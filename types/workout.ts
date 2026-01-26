@@ -1,0 +1,96 @@
+export type PlanType = 'hypertrophy' | 'strength'
+
+export type PerformanceStatus = 'overperformed' | 'met_target' | 'underperformed'
+
+export interface WorkoutTemplate {
+  id: string
+  user_id: string
+  plan_type: PlanType
+  name: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TemplateDay {
+  id: string
+  template_id: string
+  day_label: string
+  day_order: number
+  created_at: string
+}
+
+export interface TemplateExercise {
+  id: string
+  template_day_id: string
+  exercise_name: string
+  exercise_order: number
+  created_at: string
+}
+
+export interface WorkoutSession {
+  id: string
+  user_id: string
+  template_day_id: string
+  workout_date: string
+  overall_performance_rating: number | null
+  overall_feedback: string | null
+  created_at: string
+}
+
+export interface ExerciseLog {
+  id: string
+  session_id: string
+  exercise_name: string
+  set_number: number
+  weight: number
+  reps: number
+  rpe: number
+  target_weight: number | null
+  target_reps: number | null
+  target_rpe: number | null
+  performance_status: PerformanceStatus | null
+  exercise_feedback: string | null
+  created_at: string
+}
+
+export interface ProgressiveOverloadSettings {
+  id: string
+  user_id: string
+  plan_type: PlanType
+  settings_json: {
+    hypertrophy?: {
+      rep_range_min: number
+      rep_range_max: number
+      target_rpe_min: number
+      target_rpe_max: number
+      weight_increase_percent: number
+      rep_increase: number
+    }
+    strength?: {
+      rep_range_min: number
+      rep_range_max: number
+      target_rpe_min: number
+      target_rpe_max: number
+      weight_increase_percent: number
+      rep_increase: number
+    }
+  }
+  created_at: string
+  updated_at: string
+}
+
+export interface SetData {
+  setNumber: number
+  weight: number
+  reps: number
+  rpe: number
+  targetWeight?: number | null
+  targetReps?: number | null
+  targetRpe?: number | null
+}
+
+export interface ExerciseData {
+  exerciseName: string
+  sets: SetData[]
+  exerciseFeedback?: string | null
+}
