@@ -20,9 +20,9 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="text-center">
-        <p className="text-slate-300">Loading...</p>
+        <p className="text-[#888888]">Loading...</p>
       </div>
     </div>
   )

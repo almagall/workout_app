@@ -31,9 +31,9 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <p className="text-slate-300">Loading...</p>
+          <p className="text-[#888888]">Loading...</p>
         </div>
       </div>
     )
@@ -44,51 +44,51 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      <nav className="bg-slate-800 border-b border-slate-700 shadow-sm">
+    <div className="min-h-screen bg-black">
+      <nav className="bg-[#111111] border-b border-[#2a2a2a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold text-indigo-400">Workout Planner</h1>
+                <h1 className="text-xl font-bold text-white">Workout Planner</h1>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <Link
                   href="/dashboard"
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                     pathname === '/dashboard'
-                      ? 'border-indigo-500 text-slate-100'
-                      : 'border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-[#888888] hover:border-[#2a2a2a] hover:text-white'
                   }`}
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/workout/log"
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                     pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit')
-                      ? 'border-indigo-500 text-slate-100'
-                      : 'border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-[#888888] hover:border-[#2a2a2a] hover:text-white'
                   }`}
                 >
                   Log Workout
                 </Link>
                 <Link
                   href="/workout/template/create"
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                     pathname === '/workout/template/create'
-                      ? 'border-indigo-500 text-slate-100'
-                      : 'border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-[#888888] hover:border-[#2a2a2a] hover:text-white'
                   }`}
                 >
                   Create Template
                 </Link>
                 <Link
                   href="/workout/history"
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                     pathname === '/workout/history'
-                      ? 'border-indigo-500 text-slate-100'
-                      : 'border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-[#888888] hover:border-[#2a2a2a] hover:text-white'
                   }`}
                 >
                   History
@@ -96,10 +96,10 @@ export default function DashboardLayout({
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-slate-300">Hello, <span className="text-slate-100 font-medium">{user.username}</span></span>
+              <span className="text-sm text-[#888888]">Hello, <span className="text-white font-medium">{user.username}</span></span>
               <button
                 onClick={handleSignOut}
-                className="text-slate-400 hover:text-slate-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="text-[#888888] hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Sign Out
               </button>

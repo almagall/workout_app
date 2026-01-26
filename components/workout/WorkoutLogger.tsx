@@ -49,7 +49,7 @@ export default function WorkoutLogger({
   const router = useRouter()
 
   useEffect(() => {
-    function initializeWorkout() {
+    async function initializeWorkout() {
       try {
         const user = getCurrentUser()
         if (!user) {
@@ -74,7 +74,7 @@ export default function WorkoutLogger({
 
         if (isEditMode && sessionId) {
           // Edit mode: Load existing session data
-          const allLogs = getExerciseLogs()
+          const allLogs = await getExerciseLogs()
           const sessionLogs = allLogs.filter(log => log.session_id === sessionId)
 
           // Group logs by exercise
@@ -142,11 +142,11 @@ export default function WorkoutLogger({
           })
         } else {
           // New workout mode: Get the most recent previous session for THIS SPECIFIC template day
-          const previousSession = getPreviousWorkoutSession(dayId, workoutDate)
+          const previousSession = await getPreviousWorkoutSession(dayId, workoutDate)
 
           // Get exercise logs for previous session
           const allPreviousLogs = previousSession 
-            ? getExerciseLogsForSession(previousSession.id)
+            ? await getExerciseLogsForSession(previousSession.id)
             : []
 
           // Initialize exercise data
@@ -417,7 +417,7 @@ export default function WorkoutLogger({
         const feedback = generateWorkoutFeedback(workoutPerformance, planType)
 
         // Update workout session
-        updateWorkoutSession(sessionId, {
+        await updateWorkoutSession(sessionId, {
           templateDayId: dayId,
           workoutDate,
           overallRating: rating,
@@ -456,7 +456,7 @@ export default function WorkoutLogger({
       }
 
       // New workout mode: Check if a session already exists for this date and template day
-      const existingSession = getWorkoutSessionByDate(dayId, workoutDate)
+      const existingSession = await getWorkoutSessionByDate(dayId, workoutDate)
 
       if (existingSession) {
         setError('A workout already exists for this date. Please select a different date or edit the existing workout.')
@@ -510,8 +510,8 @@ export default function WorkoutLogger({
       workoutPerformance.overallRating = rating
       const feedback = generateWorkoutFeedback(workoutPerformance, planType)
 
-      // Save workout session using localStorage
-      saveWorkoutSession({
+      // Save workout session using Supabase
+      await saveWorkoutSession({
         templateDayId: dayId,
         workoutDate,
         overallRating: rating,
@@ -556,7 +556,7 @@ export default function WorkoutLogger({
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center text-slate-300">Loading workout...</div>
+        <div className="text-center text-[#888888]">Loading workout...</div>
       </div>
     )
   }
@@ -564,18 +564,18 @@ export default function WorkoutLogger({
   if (workoutComplete) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6">
-          <h2 className="text-2xl font-bold mb-4 text-slate-100">Workout Complete!</h2>
+        <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+          <h2 className="text-2xl font-bold mb-4 text-white">Workout Complete!</h2>
           <div className="mb-4">
-            <p className="text-lg font-semibold text-slate-200">Overall Rating: <span className="text-indigo-400">{overallRating}/10</span></p>
+            <p className="text-lg font-semibold text-white">Overall Rating: <span className="text-white font-bold">{overallRating}/10</span></p>
           </div>
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2 text-slate-100">Overall Feedback:</h3>
-            <p className="text-slate-300">{overallFeedback}</p>
+            <h3 className="text-lg font-semibold mb-2 text-white">Overall Feedback:</h3>
+            <p className="text-[#a1a1a1]">{overallFeedback}</p>
           </div>
           <button
             onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
+            className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
           >
             Back to Dashboard
           </button>
@@ -590,13 +590,13 @@ export default function WorkoutLogger({
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">{dayLabel}</h1>
-          <p className="text-slate-300">
+          <h1 className="text-3xl font-bold text-white mb-2">{dayLabel}</h1>
+          <p className="text-[#888888]">
             Exercise {currentExerciseIndex + 1} of {exercises.length}
           </p>
         </div>
         <div className="flex flex-col items-end">
-          <label htmlFor="workout-date" className="block text-sm font-medium text-slate-200 mb-2">
+          <label htmlFor="workout-date" className="block text-sm font-medium text-white mb-2">
             Workout Date
           </label>
           <input
@@ -617,9 +617,9 @@ export default function WorkoutLogger({
               setCurrentExerciseIndex(0)
             }}
             max={new Date().toISOString().split('T')[0]} // Prevent future dates
-            className="px-3 py-2 border border-slate-600 bg-slate-700 text-slate-100 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
           />
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#888888] mt-1">
             {workoutDate === new Date().toISOString().split('T')[0] 
               ? 'Logging today\'s workout' 
               : (() => {
@@ -634,14 +634,14 @@ export default function WorkoutLogger({
       </div>
 
       {error && (
-        <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded mb-6">
+        <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded mb-6">
           {error}
         </div>
       )}
 
-      <div className="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6 mb-6">
+      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold text-slate-100">{currentExercise.exerciseName}</h2>
+          <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
           {isEditMode && (
             <span className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-md text-sm">
               Editing Workout
@@ -656,23 +656,23 @@ export default function WorkoutLogger({
             return (
             <div 
               key={setIndex} 
-              className={`bg-slate-700/50 rounded-lg p-4 ${
+              className={`bg-[#1a1a1a] rounded-lg p-4 ${
                 isConfirmed 
                   ? 'border-2 border-green-500' 
-                  : 'border border-slate-600'
+                  : 'border border-[#2a2a2a]'
               }`}
             >
               <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold text-slate-200">Set {set.setNumber}</span>
+                <span className="font-semibold text-white">Set {set.setNumber}</span>
                 {set.targetWeight && (
-                  <span className="text-sm text-slate-400">
+                  <span className="text-sm text-[#888888]">
                     Target: {set.targetWeight} lbs × {set.targetReps} reps @ RPE {set.targetRpe}
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-200 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Weight (lbs)
                   </label>
                   <input
@@ -682,19 +682,19 @@ export default function WorkoutLogger({
                     onChange={(e) =>
                       updateSet(currentExerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)
                     }
-                    className={`w-full px-3 py-2 border border-slate-600 bg-slate-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                    className={`w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
                       (() => {
                         const key = `${currentExerciseIndex}-${setIndex}`
                         const prePop = prePopulatedValues.get(key)
                         return prePop && set.weight === prePop.weight 
-                          ? 'text-slate-400' 
-                          : 'text-slate-100'
+                          ? 'text-[#888888]' 
+                          : 'text-white'
                       })()
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-200 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     Reps
                   </label>
                   <input
@@ -703,19 +703,19 @@ export default function WorkoutLogger({
                     onChange={(e) =>
                       updateSet(currentExerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)
                     }
-                    className={`w-full px-3 py-2 border border-slate-600 bg-slate-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                    className={`w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
                       (() => {
                         const key = `${currentExerciseIndex}-${setIndex}`
                         const prePop = prePopulatedValues.get(key)
                         return prePop && set.reps === prePop.reps 
-                          ? 'text-slate-400' 
-                          : 'text-slate-100'
+                          ? 'text-[#888888]' 
+                          : 'text-white'
                       })()
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-200 mb-1">
+                  <label className="block text-sm font-medium text-white mb-1">
                     RPE
                   </label>
                   <input
@@ -727,13 +727,13 @@ export default function WorkoutLogger({
                     onChange={(e) =>
                       updateSet(currentExerciseIndex, setIndex, 'rpe', parseFloat(e.target.value) || 0)
                     }
-                    className={`w-full px-3 py-2 border border-slate-600 bg-slate-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                    className={`w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
                       (() => {
                         const key = `${currentExerciseIndex}-${setIndex}`
                         const prePop = prePopulatedValues.get(key)
                         return prePop && set.rpe === prePop.rpe 
-                          ? 'text-slate-400' 
-                          : 'text-slate-100'
+                          ? 'text-[#888888]' 
+                          : 'text-white'
                       })()
                     }`}
                   />
@@ -768,28 +768,28 @@ export default function WorkoutLogger({
         <div className="mt-4 flex gap-2">
           <button
             onClick={() => addSet(currentExerciseIndex)}
-            className="px-4 py-2 bg-slate-600 text-slate-200 rounded-md hover:bg-slate-500"
+            className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors"
           >
             + Add Set
           </button>
           <button
             onClick={() => completeExercise(currentExerciseIndex)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
+            className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
           >
             Complete Exercise
           </button>
         </div>
 
         {currentExercise.exerciseFeedback && (
-          <div className="mt-4 p-4 bg-indigo-900/30 border border-indigo-700 rounded-lg">
+          <div className="mt-4 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
             {currentExercise.exerciseRating !== null && currentExercise.exerciseRating !== undefined && (
-              <div className="mb-3 pb-3 border-b border-indigo-700">
-                <p className="text-sm text-indigo-300 mb-1">Exercise Rating</p>
-                <p className="text-2xl font-bold text-indigo-400">{currentExercise.exerciseRating}/10</p>
+              <div className="mb-3 pb-3 border-b border-[#2a2a2a]">
+                <p className="text-sm text-[#888888] mb-1">Exercise Rating</p>
+                <p className="text-2xl font-bold text-white">{currentExercise.exerciseRating}/10</p>
               </div>
             )}
-            <h3 className="font-semibold mb-2 text-indigo-300">Feedback:</h3>
-            <p className="text-slate-200">{currentExercise.exerciseFeedback}</p>
+            <h3 className="font-semibold mb-2 text-white">Feedback:</h3>
+            <p className="text-[#a1a1a1]">{currentExercise.exerciseFeedback}</p>
           </div>
         )}
       </div>
@@ -798,14 +798,14 @@ export default function WorkoutLogger({
         <button
           onClick={() => setCurrentExerciseIndex(Math.max(0, currentExerciseIndex - 1))}
           disabled={currentExerciseIndex === 0}
-          className="px-4 py-2 bg-slate-600 text-slate-200 rounded-md hover:bg-slate-500 disabled:opacity-50"
+          className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Previous
         </button>
         {currentExerciseIndex < exercises.length - 1 ? (
           <button
             onClick={() => setCurrentExerciseIndex(currentExerciseIndex + 1)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
+            className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
           >
             Next Exercise
           </button>
@@ -813,7 +813,7 @@ export default function WorkoutLogger({
           <button
             onClick={saveWorkout}
             disabled={saving}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500 disabled:opacity-50"
+            className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
             {saving ? 'Saving...' : 'Complete Workout'}
           </button>

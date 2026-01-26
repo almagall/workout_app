@@ -1,11 +1,12 @@
-// LocalStorage-based data storage for templates and workouts
-// This works with the simple auth system
+// Supabase-based data storage for templates and workouts
+// This works with the simple auth system but stores data in Supabase for cross-device sync
 
 import type { PlanType, WorkoutTemplate, TemplateDay, TemplateExercise, WorkoutSession, ExerciseLog } from '@/types/workout'
 import { getCurrentUser } from './auth-simple'
+import { createClient } from './supabase/client'
 
 // Template storage
-export function saveTemplate(template: {
+export async function saveTemplate(template: {
   name: string
   planType: PlanType
   days: Array<{
@@ -13,120 +14,175 @@ export function saveTemplate(template: {
     dayOrder: number
     exercises: string[]
   }>
-}): string {
+}): Promise<string> {
   const user = getCurrentUser()
   if (!user) throw new Error('User not authenticated')
 
-  const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  
-  const templateData: WorkoutTemplate = {
-    id: templateId,
-    user_id: user.id,
-    plan_type: template.planType,
-    name: template.name,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }
+  const supabase = createClient()
 
-  const days: TemplateDay[] = template.days.map((day, index) => ({
-    id: `day_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
+  // Insert template
+  const { data: templateData, error: templateError } = await supabase
+    .from('workout_templates')
+    .insert({
+      user_id: user.id,
+      plan_type: template.planType,
+      name: template.name,
+    })
+    .select()
+    .single()
+
+  if (templateError) throw new Error(`Failed to save template: ${templateError.message}`)
+  if (!templateData) throw new Error('Failed to save template: No data returned')
+
+  const templateId = templateData.id
+
+  // Insert template days
+  const daysToInsert = template.days.map((day) => ({
     template_id: templateId,
     day_label: day.dayLabel,
     day_order: day.dayOrder,
-    created_at: new Date().toISOString(),
   }))
 
-  const exercises: TemplateExercise[] = template.days.flatMap((day, dayIndex) =>
-    day.exercises.map((exerciseName, exerciseIndex) => ({
-      id: `exercise_${Date.now()}_${dayIndex}_${exerciseIndex}_${Math.random().toString(36).substr(2, 9)}`,
-      template_day_id: days[dayIndex].id,
+  const { error: daysError } = await supabase
+    .from('template_days')
+    .insert(daysToInsert)
+
+  if (daysError) throw new Error(`Failed to save template days: ${daysError.message}`)
+
+  // Get the inserted days to get their IDs
+  const { data: insertedDays, error: fetchDaysError } = await supabase
+    .from('template_days')
+    .select('id, day_order')
+    .eq('template_id', templateId)
+
+  if (fetchDaysError) throw new Error(`Failed to fetch template days: ${fetchDaysError.message}`)
+
+  // Insert template exercises
+  const exercisesToInsert = template.days.flatMap((day, dayIndex) => {
+    const dayData = insertedDays?.find(d => d.day_order === day.dayOrder)
+    if (!dayData) return []
+    
+    return day.exercises.map((exerciseName, exerciseIndex) => ({
+      template_day_id: dayData.id,
       exercise_name: exerciseName,
       exercise_order: exerciseIndex + 1,
-      created_at: new Date().toISOString(),
     }))
-  )
+  })
 
-  // Store in localStorage
-  const templates = getTemplates()
-  templates.push(templateData)
-  localStorage.setItem(`workout_templates_${user.id}`, JSON.stringify(templates))
+  if (exercisesToInsert.length > 0) {
+    const { error: exercisesError } = await supabase
+      .from('template_exercises')
+      .insert(exercisesToInsert)
 
-  localStorage.setItem(`template_days_${user.id}`, JSON.stringify([
-    ...(JSON.parse(localStorage.getItem(`template_days_${user.id}`) || '[]')),
-    ...days
-  ]))
-
-  localStorage.setItem(`template_exercises_${user.id}`, JSON.stringify([
-    ...(JSON.parse(localStorage.getItem(`template_exercises_${user.id}`) || '[]')),
-    ...exercises
-  ]))
+    if (exercisesError) throw new Error(`Failed to save template exercises: ${exercisesError.message}`)
+  }
 
   return templateId
 }
 
-export function getTemplates(): WorkoutTemplate[] {
+export async function getTemplates(): Promise<WorkoutTemplate[]> {
   const user = getCurrentUser()
   if (!user) return []
 
-  const templatesStr = localStorage.getItem(`workout_templates_${user.id}`)
-  if (!templatesStr) return []
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('workout_templates')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
 
-  try {
-    return JSON.parse(templatesStr) as WorkoutTemplate[]
-  } catch {
+  if (error) {
+    console.error('Error fetching templates:', error)
     return []
   }
+
+  return (data || []).map(t => ({
+    id: t.id,
+    user_id: t.user_id,
+    plan_type: t.plan_type,
+    name: t.name,
+    created_at: t.created_at,
+    updated_at: t.updated_at,
+  }))
 }
 
-export function getTemplateDays(templateId: string): TemplateDay[] {
+export async function getTemplateDays(templateId: string): Promise<TemplateDay[]> {
   const user = getCurrentUser()
   if (!user) return []
 
-  const daysStr = localStorage.getItem(`template_days_${user.id}`)
-  if (!daysStr) return []
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('template_days')
+    .select('*')
+    .eq('template_id', templateId)
+    .order('day_order', { ascending: true })
 
-  try {
-    const allDays = JSON.parse(daysStr) as TemplateDay[]
-    return allDays.filter(day => day.template_id === templateId)
-  } catch {
+  if (error) {
+    console.error('Error fetching template days:', error)
     return []
   }
+
+  return (data || []).map(d => ({
+    id: d.id,
+    template_id: d.template_id,
+    day_label: d.day_label,
+    day_order: d.day_order,
+    created_at: d.created_at,
+  }))
 }
 
-export function getTemplateExercises(dayId: string): TemplateExercise[] {
+export async function getTemplateExercises(dayId: string): Promise<TemplateExercise[]> {
   const user = getCurrentUser()
   if (!user) return []
 
-  const exercisesStr = localStorage.getItem(`template_exercises_${user.id}`)
-  if (!exercisesStr) return []
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('template_exercises')
+    .select('*')
+    .eq('template_day_id', dayId)
+    .order('exercise_order', { ascending: true })
 
-  try {
-    const allExercises = JSON.parse(exercisesStr) as TemplateExercise[]
-    return allExercises
-      .filter(ex => ex.template_day_id === dayId)
-      .sort((a, b) => a.exercise_order - b.exercise_order)
-  } catch {
+  if (error) {
+    console.error('Error fetching template exercises:', error)
     return []
   }
+
+  return (data || []).map(e => ({
+    id: e.id,
+    template_day_id: e.template_day_id,
+    exercise_name: e.exercise_name,
+    exercise_order: e.exercise_order,
+    created_at: e.created_at,
+  }))
 }
 
-export function getTemplateDay(dayId: string): TemplateDay | null {
+export async function getTemplateDay(dayId: string): Promise<TemplateDay | null> {
   const user = getCurrentUser()
   if (!user) return null
 
-  const daysStr = localStorage.getItem(`template_days_${user.id}`)
-  if (!daysStr) return null
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('template_days')
+    .select('*')
+    .eq('id', dayId)
+    .single()
 
-  try {
-    const allDays = JSON.parse(daysStr) as TemplateDay[]
-    return allDays.find(day => day.id === dayId) || null
-  } catch {
+  if (error || !data) {
+    console.error('Error fetching template day:', error)
     return null
+  }
+
+  return {
+    id: data.id,
+    template_id: data.template_id,
+    day_label: data.day_label,
+    day_order: data.day_order,
+    created_at: data.created_at,
   }
 }
 
 // Workout session storage
-export function saveWorkoutSession(session: {
+export async function saveWorkoutSession(session: {
   templateDayId: string
   workoutDate: string
   overallRating?: number
@@ -145,25 +201,33 @@ export function saveWorkoutSession(session: {
       exerciseFeedback?: string | null
     }>
   }>
-}): string {
+}): Promise<string> {
   const user = getCurrentUser()
   if (!user) throw new Error('User not authenticated')
 
-  const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const supabase = createClient()
 
-  const sessionData: WorkoutSession = {
-    id: sessionId,
-    user_id: user.id,
-    template_day_id: session.templateDayId,
-    workout_date: session.workoutDate,
-    overall_performance_rating: session.overallRating || null,
-    overall_feedback: session.overallFeedback || null,
-    created_at: new Date().toISOString(),
-  }
+  // Insert workout session
+  const { data: sessionData, error: sessionError } = await supabase
+    .from('workout_sessions')
+    .insert({
+      user_id: user.id,
+      template_day_id: session.templateDayId,
+      workout_date: session.workoutDate,
+      overall_performance_rating: session.overallRating || null,
+      overall_feedback: session.overallFeedback || null,
+    })
+    .select()
+    .single()
 
-  const logs: ExerciseLog[] = session.exercises.flatMap((exercise) =>
+  if (sessionError) throw new Error(`Failed to save workout session: ${sessionError.message}`)
+  if (!sessionData) throw new Error('Failed to save workout session: No data returned')
+
+  const sessionId = sessionData.id
+
+  // Insert exercise logs
+  const logsToInsert = session.exercises.flatMap((exercise) =>
     exercise.sets.map((set) => ({
-      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       session_id: sessionId,
       exercise_name: exercise.exerciseName,
       set_number: set.setNumber,
@@ -175,72 +239,176 @@ export function saveWorkoutSession(session: {
       target_rpe: set.targetRpe ?? null,
       performance_status: (set.performanceStatus as any) || null,
       exercise_feedback: set.exerciseFeedback || null,
-      created_at: new Date().toISOString(),
     }))
   )
 
-  // Store in localStorage
-  const sessions = getWorkoutSessions()
-  sessions.push(sessionData)
-  localStorage.setItem(`workout_sessions_${user.id}`, JSON.stringify(sessions))
+  if (logsToInsert.length > 0) {
+    const { error: logsError } = await supabase
+      .from('exercise_logs')
+      .insert(logsToInsert)
 
-  const allLogs = getExerciseLogs()
-  localStorage.setItem(`exercise_logs_${user.id}`, JSON.stringify([...allLogs, ...logs]))
+    if (logsError) throw new Error(`Failed to save exercise logs: ${logsError.message}`)
+  }
 
   return sessionId
 }
 
-export function getWorkoutSessions(): WorkoutSession[] {
+export async function getWorkoutSessions(): Promise<WorkoutSession[]> {
   const user = getCurrentUser()
   if (!user) return []
 
-  const sessionsStr = localStorage.getItem(`workout_sessions_${user.id}`)
-  if (!sessionsStr) return []
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('workout_sessions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('workout_date', { ascending: false })
 
-  try {
-    return JSON.parse(sessionsStr) as WorkoutSession[]
-  } catch {
+  if (error) {
+    console.error('Error fetching workout sessions:', error)
     return []
   }
+
+  return (data || []).map(s => ({
+    id: s.id,
+    user_id: s.user_id,
+    template_day_id: s.template_day_id,
+    workout_date: s.workout_date,
+    overall_performance_rating: s.overall_performance_rating,
+    overall_feedback: s.overall_feedback,
+    created_at: s.created_at,
+  }))
 }
 
-export function getExerciseLogs(): ExerciseLog[] {
+export async function getExerciseLogs(): Promise<ExerciseLog[]> {
   const user = getCurrentUser()
   if (!user) return []
 
-  const logsStr = localStorage.getItem(`exercise_logs_${user.id}`)
-  if (!logsStr) return []
+  const supabase = createClient()
+  
+  // Get all sessions for this user first
+  const sessions = await getWorkoutSessions()
+  if (sessions.length === 0) return []
 
-  try {
-    return JSON.parse(logsStr) as ExerciseLog[]
-  } catch {
+  const sessionIds = sessions.map(s => s.id)
+
+  const { data, error } = await supabase
+    .from('exercise_logs')
+    .select('*')
+    .in('session_id', sessionIds)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching exercise logs:', error)
     return []
   }
+
+  return (data || []).map(log => ({
+    id: log.id,
+    session_id: log.session_id,
+    exercise_name: log.exercise_name,
+    set_number: log.set_number,
+    weight: log.weight,
+    reps: log.reps,
+    rpe: log.rpe,
+    target_weight: log.target_weight,
+    target_reps: log.target_reps,
+    target_rpe: log.target_rpe,
+    performance_status: log.performance_status,
+    exercise_feedback: log.exercise_feedback,
+    created_at: log.created_at,
+  }))
 }
 
-export function getPreviousWorkoutSession(templateDayId: string, beforeDate: string): WorkoutSession | null {
+export async function getPreviousWorkoutSession(templateDayId: string, beforeDate: string): Promise<WorkoutSession | null> {
   const user = getCurrentUser()
   if (!user) return null
 
-  const sessions = getWorkoutSessions()
-    .filter(s => s.template_day_id === templateDayId && s.workout_date < beforeDate)
-    .sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime())
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('workout_sessions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('template_day_id', templateDayId)
+    .lt('workout_date', beforeDate)
+    .order('workout_date', { ascending: false })
+    .limit(1)
+    .single()
 
-  return sessions.length > 0 ? sessions[0] : null
+  if (error || !data) {
+    return null
+  }
+
+  return {
+    id: data.id,
+    user_id: data.user_id,
+    template_day_id: data.template_day_id,
+    workout_date: data.workout_date,
+    overall_performance_rating: data.overall_performance_rating,
+    overall_feedback: data.overall_feedback,
+    created_at: data.created_at,
+  }
 }
 
-export function getWorkoutSessionByDate(templateDayId: string, date: string): WorkoutSession | null {
-  const sessions = getWorkoutSessions()
-    .filter(s => s.template_day_id === templateDayId && s.workout_date === date)
+export async function getWorkoutSessionByDate(templateDayId: string, date: string): Promise<WorkoutSession | null> {
+  const user = getCurrentUser()
+  if (!user) return null
 
-  return sessions.length > 0 ? sessions[0] : null
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('workout_sessions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('template_day_id', templateDayId)
+    .eq('workout_date', date)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return {
+    id: data.id,
+    user_id: data.user_id,
+    template_day_id: data.template_day_id,
+    workout_date: data.workout_date,
+    overall_performance_rating: data.overall_performance_rating,
+    overall_feedback: data.overall_feedback,
+    created_at: data.created_at,
+  }
 }
 
-export function getExerciseLogsForSession(sessionId: string): ExerciseLog[] {
-  return getExerciseLogs().filter(log => log.session_id === sessionId)
+export async function getExerciseLogsForSession(sessionId: string): Promise<ExerciseLog[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('exercise_logs')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('set_number', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching exercise logs for session:', error)
+    return []
+  }
+
+  return (data || []).map(log => ({
+    id: log.id,
+    session_id: log.session_id,
+    exercise_name: log.exercise_name,
+    set_number: log.set_number,
+    weight: log.weight,
+    reps: log.reps,
+    rpe: log.rpe,
+    target_weight: log.target_weight,
+    target_reps: log.target_reps,
+    target_rpe: log.target_rpe,
+    performance_status: log.performance_status,
+    exercise_feedback: log.exercise_feedback,
+    created_at: log.created_at,
+  }))
 }
 
-export function updateWorkoutSession(
+export async function updateWorkoutSession(
   sessionId: string,
   session: {
     templateDayId: string
@@ -262,31 +430,37 @@ export function updateWorkoutSession(
       }>
     }>
   }
-): void {
+): Promise<void> {
   const user = getCurrentUser()
   if (!user) throw new Error('User not authenticated')
 
+  const supabase = createClient()
+
   // Update session
-  const sessions = getWorkoutSessions()
-  const sessionIndex = sessions.findIndex(s => s.id === sessionId)
-  if (sessionIndex === -1) throw new Error('Session not found')
+  const { error: sessionError } = await supabase
+    .from('workout_sessions')
+    .update({
+      template_day_id: session.templateDayId,
+      workout_date: session.workoutDate,
+      overall_performance_rating: session.overallRating || null,
+      overall_feedback: session.overallFeedback || null,
+    })
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
 
-  sessions[sessionIndex] = {
-    ...sessions[sessionIndex],
-    template_day_id: session.templateDayId,
-    workout_date: session.workoutDate,
-    overall_performance_rating: session.overallRating || null,
-    overall_feedback: session.overallFeedback || null,
-  }
-  localStorage.setItem(`workout_sessions_${user.id}`, JSON.stringify(sessions))
+  if (sessionError) throw new Error(`Failed to update workout session: ${sessionError.message}`)
 
-  // Remove old logs and add new ones
-  const allLogs = getExerciseLogs()
-  const filteredLogs = allLogs.filter(log => log.session_id !== sessionId)
+  // Delete old logs
+  const { error: deleteError } = await supabase
+    .from('exercise_logs')
+    .delete()
+    .eq('session_id', sessionId)
 
-  const newLogs: ExerciseLog[] = session.exercises.flatMap((exercise) =>
+  if (deleteError) throw new Error(`Failed to delete old exercise logs: ${deleteError.message}`)
+
+  // Insert new logs
+  const logsToInsert = session.exercises.flatMap((exercise) =>
     exercise.sets.map((set) => ({
-      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       session_id: sessionId,
       exercise_name: exercise.exerciseName,
       set_number: set.setNumber,
@@ -298,24 +472,38 @@ export function updateWorkoutSession(
       target_rpe: set.targetRpe ?? null,
       performance_status: (set.performanceStatus as any) || null,
       exercise_feedback: set.exerciseFeedback || null,
-      created_at: new Date().toISOString(),
     }))
   )
 
-  localStorage.setItem(`exercise_logs_${user.id}`, JSON.stringify([...filteredLogs, ...newLogs]))
+  if (logsToInsert.length > 0) {
+    const { error: logsError } = await supabase
+      .from('exercise_logs')
+      .insert(logsToInsert)
+
+    if (logsError) throw new Error(`Failed to save exercise logs: ${logsError.message}`)
+  }
 }
 
-export function deleteWorkoutSession(sessionId: string): void {
+export async function deleteWorkoutSession(sessionId: string): Promise<void> {
   const user = getCurrentUser()
   if (!user) throw new Error('User not authenticated')
 
-  // Remove session
-  const sessions = getWorkoutSessions()
-  const filteredSessions = sessions.filter(s => s.id !== sessionId)
-  localStorage.setItem(`workout_sessions_${user.id}`, JSON.stringify(filteredSessions))
+  const supabase = createClient()
 
-  // Remove logs
-  const allLogs = getExerciseLogs()
-  const filteredLogs = allLogs.filter(log => log.session_id !== sessionId)
-  localStorage.setItem(`exercise_logs_${user.id}`, JSON.stringify(filteredLogs))
+  // Delete logs first (cascade should handle this, but being explicit)
+  const { error: logsError } = await supabase
+    .from('exercise_logs')
+    .delete()
+    .eq('session_id', sessionId)
+
+  if (logsError) throw new Error(`Failed to delete exercise logs: ${logsError.message}`)
+
+  // Delete session
+  const { error: sessionError } = await supabase
+    .from('workout_sessions')
+    .delete()
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
+
+  if (sessionError) throw new Error(`Failed to delete workout session: ${sessionError.message}`)
 }

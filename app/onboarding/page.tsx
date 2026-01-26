@@ -84,27 +84,27 @@ export default function OnboardingPage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <p className="text-slate-300">Loading...</p>
+          <p className="text-[#888888]">Loading...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="max-w-4xl w-full p-8">
-        <div className="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-8">
-          <h1 className="text-3xl font-bold text-center mb-2 text-slate-100">
+        <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-8">
+          <h1 className="text-3xl font-bold text-center mb-2 text-white">
             Choose Your Workout Plan
           </h1>
-          <p className="text-center text-slate-300 mb-8">
+          <p className="text-center text-[#888888] mb-8">
             Select the plan that matches your fitness goals
           </p>
 
           {error && (
-            <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded mb-6">
+            <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded mb-6">
               {error}
             </div>
           )}
@@ -114,32 +114,32 @@ export default function OnboardingPage() {
             <div
               className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
                 selectedPlan === 'hypertrophy'
-                  ? 'border-indigo-500 bg-indigo-900/30'
-                  : 'border-slate-600 bg-slate-700 hover:border-indigo-500/50'
+                  ? 'border-white bg-[#1a1a1a]'
+                  : 'border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#444444]'
               }`}
               onClick={() => handlePlanSelection('hypertrophy')}
             >
-              <h2 className="text-2xl font-bold mb-4 text-slate-100">Hypertrophy Training</h2>
-              <ul className="space-y-2 text-slate-200">
+              <h2 className="text-2xl font-bold mb-4 text-white">Hypertrophy Training</h2>
+              <ul className="space-y-2 text-[#a1a1a1]">
                 <li className="flex items-start">
-                  <span className="text-indigo-400 mr-2 font-bold">✓</span>
+                  <span className="text-white mr-2 font-bold">✓</span>
                   <span>Higher rep range (8-15 reps)</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-indigo-400 mr-2 font-bold">✓</span>
+                  <span className="text-white mr-2 font-bold">✓</span>
                   <span>Focus on volume progression</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-indigo-400 mr-2 font-bold">✓</span>
+                  <span className="text-white mr-2 font-bold">✓</span>
                   <span>Moderate intensity (RPE 6-8)</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-indigo-400 mr-2 font-bold">✓</span>
+                  <span className="text-white mr-2 font-bold">✓</span>
                   <span>Build muscle size and endurance</span>
                 </li>
               </ul>
               {loading && selectedPlan === 'hypertrophy' && (
-                <p className="mt-4 text-indigo-400">Loading...</p>
+                <p className="mt-4 text-white">Loading...</p>
               )}
             </div>
 
@@ -147,32 +147,32 @@ export default function OnboardingPage() {
             <div
               className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
                 selectedPlan === 'strength'
-                  ? 'border-indigo-500 bg-indigo-900/30'
-                  : 'border-slate-600 bg-slate-700 hover:border-indigo-500/50'
+                  ? 'border-white bg-[#1a1a1a]'
+                  : 'border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#444444]'
               }`}
               onClick={() => handlePlanSelection('strength')}
             >
-              <h2 className="text-2xl font-bold mb-4 text-slate-100">Strength Training</h2>
-              <ul className="space-y-2 text-slate-200">
+              <h2 className="text-2xl font-bold mb-4 text-white">Strength Training</h2>
+              <ul className="space-y-2 text-[#a1a1a1]">
                 <li className="flex items-start">
-                  <span className="text-indigo-400 mr-2 font-bold">✓</span>
+                  <span className="text-white mr-2 font-bold">✓</span>
                   <span>Lower rep range (3-6 reps)</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-indigo-400 mr-2 font-bold">✓</span>
+                  <span className="text-white mr-2 font-bold">✓</span>
                   <span>Focus on weight progression</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-indigo-400 mr-2 font-bold">✓</span>
+                  <span className="text-white mr-2 font-bold">✓</span>
                   <span>Higher intensity (RPE 7-9)</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-indigo-400 mr-2 font-bold">✓</span>
+                  <span className="text-white mr-2 font-bold">✓</span>
                   <span>Build maximum strength</span>
                 </li>
               </ul>
               {loading && selectedPlan === 'strength' && (
-                <p className="mt-4 text-indigo-400">Loading...</p>
+                <p className="mt-4 text-white">Loading...</p>
               )}
             </div>
           </div>

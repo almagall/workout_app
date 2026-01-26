@@ -131,8 +131,8 @@ export default function CreateTemplatePage() {
         throw new Error('Plan type not set')
       }
 
-      // Save template using localStorage
-      saveTemplate({
+      // Save template using Supabase
+      await saveTemplate({
         name: templateName,
         planType,
         days: days.map(day => ({
@@ -150,22 +150,22 @@ export default function CreateTemplatePage() {
   }
 
   if (!planType) {
-    return <div className="p-8 text-slate-300">Loading...</div>
+    return <div className="p-8 text-[#888888]">Loading...</div>
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-slate-100 mb-8">Create Workout Template</h1>
+      <h1 className="text-3xl font-bold text-white mb-8">Create Workout Template</h1>
 
       {error && (
-        <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded mb-6">
+        <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded mb-6">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6">
+      <form onSubmit={handleSubmit} className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
         <div className="mb-6">
-          <label htmlFor="templateName" className="block text-sm font-medium text-slate-200 mb-2">
+          <label htmlFor="templateName" className="block text-sm font-medium text-white mb-2">
             Template Name
           </label>
           <input
@@ -173,7 +173,7 @@ export default function CreateTemplatePage() {
             id="templateName"
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-600 bg-slate-700 text-slate-100 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
             placeholder="e.g., 6-Day Push/Pull/Legs"
             required
           />
@@ -181,31 +181,31 @@ export default function CreateTemplatePage() {
 
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-slate-100">Workout Days</h2>
+            <h2 className="text-xl font-semibold text-white">Workout Days</h2>
             <button
               type="button"
               onClick={addDay}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
+              className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
             >
               Add Day
             </button>
           </div>
 
           {days.map((day, dayIndex) => (
-            <div key={dayIndex} className="mb-6 p-4 border border-slate-600 bg-slate-700/50 rounded-lg">
+            <div key={dayIndex} className="mb-6 p-4 border border-[#2a2a2a] bg-[#1a1a1a] rounded-lg">
               <div className="flex justify-between items-center mb-4">
                 <input
                   type="text"
                   value={day.dayLabel}
                   onChange={(e) => updateDay(dayIndex, 'dayLabel', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-slate-600 bg-slate-700 text-slate-100 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="flex-1 px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
                   placeholder="e.g., Push A, Pull B, Legs A"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => removeDay(dayIndex)}
-                  className="ml-2 px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-500"
+                  className="ml-2 px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-500 transition-colors"
                 >
                   Remove
                 </button>
@@ -213,11 +213,11 @@ export default function CreateTemplatePage() {
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-medium text-slate-200">Exercises</label>
+                  <label className="text-sm font-medium text-white">Exercises</label>
                   <button
                     type="button"
                     onClick={() => addExercise(dayIndex)}
-                    className="text-sm px-3 py-1 bg-slate-600 text-slate-200 rounded hover:bg-slate-500"
+                    className="text-sm px-3 py-1 bg-[#1a1a1a] text-white rounded hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors"
                   >
                     + Add Exercise
                   </button>
@@ -228,14 +228,14 @@ export default function CreateTemplatePage() {
                       type="text"
                       value={exercise}
                       onChange={(e) => updateExercise(dayIndex, exerciseIndex, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-slate-600 bg-slate-700 text-slate-100 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="flex-1 px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
                       placeholder="Exercise name"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => removeExercise(dayIndex, exerciseIndex)}
-                      className="px-3 py-2 bg-red-900/50 text-red-200 rounded-md hover:bg-red-800/50"
+                      className="px-3 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-900/50 transition-colors"
                     >
                       ×
                     </button>
@@ -250,14 +250,14 @@ export default function CreateTemplatePage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500 disabled:opacity-50"
+            className="flex-1 px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
             {loading ? 'Creating...' : 'Create Template'}
           </button>
           <button
             type="button"
             onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 bg-slate-600 text-slate-200 rounded-md hover:bg-slate-500"
+            className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors"
           >
             Cancel
           </button>

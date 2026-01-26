@@ -19,42 +19,47 @@ export default function LogWorkoutDayPage() {
   } | null>(null)
 
   useEffect(() => {
-    const user = getCurrentUser()
-    if (!user) {
-      router.push('/get-started')
-      return
+    async function loadDayData() {
+      const user = getCurrentUser()
+      if (!user) {
+        router.push('/get-started')
+        return
+      }
+
+      // Get template day
+      const day = await getTemplateDay(dayId)
+      if (!day) {
+        router.push('/workout/log')
+        return
+      }
+
+      // Get template to find plan type
+      const templates = await getTemplates()
+      const template = templates.find(t => t.id === day.template_id)
+      if (!template) {
+        router.push('/workout/log')
+        return
+      }
+
+      // Get exercises for this day
+      const exercisesData = await getTemplateExercises(dayId)
+      const exercises = exercisesData.map(ex => ex.exercise_name)
+
+      setDayData({
+        dayLabel: day.day_label,
+        planType: template.plan_type,
+        exercises,
+      })
+      setLoading(false)
     }
 
-    // Get template day
-    const day = getTemplateDay(dayId)
-    if (!day) {
-      router.push('/workout/log')
-      return
-    }
-
-    // Get template to find plan type
-    const templates = getTemplates()
-    const template = templates.find(t => t.id === day.template_id)
-    if (!template) {
-      router.push('/workout/log')
-      return
-    }
-
-    // Get exercises for this day
-    const exercises = getTemplateExercises(dayId).map(ex => ex.exercise_name)
-
-    setDayData({
-      dayLabel: day.day_label,
-      planType: template.plan_type,
-      exercises,
-    })
-    setLoading(false)
+    loadDayData()
   }, [dayId, router])
 
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-slate-300">Loading...</div>
+        <div className="text-[#888888]">Loading...</div>
       </div>
     )
   }

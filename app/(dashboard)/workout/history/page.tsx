@@ -10,34 +10,56 @@ export default function WorkoutHistoryPage() {
   const [sessions, setSessions] = useState<WorkoutSession[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [templateDays, setTemplateDays] = useState<Map<string, any>>(new Map())
+  const [templates, setTemplates] = useState<any[]>([])
 
   useEffect(() => {
-    const user = getCurrentUser()
-    if (!user) {
-      window.location.href = '/get-started'
-      return
+    async function loadSessions() {
+      const user = getCurrentUser()
+      if (!user) {
+        window.location.href = '/get-started'
+        return
+      }
+
+      const [allSessions, allTemplates] = await Promise.all([
+        getWorkoutSessions(),
+        getTemplates()
+      ])
+      
+      allSessions.sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime())
+
+      // Load template days for all sessions
+      const dayIds = [...new Set(allSessions.map(s => s.template_day_id))]
+      const daysMap = new Map()
+      await Promise.all(
+        dayIds.map(async (dayId) => {
+          const day = await getTemplateDay(dayId)
+          if (day) daysMap.set(dayId, day)
+        })
+      )
+
+      setSessions(allSessions)
+      setTemplateDays(daysMap)
+      setTemplates(allTemplates)
+      setLoading(false)
     }
 
-    const allSessions = getWorkoutSessions()
-      .sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime())
-
-    setSessions(allSessions)
-    setLoading(false)
+    loadSessions()
   }, [])
 
-  const handleDelete = (sessionId: string, e: React.MouseEvent) => {
+  const handleDelete = async (sessionId: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
     if (window.confirm('Are you sure you want to delete this workout? This action cannot be undone.')) {
       setDeletingId(sessionId)
       try {
-        deleteWorkoutSession(sessionId)
+        await deleteWorkoutSession(sessionId)
         // Refresh the sessions list
         const user = getCurrentUser()
         if (user) {
-          const allSessions = getWorkoutSessions()
-            .sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime())
+          const allSessions = await getWorkoutSessions()
+          allSessions.sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime())
           setSessions(allSessions)
         }
       } catch (error) {
@@ -52,7 +74,7 @@ export default function WorkoutHistoryPage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-slate-300">Loading...</div>
+        <div className="text-[#888888]">Loading...</div>
       </div>
     )
   }
@@ -70,18 +92,18 @@ export default function WorkoutHistoryPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-100">Workout History</h1>
+        <h1 className="text-3xl font-bold text-white">Workout History</h1>
         <Link
           href="/workout/log"
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
+          className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
         >
           Log New Workout
         </Link>
       </div>
 
       {sessions.length === 0 ? (
-        <div className="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6">
-          <p className="text-slate-300 text-center">
+        <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+          <p className="text-[#a1a1a1] text-center">
             No workouts logged yet. Start logging workouts to see your history!
           </p>
         </div>
@@ -100,18 +122,17 @@ export default function WorkoutHistoryPage() {
               })
 
               return (
-                <div key={date} className="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6">
-                  <h2 className="text-xl font-semibold text-slate-100 mb-4">{formattedDate}</h2>
+                <div key={date} className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+                  <h2 className="text-xl font-semibold text-white mb-4">{formattedDate}</h2>
                   <div className="space-y-3">
                     {dateSessions.map((session) => {
-                      const day = getTemplateDay(session.template_day_id)
-                      const templates = getTemplates()
+                      const day = templateDays.get(session.template_day_id)
                       const template = day ? templates.find(t => t.id === day.template_id) : null
 
                       return (
                         <div
                           key={session.id}
-                          className="bg-slate-700/50 rounded-lg p-4 hover:bg-slate-700 transition-colors border border-slate-600"
+                          className="bg-[#1a1a1a] rounded-lg p-4 hover:bg-[#222222] transition-colors border border-[#2a2a2a]"
                         >
                           <div className="flex justify-between items-center">
                             <Link
@@ -119,24 +140,24 @@ export default function WorkoutHistoryPage() {
                               className="flex-1"
                             >
                               <div>
-                                <h3 className="text-lg font-semibold text-slate-100">
+                                <h3 className="text-lg font-semibold text-white">
                                   {day?.day_label || 'Unknown Workout'}
                                 </h3>
                                 {template && (
-                                  <p className="text-sm text-slate-400">{template.name}</p>
+                                  <p className="text-sm text-[#888888]">{template.name}</p>
                                 )}
                               </div>
                             </Link>
                             <div className="flex items-center gap-4">
                               <div className="text-right">
                                 {session.overall_performance_rating && (
-                                  <p className="text-indigo-400 font-semibold">
+                                  <p className="text-white font-semibold">
                                     {session.overall_performance_rating}/10
                                   </p>
                                 )}
                                 <Link
                                   href={`/workout/edit/${session.id}`}
-                                  className="text-sm text-slate-400 hover:text-slate-200"
+                                  className="text-sm text-[#888888] hover:text-white transition-colors"
                                 >
                                   Edit →
                                 </Link>

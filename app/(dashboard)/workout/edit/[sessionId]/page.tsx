@@ -22,53 +22,58 @@ export default function EditWorkoutPage() {
   } | null>(null)
 
   useEffect(() => {
-    const user = getCurrentUser()
-    if (!user) {
-      router.push('/get-started')
-      return
+    async function loadWorkoutData() {
+      const user = getCurrentUser()
+      if (!user) {
+        router.push('/get-started')
+        return
+      }
+
+      const sessions = await getWorkoutSessions()
+      const session = sessions.find(s => s.id === sessionId)
+
+      if (!session) {
+        router.push('/workout/history')
+        return
+      }
+
+      // Get template day
+      const day = await getTemplateDay(session.template_day_id)
+      if (!day) {
+        router.push('/workout/history')
+        return
+      }
+
+      // Get template to find plan type
+      const templates = await getTemplates()
+      const template = templates.find(t => t.id === day.template_id)
+      if (!template) {
+        router.push('/workout/history')
+        return
+      }
+
+      // Get exercises for this day
+      const exercisesData = await getTemplateExercises(day.id)
+      const exercises = exercisesData.map(ex => ex.exercise_name)
+
+      setWorkoutData({
+        dayId: day.id,
+        dayLabel: day.day_label,
+        planType: template.plan_type,
+        exercises,
+        userId: user.id,
+        workoutDate: session.workout_date,
+      })
+      setLoading(false)
     }
 
-    const sessions = getWorkoutSessions()
-    const session = sessions.find(s => s.id === sessionId)
-
-    if (!session) {
-      router.push('/workout/history')
-      return
-    }
-
-    // Get template day
-    const day = getTemplateDay(session.template_day_id)
-    if (!day) {
-      router.push('/workout/history')
-      return
-    }
-
-    // Get template to find plan type
-    const templates = getTemplates()
-    const template = templates.find(t => t.id === day.template_id)
-    if (!template) {
-      router.push('/workout/history')
-      return
-    }
-
-    // Get exercises for this day
-    const exercises = getTemplateExercises(day.id).map(ex => ex.exercise_name)
-
-    setWorkoutData({
-      dayId: day.id,
-      dayLabel: day.day_label,
-      planType: template.plan_type,
-      exercises,
-      userId: user.id,
-      workoutDate: session.workout_date,
-    })
-    setLoading(false)
+    loadWorkoutData()
   }, [sessionId, router])
 
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-slate-300">Loading...</div>
+        <div className="text-[#888888]">Loading...</div>
       </div>
     )
   }
