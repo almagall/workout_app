@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { getCurrentUser } from '@/lib/auth-simple'
+import { getWorkoutSessions, getExerciseLogs } from '@/lib/storage'
 
 interface Metrics {
   totalWorkouts: number
@@ -13,68 +14,47 @@ interface Metrics {
 export default function PerformanceMetrics() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
-    async function fetchMetrics() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+    const user = getCurrentUser()
+    if (!user) return
 
-      const { data: sessions } = await supabase
-        .from('workout_sessions')
-        .select('id, overall_performance_rating')
-        .eq('user_id', user.id)
+    const sessions = getWorkoutSessions()
+    const logs = getExerciseLogs()
 
-      const { data: sessionsWithLogs } = await supabase
-        .from('workout_sessions')
-        .select(`
-          exercise_logs (
-            weight,
-            reps,
-            exercise_name
-          )
-        `)
-        .eq('user_id', user.id)
+    if (sessions.length > 0 && logs.length > 0) {
+      const totalWorkouts = sessions.length
+      const totalVolume = logs.reduce(
+        (sum, log) => sum + parseFloat(log.weight.toString()) * log.reps,
+        0
+      )
+      const ratings = sessions
+        .map((s) => s.overall_performance_rating)
+        .filter((r) => r !== null) as number[]
+      const averageRating =
+        ratings.length > 0
+          ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+          : 0
 
-      const logs = sessionsWithLogs?.flatMap((s: any) => s.exercise_logs || []) || []
+      // Calculate PRs (simplified - count exercises where weight increased)
+      const exerciseMaxWeights = new Map<string, number>()
+      logs.forEach((log) => {
+        const weight = parseFloat(log.weight.toString())
+        const currentMax = exerciseMaxWeights.get(log.exercise_name) || 0
+        if (weight > currentMax) {
+          exerciseMaxWeights.set(log.exercise_name, weight)
+        }
+      })
+      const personalRecords = exerciseMaxWeights.size
 
-      if (sessions && logs) {
-        const totalWorkouts = sessions.length
-        const totalVolume = logs.reduce(
-          (sum, log) => sum + parseFloat(log.weight.toString()) * log.reps,
-          0
-        )
-        const ratings = sessions
-          .map((s) => s.overall_performance_rating)
-          .filter((r) => r !== null) as number[]
-        const averageRating =
-          ratings.length > 0
-            ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
-            : 0
-
-        // Calculate PRs (simplified - count exercises where weight increased)
-        const exerciseMaxWeights = new Map<string, number>()
-        logs.forEach((log) => {
-          const weight = parseFloat(log.weight.toString())
-          const currentMax = exerciseMaxWeights.get(log.exercise_name) || 0
-          if (weight > currentMax) {
-            exerciseMaxWeights.set(log.exercise_name, weight)
-          }
-        })
-        const personalRecords = exerciseMaxWeights.size
-
-        setMetrics({
-          totalWorkouts,
-          totalVolume: Math.round(totalVolume),
-          averageRating: Math.round(averageRating * 10) / 10,
-          personalRecords,
-        })
-      }
-      setLoading(false)
+      setMetrics({
+        totalWorkouts,
+        totalVolume: Math.round(totalVolume),
+        averageRating: Math.round(averageRating * 10) / 10,
+        personalRecords,
+      })
     }
-
-    fetchMetrics()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLoading(false)
   }, [])
 
   if (loading) {

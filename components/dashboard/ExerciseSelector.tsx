@@ -1,43 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { getCurrentUser } from '@/lib/auth-simple'
+import { getExerciseLogs } from '@/lib/storage'
 
 export default function ExerciseSelector() {
   const [exercises, setExercises] = useState<string[]>([])
   const [selectedExercise, setSelectedExercise] = useState<string>('')
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
-    async function fetchExercises() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+    const user = getCurrentUser()
+    if (!user) return
 
-      const { data: sessions } = await supabase
-        .from('workout_sessions')
-        .select(`
-          exercise_logs (
-            exercise_name
-          )
-        `)
-        .eq('user_id', user.id)
+    const logs = getExerciseLogs()
 
-      const logs = sessions?.flatMap((s: any) => s.exercise_logs || []) || []
-
-      if (logs) {
-        const uniqueExercises = Array.from(
-          new Set(logs.map((log) => log.exercise_name))
-        ).sort()
-        setExercises(uniqueExercises)
-        if (uniqueExercises.length > 0 && !selectedExercise) {
-          setSelectedExercise(uniqueExercises[0])
-        }
+    if (logs.length > 0) {
+      const uniqueExercises = Array.from(
+        new Set(logs.map((log) => log.exercise_name))
+      ).sort()
+      setExercises(uniqueExercises)
+      if (uniqueExercises.length > 0 && !selectedExercise) {
+        setSelectedExercise(uniqueExercises[0])
       }
-      setLoading(false)
     }
-
-    fetchExercises()
+    setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

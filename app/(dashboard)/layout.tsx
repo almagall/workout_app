@@ -69,6 +69,12 @@ export default function DashboardLayout({
                 >
                   Create Template
                 </Link>
+                <Link
+                  href="/workout/history"
+                  className="border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                >
+                  History
+                </Link>
               </div>
             </div>
             <div className="flex items-center gap-4">

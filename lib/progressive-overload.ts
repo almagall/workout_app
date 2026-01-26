@@ -172,6 +172,107 @@ export function calculateTargets(
 }
 
 /**
+ * Calculate target for a single set based on the previous set's performance
+ */
+export function calculateSetTarget(
+  previousSet: {
+    weight: number
+    reps: number
+    rpe: number
+    targetWeight: number | null
+    targetReps: number | null
+    targetRpe: number | null
+  },
+  planType: PlanType,
+  planSettings: PlanSettings
+): TargetCalculation {
+  // If no previous target, return null (first week)
+  if (!previousSet.targetWeight || !previousSet.targetReps || !previousSet.targetRpe) {
+    return {
+      targetWeight: null,
+      targetReps: null,
+      targetRpe: null,
+    }
+  }
+
+  // Evaluate this set's performance against its target
+  const setStatus = evaluateSetPerformance(
+    previousSet.weight,
+    previousSet.reps,
+    previousSet.rpe,
+    previousSet.targetWeight,
+    previousSet.targetReps,
+    previousSet.targetRpe
+  )
+
+  let targetWeight: number
+  let targetReps: number
+  let targetRpe: number
+
+  if (planType === 'hypertrophy') {
+    // Hypertrophy: Focus on volume progression
+    if (setStatus === 'overperformed') {
+      // Gradual increase: 2.5-5% weight or +1-2 reps
+      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 100)
+      targetReps = Math.min(
+        previousSet.reps + planSettings.rep_increase,
+        planSettings.rep_range_max
+      )
+      targetRpe = planSettings.target_rpe_max
+    } else if (setStatus === 'underperformed') {
+      // Maintain or slight reduction
+      targetWeight = previousSet.weight * 0.975
+      targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
+      targetRpe = planSettings.target_rpe_max
+    } else {
+      // Met target: slight increase
+      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200)
+      targetReps = Math.min(previousSet.reps + 1, planSettings.rep_range_max)
+      targetRpe = planSettings.target_rpe_max
+    }
+
+    // Ensure targets are within rep range
+    targetReps = Math.max(
+      planSettings.rep_range_min,
+      Math.min(targetReps, planSettings.rep_range_max)
+    )
+  } else {
+    // Strength: Focus on weight progression
+    if (setStatus === 'overperformed') {
+      // More aggressive weight increase for strength
+      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 100)
+      targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
+      targetRpe = planSettings.target_rpe_max
+    } else if (setStatus === 'underperformed') {
+      // Slight reduction
+      targetWeight = previousSet.weight * 0.95
+      targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
+      targetRpe = planSettings.target_rpe_max
+    } else {
+      // Met target: slight increase
+      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200)
+      targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
+      targetRpe = planSettings.target_rpe_max
+    }
+
+    // Ensure targets are within rep range
+    targetReps = Math.max(
+      planSettings.rep_range_min,
+      Math.min(targetReps, planSettings.rep_range_max)
+    )
+  }
+
+  // Round weight to nearest 2.5 lbs
+  targetWeight = Math.round(targetWeight / 2.5) * 2.5
+
+  return {
+    targetWeight,
+    targetReps: Math.round(targetReps),
+    targetRpe,
+  }
+}
+
+/**
  * Determine performance status for a set
  */
 export function evaluateSetPerformance(

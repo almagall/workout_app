@@ -1,32 +1,45 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { TemplateDay } from '@/types/workout'
+import { getCurrentUser } from '@/lib/auth-simple'
+import { getTemplates, getTemplateDays } from '@/lib/storage'
+import type { TemplateDay, WorkoutTemplate } from '@/types/workout'
 
-export default async function LogWorkoutPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function LogWorkoutPage() {
+  const [templates, setTemplates] = useState<Array<{
+    template: WorkoutTemplate
+    days: TemplateDay[]
+  }>>([])
+  const [loading, setLoading] = useState(true)
 
-  if (!user) {
-    redirect('/login')
+  useEffect(() => {
+    const user = getCurrentUser()
+    if (!user) {
+      window.location.href = '/get-started'
+      return
+    }
+
+    // Get all templates for user
+    const allTemplates = getTemplates()
+    const templatesWithDays = allTemplates.map(template => ({
+      template,
+      days: getTemplateDays(template.id),
+    }))
+
+    setTemplates(templatesWithDays)
+    setLoading(false)
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-slate-300">Loading...</div>
+      </div>
+    )
   }
 
-  // Get user's templates and their days
-  const { data: templates } = await supabase
-    .from('workout_templates')
-    .select(`
-      id,
-      name,
-      template_days (
-        id,
-        day_label,
-        day_order
-      )
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  if (!templates || templates.length === 0) {
+  if (templates.length === 0 || templates.every(t => t.days.length === 0)) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-slate-100 mb-8">Log Workout</h1>
@@ -54,8 +67,7 @@ export default async function LogWorkoutPage() {
     dayOrder: number
   }> = []
 
-  templates.forEach((template) => {
-    const days = template.template_days as TemplateDay[]
+  templates.forEach(({ template, days }) => {
     days.forEach((day) => {
       allDays.push({
         templateId: template.id,

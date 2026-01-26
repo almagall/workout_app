@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getCurrentUser } from '@/lib/auth-simple'
+import { saveTemplate } from '@/lib/storage'
 import type { PlanType } from '@/types/workout'
 
 interface TemplateDay {
@@ -19,42 +20,26 @@ export default function CreateTemplatePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    async function fetchPlanType() {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) {
-        window.location.href = '/login'
-        return
-      }
-
-      const { data: settings, error: settingsError } = await supabase
-        .from('progressive_overload_settings')
-        .select('plan_type')
-        .eq('user_id', user.id)
-        .single()
-
-      if (settingsError) {
-        // If table doesn't exist, show error
-        if (settingsError.message.includes('relation') || settingsError.message.includes('does not exist')) {
-          setError('Database tables not found. Please run the database migration first. See DATABASE_SETUP.md for instructions.')
-        } else {
-          // Other error, redirect to onboarding
-          window.location.href = '/onboarding'
-        }
-        return
-      }
-
-      if (settings) {
-        setPlanType(settings.plan_type)
-      } else {
-        window.location.href = '/onboarding'
-      }
+    const user = getCurrentUser()
+    if (!user) {
+      window.location.href = '/get-started'
+      return
     }
 
-    fetchPlanType()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const settings = localStorage.getItem(`workout_settings_${user.id}`)
+    if (!settings) {
+      window.location.href = '/onboarding'
+      return
+    }
+
+    try {
+      const settingsData = JSON.parse(settings)
+      setPlanType(settingsData.plan_type)
+    } catch {
+      window.location.href = '/onboarding'
+    }
   }, [])
 
   const addDay = () => {
@@ -139,54 +124,27 @@ export default function CreateTemplatePage() {
     setLoading(true)
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = getCurrentUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Create template
-      const { data: template, error: templateError } = await supabase
-        .from('workout_templates')
-        .insert({
-          user_id: user.id,
-          plan_type: planType!,
-          name: templateName,
-        })
-        .select()
-        .single()
-
-      if (templateError) throw templateError
-
-      // Create days and exercises
-      for (const day of days) {
-        const { data: templateDay, error: dayError } = await supabase
-          .from('template_days')
-          .insert({
-            template_id: template.id,
-            day_label: day.dayLabel,
-            day_order: day.dayOrder,
-          })
-          .select()
-          .single()
-
-        if (dayError) throw dayError
-
-        // Insert exercises
-        const exercisesToInsert = day.exercises.map((exerciseName, index) => ({
-          template_day_id: templateDay.id,
-          exercise_name: exerciseName.trim(),
-          exercise_order: index + 1,
-        }))
-
-        const { error: exercisesError } = await supabase
-          .from('template_exercises')
-          .insert(exercisesToInsert)
-
-        if (exercisesError) throw exercisesError
+      if (!planType) {
+        throw new Error('Plan type not set')
       }
+
+      // Save template using localStorage
+      saveTemplate({
+        name: templateName,
+        planType,
+        days: days.map(day => ({
+          dayLabel: day.dayLabel,
+          dayOrder: day.dayOrder,
+          exercises: day.exercises.map(ex => ex.trim()),
+        })),
+      })
 
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Failed to create template')
-    } finally {
       setLoading(false)
     }
   }

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { createClient } from '@/lib/supabase/client'
+import { getCurrentUser } from '@/lib/auth-simple'
+import { getWorkoutSessions, getExerciseLogs } from '@/lib/storage'
 
 interface ChartData {
   date: string
@@ -15,71 +16,55 @@ export default function ProgressChart() {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMetric, setSelectedMetric] = useState<'weight' | 'reps' | 'volume'>('weight')
-  const supabase = createClient()
 
   useEffect(() => {
-    async function fetchData() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+    const user = getCurrentUser()
+    if (!user) return
 
-      // Get exercise selector value from parent or use first exercise
-      // For now, we'll get all exercises and aggregate
-      const { data: sessions } = await supabase
-        .from('workout_sessions')
-        .select(`
-          id,
-          workout_date,
-          exercise_logs (
-            exercise_name,
-            weight,
-            reps,
-            set_number
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('workout_date', { ascending: true })
+    const sessions = getWorkoutSessions().sort((a, b) => 
+      new Date(a.workout_date).getTime() - new Date(b.workout_date).getTime()
+    )
+    const allLogs = getExerciseLogs()
 
-      if (sessions) {
-        const chartData: ChartData[] = sessions.map((session) => {
-          if (!session.exercise_logs || session.exercise_logs.length === 0) {
-            return {
-              date: new Date(session.workout_date).toLocaleDateString(),
-              weight: 0,
-              reps: 0,
-              volume: 0,
-            }
-          }
+    if (sessions.length > 0) {
+      const chartData: ChartData[] = sessions.map((session) => {
+        const sessionLogs = allLogs.filter(log => log.session_id === session.id)
 
-          // Calculate average weight and reps across all exercises
-          const totalWeight = session.exercise_logs.reduce(
-            (sum: number, log: any) => sum + parseFloat(log.weight),
-            0
-          )
-          const totalReps = session.exercise_logs.reduce(
-            (sum: number, log: any) => sum + log.reps,
-            0
-          )
-          const count = session.exercise_logs.length
-
-          const avgWeight = count > 0 ? totalWeight / count : 0
-          const avgReps = count > 0 ? totalReps / count : 0
-          const volume = avgWeight * avgReps
-
+        if (sessionLogs.length === 0) {
           return {
             date: new Date(session.workout_date).toLocaleDateString(),
-            weight: Math.round(avgWeight * 10) / 10,
-            reps: Math.round(avgReps * 10) / 10,
-            volume: Math.round(volume * 10) / 10,
+            weight: 0,
+            reps: 0,
+            volume: 0,
           }
-        })
+        }
 
-        setData(chartData)
-      }
-      setLoading(false)
+        // Calculate average weight and reps across all exercises
+        const totalWeight = sessionLogs.reduce(
+          (sum, log) => sum + parseFloat(log.weight.toString()),
+          0
+        )
+        const totalReps = sessionLogs.reduce(
+          (sum, log) => sum + log.reps,
+          0
+        )
+        const count = sessionLogs.length
+
+        const avgWeight = count > 0 ? totalWeight / count : 0
+        const avgReps = count > 0 ? totalReps / count : 0
+        const volume = avgWeight * avgReps
+
+        return {
+          date: new Date(session.workout_date).toLocaleDateString(),
+          weight: Math.round(avgWeight * 10) / 10,
+          reps: Math.round(avgReps * 10) / 10,
+          volume: Math.round(volume * 10) / 10,
+        }
+      })
+
+      setData(chartData)
     }
-
-    fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLoading(false)
   }, [])
 
   if (loading) {

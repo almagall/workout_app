@@ -3,19 +3,22 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
-import { getTemplateDay, getTemplateExercises, getTemplates } from '@/lib/storage'
+import { getWorkoutSessions, getExerciseLogsForSession, getTemplateDay, getTemplateExercises, getTemplates } from '@/lib/storage'
 import WorkoutLogger from '@/components/workout/WorkoutLogger'
 import type { PlanType } from '@/types/workout'
 
-export default function LogWorkoutDayPage() {
+export default function EditWorkoutPage() {
   const params = useParams()
   const router = useRouter()
-  const dayId = params.dayId as string
+  const sessionId = params.sessionId as string
   const [loading, setLoading] = useState(true)
-  const [dayData, setDayData] = useState<{
+  const [workoutData, setWorkoutData] = useState<{
+    dayId: string
     dayLabel: string
     planType: PlanType
     exercises: string[]
+    userId: string
+    workoutDate: string
   } | null>(null)
 
   useEffect(() => {
@@ -25,10 +28,18 @@ export default function LogWorkoutDayPage() {
       return
     }
 
+    const sessions = getWorkoutSessions()
+    const session = sessions.find(s => s.id === sessionId)
+
+    if (!session) {
+      router.push('/workout/history')
+      return
+    }
+
     // Get template day
-    const day = getTemplateDay(dayId)
+    const day = getTemplateDay(session.template_day_id)
     if (!day) {
-      router.push('/workout/log')
+      router.push('/workout/history')
       return
     }
 
@@ -36,20 +47,23 @@ export default function LogWorkoutDayPage() {
     const templates = getTemplates()
     const template = templates.find(t => t.id === day.template_id)
     if (!template) {
-      router.push('/workout/log')
+      router.push('/workout/history')
       return
     }
 
     // Get exercises for this day
-    const exercises = getTemplateExercises(dayId).map(ex => ex.exercise_name)
+    const exercises = getTemplateExercises(day.id).map(ex => ex.exercise_name)
 
-    setDayData({
+    setWorkoutData({
+      dayId: day.id,
       dayLabel: day.day_label,
       planType: template.plan_type,
       exercises,
+      userId: user.id,
+      workoutDate: session.workout_date,
     })
     setLoading(false)
-  }, [dayId, router])
+  }, [sessionId, router])
 
   if (loading) {
     return (
@@ -59,22 +73,19 @@ export default function LogWorkoutDayPage() {
     )
   }
 
-  if (!dayData) {
-    return null
-  }
-
-  const user = getCurrentUser()
-  if (!user) {
+  if (!workoutData) {
     return null
   }
 
   return (
     <WorkoutLogger
-      dayId={dayId}
-      dayLabel={dayData.dayLabel}
-      planType={dayData.planType}
-      exercises={dayData.exercises}
-      userId={user.id}
+      dayId={workoutData.dayId}
+      dayLabel={workoutData.dayLabel}
+      planType={workoutData.planType}
+      exercises={workoutData.exercises}
+      userId={workoutData.userId}
+      sessionId={sessionId}
+      workoutDate={workoutData.workoutDate}
     />
   )
 }

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { calculateTargets } from '@/lib/progressive-overload'
+import { getCurrentUser } from '@/lib/auth-simple'
+import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession } from '@/lib/storage'
+import { calculateSetTarget } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
 import type { PlanType, SetData, ExerciseData, PerformanceStatus } from '@/types/workout'
@@ -14,6 +15,8 @@ interface WorkoutLoggerProps {
   planType: PlanType
   exercises: string[]
   userId: string
+  sessionId?: string // Optional: if provided, we're editing an existing workout
+  workoutDate?: string // Optional: if provided, use this date instead of today
 }
 
 export default function WorkoutLogger({
@@ -22,6 +25,8 @@ export default function WorkoutLogger({
   planType,
   exercises,
   userId,
+  sessionId,
+  workoutDate: initialWorkoutDate,
 }: WorkoutLoggerProps) {
   const [exerciseData, setExerciseData] = useState<ExerciseData[]>([])
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
@@ -32,92 +37,137 @@ export default function WorkoutLogger({
   const [workoutComplete, setWorkoutComplete] = useState(false)
   const [overallFeedback, setOverallFeedback] = useState<string | null>(null)
   const [overallRating, setOverallRating] = useState<number | null>(null)
+  // Track pre-populated values for styling
+  const [prePopulatedValues, setPrePopulatedValues] = useState<Map<string, { weight: number; reps: number; rpe: number }>>(new Map())
   const [workoutDate, setWorkoutDate] = useState<string>(() => {
-    // Default to today's date in YYYY-MM-DD format
-    return new Date().toISOString().split('T')[0]
+    // Use provided date or default to today's date in YYYY-MM-DD format
+    return initialWorkoutDate || new Date().toISOString().split('T')[0]
   })
+  const [isEditMode, setIsEditMode] = useState(!!sessionId)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    async function initializeWorkout() {
+    function initializeWorkout() {
       try {
-        // Get plan settings
-        const { data: settings } = await supabase
-          .from('progressive_overload_settings')
-          .select('settings_json')
-          .eq('user_id', userId)
-          .eq('plan_type', planType)
-          .single()
-
-        if (settings) {
-          setPlanSettings(settings.settings_json[planType])
+        const user = getCurrentUser()
+        if (!user) {
+          router.push('/get-started')
+          return
         }
 
-        // Get the most recent previous session for THIS SPECIFIC template day (e.g., "Push A")
-        // This finds the last time the user did this workout day, regardless of:
-        // - What day of the week it was
-        // - How many days/weeks ago it was
-        // - Whether they skipped weeks
-        // Example: If you did "Push A" 2 weeks ago on Monday, and now you're doing "Push A" 
-        // on Wednesday, it will find that workout from 2 weeks ago (the last "Push A" workout)
-        const { data: previousSessions } = await supabase
-          .from('workout_sessions')
-          .select(`
-            id,
-            workout_date,
-            exercise_logs (
-              exercise_name,
-              set_number,
-              weight,
-              reps,
-              rpe,
-              target_weight,
-              target_reps,
-              target_rpe
+        // Get plan settings from localStorage
+        const settingsStr = localStorage.getItem(`workout_settings_${user.id}`)
+        if (settingsStr) {
+          try {
+            const settingsData = JSON.parse(settingsStr)
+            if (settingsData.settings_json && settingsData.settings_json[planType]) {
+              setPlanSettings(settingsData.settings_json[planType])
+            }
+          } catch (e) {
+            console.error('Failed to parse settings', e)
+          }
+        }
+
+        let initializedExercises: ExerciseData[] = []
+
+        if (isEditMode && sessionId) {
+          // Edit mode: Load existing session data
+          const allLogs = getExerciseLogs()
+          const sessionLogs = allLogs.filter(log => log.session_id === sessionId)
+
+          // Group logs by exercise
+          const exerciseMap = new Map<string, typeof sessionLogs>()
+          exercises.forEach(exerciseName => {
+            exerciseMap.set(exerciseName, sessionLogs.filter(log => log.exercise_name === exerciseName))
+          })
+
+          initializedExercises = exercises.map((exerciseName) => {
+            const exerciseLogs = exerciseMap.get(exerciseName) || []
+            const sets: SetData[] = exerciseLogs
+              .sort((a, b) => a.set_number - b.set_number)
+              .map((log) => ({
+                setNumber: log.set_number,
+                weight: parseFloat(log.weight.toString()),
+                reps: log.reps,
+                rpe: parseFloat(log.rpe.toString()),
+                targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+                targetReps: log.target_reps,
+                targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+              }))
+
+            return {
+              exerciseName,
+              sets: sets.length > 0 ? sets : [{
+                setNumber: 1,
+                weight: 0,
+                reps: 0,
+                rpe: 5,
+                targetWeight: null,
+                targetReps: null,
+                targetRpe: null,
+              }],
+              exerciseFeedback: exerciseLogs[0]?.exercise_feedback || null,
+            }
+          })
+        } else {
+          // New workout mode: Get the most recent previous session for THIS SPECIFIC template day
+          const previousSession = getPreviousWorkoutSession(dayId, workoutDate)
+
+          // Get exercise logs for previous session
+          const allPreviousLogs = previousSession 
+            ? getExerciseLogsForSession(previousSession.id)
+            : []
+
+          // Initialize exercise data
+          initializedExercises = exercises.map((exerciseName) => {
+            const exerciseLogs = allPreviousLogs.filter(
+              (log) => log.exercise_name === exerciseName
             )
-          `)
-          .eq('user_id', userId)
-          .eq('template_day_id', dayId) // Same workout day (e.g., "Push A")
-          .lt('workout_date', workoutDate) // Before the selected date
-          .order('workout_date', { ascending: false }) // Most recent first
-          .limit(1) // Get only the most recent one
-
-        const previousSession = previousSessions && previousSessions.length > 0 ? previousSessions[0] : null
-
-        // Initialize exercise data
-        const initializedExercises: ExerciseData[] = exercises.map((exerciseName) => {
-          const previousLogs = previousSession?.exercise_logs?.filter(
-            (log: any) => log.exercise_name === exerciseName
-          ) || []
 
           let sets: SetData[] = []
 
-          if (previousLogs.length > 0 && planSettings) {
-            // Calculate targets based on previous performance
-            const previousExerciseData = {
-              sets: previousLogs.map((log: any) => ({
-                weight: parseFloat(log.weight),
-                reps: log.reps,
-                rpe: parseFloat(log.rpe),
-                targetWeight: log.target_weight ? parseFloat(log.target_weight) : null,
-                targetReps: log.target_reps,
-                targetRpe: log.target_rpe ? parseFloat(log.target_rpe) : null,
-              })),
-            }
-
-            // Count consecutive underperformance (simplified - would need more logic in production)
-            const targets = calculateTargets(previousExerciseData, planType, planSettings, 0)
+          if (exerciseLogs.length > 0 && planSettings) {
+            // Calculate individual target for each set based on the corresponding previous set
 
             // Create sets with targets
-            sets = previousLogs.map((log: any, index: number) => ({
+            sets = exerciseLogs.map((log, index: number) => ({
               setNumber: index + 1,
               weight: parseFloat(log.weight),
               reps: log.reps,
               rpe: parseFloat(log.rpe),
-              targetWeight: targets.targetWeight,
-              targetReps: targets.targetReps,
-              targetRpe: targets.targetRpe,
+              targetWeight: (() => {
+                const previousSet = {
+                  weight: parseFloat(log.weight.toString()),
+                  reps: log.reps,
+                  rpe: parseFloat(log.rpe.toString()),
+                  targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+                  targetReps: log.target_reps,
+                  targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+                }
+                return calculateSetTarget(previousSet, planType, planSettings).targetWeight
+              })(),
+              targetReps: (() => {
+                const previousSet = {
+                  weight: parseFloat(log.weight.toString()),
+                  reps: log.reps,
+                  rpe: parseFloat(log.rpe.toString()),
+                  targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+                  targetReps: log.target_reps,
+                  targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+                }
+                return calculateSetTarget(previousSet, planType, planSettings).targetReps
+              })(),
+              targetRpe: (() => {
+                const previousSet = {
+                  weight: parseFloat(log.weight.toString()),
+                  reps: log.reps,
+                  rpe: parseFloat(log.rpe.toString()),
+                  targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+                  targetReps: log.target_reps,
+                  targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+                }
+                return calculateSetTarget(previousSet, planType, planSettings).targetRpe
+              })(),
             }))
           } else {
             // First week - no targets, create empty sets
@@ -139,7 +189,22 @@ export default function WorkoutLogger({
             sets,
             exerciseFeedback: null,
           }
+          })
+        }
+
+        // Track pre-populated values for styling
+        const prePopulated = new Map<string, { weight: number; reps: number; rpe: number }>()
+        initializedExercises.forEach((exercise, exIndex) => {
+          exercise.sets.forEach((set, setIndex) => {
+            const key = `${exIndex}-${setIndex}`
+            prePopulated.set(key, {
+              weight: set.weight,
+              reps: set.reps,
+              rpe: set.rpe,
+            })
+          })
         })
+        setPrePopulatedValues(prePopulated)
 
         setExerciseData(initializedExercises)
       } catch (err: any) {
@@ -248,33 +313,101 @@ export default function WorkoutLogger({
     setError(null)
 
     try {
-      // Check if a session already exists for this date and template day
-      const { data: existingSession } = await supabase
-        .from('workout_sessions')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('template_day_id', dayId)
-        .eq('workout_date', workoutDate)
-        .single()
+      if (isEditMode && sessionId) {
+        // Edit mode: Update existing session
+        // Calculate overall rating and feedback
+        const workoutPerformance = {
+          exercises: exerciseData.map((exercise) => {
+            const statuses = exercise.sets.map((set) =>
+              evaluateSetPerformance(
+                set.weight,
+                set.reps,
+                set.rpe,
+                set.targetWeight ?? null,
+                set.targetReps ?? null,
+                set.targetRpe ?? null
+              )
+            )
+            const overperformedCount = statuses.filter((s) => s === 'overperformed').length
+            const metTargetCount = statuses.filter((s) => s === 'met_target').length
+            const underperformedCount = statuses.filter((s) => s === 'underperformed').length
+
+            let status: PerformanceStatus = 'met_target'
+            if (overperformedCount > underperformedCount) {
+              status = 'overperformed'
+            } else if (underperformedCount > metTargetCount) {
+              status = 'underperformed'
+            }
+
+            return {
+              exerciseName: exercise.exerciseName,
+              status,
+              overperformedCount,
+              metTargetCount,
+              underperformedCount,
+              sets: exercise.sets.map((set) => ({
+                weight: set.weight,
+                reps: set.reps,
+                rpe: set.rpe,
+                targetWeight: set.targetWeight ?? null,
+                targetReps: set.targetReps ?? null,
+              })),
+            }
+          }),
+          overallRating: 0,
+        }
+
+        const rating = calculateWorkoutRating(workoutPerformance)
+        workoutPerformance.overallRating = rating
+        const feedback = generateWorkoutFeedback(workoutPerformance, planType)
+
+        // Update workout session
+        updateWorkoutSession(sessionId, {
+          templateDayId: dayId,
+          workoutDate,
+          overallRating: rating,
+          overallFeedback: feedback,
+          exercises: exerciseData.map((exercise) => ({
+            exerciseName: exercise.exerciseName,
+            sets: exercise.sets.map((set) => {
+              const performanceStatus = evaluateSetPerformance(
+                set.weight,
+                set.reps,
+                set.rpe,
+                set.targetWeight ?? null,
+                set.targetReps ?? null,
+                set.targetRpe ?? null
+              )
+
+              return {
+                setNumber: set.setNumber,
+                weight: set.weight,
+                reps: set.reps,
+                rpe: set.rpe,
+                targetWeight: set.targetWeight ?? null,
+                targetReps: set.targetReps ?? null,
+                targetRpe: set.targetRpe ?? null,
+                performanceStatus,
+                exerciseFeedback: exercise.exerciseFeedback || null,
+              }
+            }),
+          })),
+        })
+
+        setOverallRating(rating)
+        setOverallFeedback(feedback)
+        setWorkoutComplete(true)
+        return
+      }
+
+      // New workout mode: Check if a session already exists for this date and template day
+      const existingSession = getWorkoutSessionByDate(dayId, workoutDate)
 
       if (existingSession) {
         setError('A workout already exists for this date. Please select a different date or edit the existing workout.')
         setSaving(false)
         return
       }
-
-      // Create workout session with selected date
-      const { data: session, error: sessionError } = await supabase
-        .from('workout_sessions')
-        .insert({
-          user_id: userId,
-          template_day_id: dayId,
-          workout_date: workoutDate,
-        })
-        .select()
-        .single()
-
-      if (sessionError) throw sessionError
 
       // Calculate overall rating and feedback
       const workoutPerformance = {
@@ -322,48 +455,38 @@ export default function WorkoutLogger({
       workoutPerformance.overallRating = rating
       const feedback = generateWorkoutFeedback(workoutPerformance, planType)
 
-      // Update session with rating and feedback
-      await supabase
-        .from('workout_sessions')
-        .update({
-          overall_performance_rating: rating,
-          overall_feedback: feedback,
-        })
-        .eq('id', session.id)
+      // Save workout session using localStorage
+      saveWorkoutSession({
+        templateDayId: dayId,
+        workoutDate,
+        overallRating: rating,
+        overallFeedback: feedback,
+        exercises: exerciseData.map((exercise) => ({
+          exerciseName: exercise.exerciseName,
+          sets: exercise.sets.map((set) => {
+            const performanceStatus = evaluateSetPerformance(
+              set.weight,
+              set.reps,
+              set.rpe,
+              set.targetWeight ?? null,
+              set.targetReps ?? null,
+              set.targetRpe ?? null
+            )
 
-      // Insert exercise logs
-      const logsToInsert = exerciseData.flatMap((exercise) =>
-        exercise.sets.map((set) => {
-          const performanceStatus = evaluateSetPerformance(
-            set.weight,
-            set.reps,
-            set.rpe,
-            set.targetWeight ?? null,
-            set.targetReps ?? null,
-            set.targetRpe ?? null
-          )
-
-          return {
-            session_id: session.id,
-            exercise_name: exercise.exerciseName,
-            set_number: set.setNumber,
-            weight: set.weight,
-            reps: set.reps,
-            rpe: set.rpe,
-            target_weight: set.targetWeight,
-            target_reps: set.targetReps,
-            target_rpe: set.targetRpe,
-            performance_status: performanceStatus,
-            exercise_feedback: exercise.exerciseFeedback,
-          }
-        })
-      )
-
-      const { error: logsError } = await supabase
-        .from('exercise_logs')
-        .insert(logsToInsert)
-
-      if (logsError) throw logsError
+            return {
+              setNumber: set.setNumber,
+              weight: set.weight,
+              reps: set.reps,
+              rpe: set.rpe,
+              targetWeight: set.targetWeight ?? null,
+              targetReps: set.targetReps ?? null,
+              targetRpe: set.targetRpe ?? null,
+              performanceStatus,
+              exerciseFeedback: exercise.exerciseFeedback || null,
+            }
+          }),
+        })),
+      })
 
       setOverallRating(rating)
       setOverallFeedback(feedback)
@@ -444,7 +567,13 @@ export default function WorkoutLogger({
           <p className="text-xs text-slate-400 mt-1">
             {workoutDate === new Date().toISOString().split('T')[0] 
               ? 'Logging today\'s workout' 
-              : `Logging workout for ${new Date(workoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+              : (() => {
+                  // Parse date string directly to avoid timezone issues
+                  // workoutDate is in YYYY-MM-DD format
+                  const [year, month, day] = workoutDate.split('-').map(Number)
+                  const date = new Date(year, month - 1, day)
+                  return `Logging workout for ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                })()}
           </p>
         </div>
       </div>
@@ -456,7 +585,14 @@ export default function WorkoutLogger({
       )}
 
       <div className="bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6 mb-6">
-        <h2 className="text-2xl font-semibold mb-4 text-slate-100">{currentExercise.exerciseName}</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold text-slate-100">{currentExercise.exerciseName}</h2>
+          {isEditMode && (
+            <span className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-md text-sm">
+              Editing Workout
+            </span>
+          )}
+        </div>
 
         <div className="space-y-4">
           {currentExercise.sets.map((set, setIndex) => (
@@ -481,7 +617,13 @@ export default function WorkoutLogger({
                     onChange={(e) =>
                       updateSet(currentExerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)
                     }
-                    className="w-full px-3 py-2 border border-slate-600 bg-slate-700 text-slate-100 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className={`w-full px-3 py-2 border border-slate-600 bg-slate-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                      (() => {
+                        const key = `${currentExerciseIndex}-${setIndex}`
+                        const prePop = prePopulatedValues.get(key)
+                        return prePop && set.weight === prePop.weight ? 'text-slate-400' : 'text-slate-100'
+                      })()
+                    }`}
                   />
                 </div>
                 <div>
@@ -492,7 +634,13 @@ export default function WorkoutLogger({
                     onChange={(e) =>
                       updateSet(currentExerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)
                     }
-                    className="w-full px-3 py-2 border border-slate-600 bg-slate-700 text-slate-100 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className={`w-full px-3 py-2 border border-slate-600 bg-slate-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                      (() => {
+                        const key = `${currentExerciseIndex}-${setIndex}`
+                        const prePop = prePopulatedValues.get(key)
+                        return prePop && set.reps === prePop.reps ? 'text-slate-400' : 'text-slate-100'
+                      })()
+                    }`}
                   />
                 </div>
                 <div>
@@ -506,7 +654,13 @@ export default function WorkoutLogger({
                     onChange={(e) =>
                       updateSet(currentExerciseIndex, setIndex, 'rpe', parseFloat(e.target.value) || 0)
                     }
-                    className="w-full px-3 py-2 border border-slate-600 bg-slate-700 text-slate-100 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className={`w-full px-3 py-2 border border-slate-600 bg-slate-700 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                      (() => {
+                        const key = `${currentExerciseIndex}-${setIndex}`
+                        const prePop = prePopulatedValues.get(key)
+                        return prePop && set.rpe === prePop.rpe ? 'text-slate-400' : 'text-slate-100'
+                      })()
+                    }`}
                   />
                 </div>
               </div>
