@@ -31,7 +31,7 @@ export function generateExerciseFeedback(
 
   if (status === 'overperformed') {
     if (planType === 'hypertrophy') {
-      return `Excellent work! You exceeded your targets on ${overperformedCount} set(s). This shows great progress. Next week, we'll increase your targets to continue progressive overload. Keep maintaining good form and control.`
+      return `Excellent work! You exceeded your targets on ${overperformedCount} set(s). This shows great progress. Next week, we will increase your targets to continue progressive overload. Keep maintaining good form and control.`
     } else {
       return `Outstanding performance! You lifted more than targeted on ${overperformedCount} set(s). Your strength is improving. We'll adjust your targets upward next week to keep challenging you.`
     }
@@ -55,7 +55,7 @@ export function generateExerciseFeedback(
 
   // Met target
   if (planType === 'hypertrophy') {
-    return `Great job hitting your targets! You're on track with your hypertrophy goals. We'll make a small increase next week to continue your progress. Keep focusing on the mind-muscle connection and controlled movements.`
+    return `Great job hitting your targets! You are on track with your hypertrophy goals. We will make a small increase next week to continue your progress. Keep focusing on the mind-muscle connection and controlled movements.`
   } else {
     return `Solid performance! You met your strength targets. We'll make a conservative increase next week. Remember to prioritize form and control over ego lifting.`
   }
@@ -83,18 +83,18 @@ export function generateWorkoutFeedback(workout: WorkoutPerformance, planType: P
   } else if (overallRating >= 6) {
     feedback = `Good workout overall. You met or exceeded targets on ${metTargetExercises + overperformedExercises} exercise(s). `
     if (underperformedExercises > 0) {
-      feedback += `You struggled with ${underperformedExercises} exercise(s) - this is normal. Focus on recovery and we'll adjust targets accordingly.`
+      feedback += `You struggled with ${underperformedExercises} exercise(s) - this is normal. Focus on recovery and we will adjust targets accordingly.`
     } else {
-      feedback += 'You're making steady progress. Keep it up!'
+      feedback += 'You are making steady progress. Keep it up!'
     }
   } else {
     feedback = `This was a challenging workout. You underperformed on ${underperformedExercises} exercise(s). `
     if (planType === 'hypertrophy') {
       feedback +=
-        'Consider factors like sleep, nutrition, stress, and recovery. We'll adjust your targets to ensure continued progress. Remember, consistency is key.'
+        'Consider factors like sleep, nutrition, stress, and recovery. We will adjust your targets to ensure continued progress. Remember, consistency is key.'
     } else {
       feedback +=
-        'Strength training requires adequate recovery. Ensure you're getting enough sleep, proper nutrition, and managing stress. We'll adjust targets to keep you progressing safely.'
+        'Strength training requires adequate recovery. Ensure you are getting enough sleep, proper nutrition, and managing stress. We will adjust targets to keep you progressing safely.'
     }
   }
 
