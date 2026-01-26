@@ -130,45 +130,32 @@ export default function WorkoutLogger({
             // Calculate individual target for each set based on the corresponding previous set
 
             // Create sets with targets
-            sets = exerciseLogs.map((log, index: number) => ({
-              setNumber: index + 1,
-              weight: parseFloat(log.weight),
-              reps: log.reps,
-              rpe: parseFloat(log.rpe),
-              targetWeight: (() => {
-                const previousSet = {
-                  weight: parseFloat(log.weight.toString()),
-                  reps: log.reps,
-                  rpe: parseFloat(log.rpe.toString()),
-                  targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
-                  targetReps: log.target_reps,
-                  targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
-                }
-                return calculateSetTarget(previousSet, planType, planSettings).targetWeight
-              })(),
-              targetReps: (() => {
-                const previousSet = {
-                  weight: parseFloat(log.weight.toString()),
-                  reps: log.reps,
-                  rpe: parseFloat(log.rpe.toString()),
-                  targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
-                  targetReps: log.target_reps,
-                  targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
-                }
-                return calculateSetTarget(previousSet, planType, planSettings).targetReps
-              })(),
-              targetRpe: (() => {
-                const previousSet = {
-                  weight: parseFloat(log.weight.toString()),
-                  reps: log.reps,
-                  rpe: parseFloat(log.rpe.toString()),
-                  targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
-                  targetReps: log.target_reps,
-                  targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
-                }
-                return calculateSetTarget(previousSet, planType, planSettings).targetRpe
-              })(),
-            }))
+            // Sort logs by set_number to ensure proper ordering
+            const sortedLogs = [...exerciseLogs].sort((a, b) => a.set_number - b.set_number)
+            
+            sets = sortedLogs.map((log) => {
+              const previousSet = {
+                weight: parseFloat(log.weight.toString()),
+                reps: log.reps,
+                rpe: parseFloat(log.rpe.toString()),
+                targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+                targetReps: log.target_reps,
+                targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+              }
+
+              // Calculate target for this specific set number based on the same set number from previous workout
+              const setTarget = calculateSetTarget(previousSet, planType, planSettings)
+
+              return {
+                setNumber: log.set_number, // Use the actual set_number from previous workout
+                weight: parseFloat(log.weight.toString()),
+                reps: log.reps,
+                rpe: parseFloat(log.rpe.toString()),
+                targetWeight: setTarget.targetWeight,
+                targetReps: setTarget.targetReps,
+                targetRpe: setTarget.targetRpe,
+              }
+            })
           } else {
             // First week - no targets, create empty sets
             sets = [
