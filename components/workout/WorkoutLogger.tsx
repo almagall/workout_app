@@ -200,9 +200,9 @@ export default function WorkoutLogger({
         set.weight,
         set.reps,
         set.rpe,
-        set.targetWeight,
-        set.targetReps,
-        set.targetRpe
+        set.targetWeight ?? null,
+        set.targetReps ?? null,
+        set.targetRpe ?? null
       )
     )
 
@@ -278,9 +278,9 @@ export default function WorkoutLogger({
               set.weight,
               set.reps,
               set.rpe,
-              set.targetWeight,
-              set.targetReps,
-              set.targetRpe
+              set.targetWeight ?? null,
+              set.targetReps ?? null,
+              set.targetRpe ?? null
             )
           )
           const overperformedCount = statuses.filter((s) => s === 'overperformed').length
@@ -326,9 +326,9 @@ export default function WorkoutLogger({
             set.weight,
             set.reps,
             set.rpe,
-            set.targetWeight,
-            set.targetReps,
-            set.targetRpe
+            set.targetWeight ?? null,
+            set.targetReps ?? null,
+            set.targetRpe ?? null
           )
 
           return {
