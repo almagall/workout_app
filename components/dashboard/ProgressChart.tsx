@@ -12,14 +12,21 @@ interface ChartData {
   volume: number
 }
 
-export default function ProgressChart() {
+interface ProgressChartProps {
+  selectedExercise: string
+}
+
+export default function ProgressChart({ selectedExercise }: ProgressChartProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMetric, setSelectedMetric] = useState<'weight' | 'reps' | 'volume'>('weight')
 
   useEffect(() => {
     const user = getCurrentUser()
-    if (!user) return
+    if (!user || !selectedExercise) {
+      setLoading(false)
+      return
+    }
 
     const sessions = getWorkoutSessions().sort((a, b) => 
       new Date(a.workout_date).getTime() - new Date(b.workout_date).getTime()
@@ -28,7 +35,10 @@ export default function ProgressChart() {
 
     if (sessions.length > 0) {
       const chartData: ChartData[] = sessions.map((session) => {
-        const sessionLogs = allLogs.filter(log => log.session_id === session.id)
+        // Filter logs for this session AND this specific exercise
+        const sessionLogs = allLogs.filter(
+          log => log.session_id === session.id && log.exercise_name === selectedExercise
+        )
 
         if (sessionLogs.length === 0) {
           return {
@@ -39,7 +49,7 @@ export default function ProgressChart() {
           }
         }
 
-        // Calculate average weight and reps across all exercises
+        // Calculate average weight and reps for this specific exercise
         const totalWeight = sessionLogs.reduce(
           (sum, log) => sum + parseFloat(log.weight.toString()),
           0
@@ -65,7 +75,7 @@ export default function ProgressChart() {
       setData(chartData)
     }
     setLoading(false)
-  }, [])
+  }, [selectedExercise])
 
   if (loading) {
     return <div className="text-slate-400">Loading chart data...</div>

@@ -39,6 +39,8 @@ export default function WorkoutLogger({
   const [overallRating, setOverallRating] = useState<number | null>(null)
   // Track pre-populated values for styling
   const [prePopulatedValues, setPrePopulatedValues] = useState<Map<string, { weight: number; reps: number; rpe: number }>>(new Map())
+  // Track confirmed sets
+  const [confirmedSets, setConfirmedSets] = useState<Set<string>>(new Set())
   const [workoutDate, setWorkoutDate] = useState<string>(() => {
     // Use provided date or default to today's date in YYYY-MM-DD format
     return initialWorkoutDate || new Date().toISOString().split('T')[0]
@@ -95,6 +97,34 @@ export default function WorkoutLogger({
                 targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
               }))
 
+            // Calculate exercise rating if feedback exists
+            let exerciseRating: number | null = null
+            if (exerciseLogs[0]?.exercise_feedback) {
+              const performanceStatuses = sets.map((set) =>
+                evaluateSetPerformance(
+                  set.weight,
+                  set.reps,
+                  set.rpe,
+                  set.targetWeight ?? null,
+                  set.targetReps ?? null,
+                  set.targetRpe ?? null
+                )
+              )
+              let totalScore = 0
+              performanceStatuses.forEach((status) => {
+                if (status === 'overperformed') {
+                  totalScore += 9
+                } else if (status === 'met_target') {
+                  totalScore += 7
+                } else {
+                  totalScore += 4
+                }
+              })
+              exerciseRating = sets.length > 0 
+                ? Math.round((totalScore / sets.length) * 10) / 10 
+                : 5
+            }
+
             return {
               exerciseName,
               sets: sets.length > 0 ? sets : [{
@@ -107,6 +137,7 @@ export default function WorkoutLogger({
                 targetRpe: null,
               }],
               exerciseFeedback: exerciseLogs[0]?.exercise_feedback || null,
+              exerciseRating,
             }
           })
         } else {
@@ -241,6 +272,27 @@ export default function WorkoutLogger({
       set.setNumber = index + 1
     })
     setExerciseData(newData)
+    // Remove confirmation for this set
+    const key = `${exerciseIndex}-${setIndex}`
+    const newConfirmed = new Set(confirmedSets)
+    newConfirmed.delete(key)
+    // Update keys for sets after the removed one
+    for (let i = setIndex; i < newData[exerciseIndex].sets.length; i++) {
+      const oldKey = `${exerciseIndex}-${i + 1}`
+      const newKey = `${exerciseIndex}-${i}`
+      if (newConfirmed.has(oldKey)) {
+        newConfirmed.delete(oldKey)
+        newConfirmed.add(newKey)
+      }
+    }
+    setConfirmedSets(newConfirmed)
+  }
+
+  const confirmSet = (exerciseIndex: number, setIndex: number) => {
+    const key = `${exerciseIndex}-${setIndex}`
+    const newConfirmed = new Set(confirmedSets)
+    newConfirmed.add(key)
+    setConfirmedSets(newConfirmed)
   }
 
   const completeExercise = (exerciseIndex: number) => {
@@ -270,6 +322,21 @@ export default function WorkoutLogger({
       overallStatus = 'underperformed'
     }
 
+    // Calculate exercise rating based on set performance
+    let totalScore = 0
+    performanceStatuses.forEach((status) => {
+      if (status === 'overperformed') {
+        totalScore += 9
+      } else if (status === 'met_target') {
+        totalScore += 7
+      } else {
+        totalScore += 4
+      }
+    })
+    const exerciseRating = exercise.sets.length > 0 
+      ? Math.round((totalScore / exercise.sets.length) * 10) / 10 
+      : 5
+
     // Generate feedback
     const feedback = generateExerciseFeedback(
       {
@@ -289,9 +356,10 @@ export default function WorkoutLogger({
       planType
     )
 
-    // Update exercise data with feedback
+    // Update exercise data with feedback and rating
     const newData = [...exerciseData]
     newData[exerciseIndex].exerciseFeedback = feedback
+    newData[exerciseIndex].exerciseRating = exerciseRating
     setExerciseData(newData)
   }
 
@@ -582,8 +650,18 @@ export default function WorkoutLogger({
         </div>
 
         <div className="space-y-4">
-          {currentExercise.sets.map((set, setIndex) => (
-            <div key={setIndex} className="border border-slate-600 bg-slate-700/50 rounded-lg p-4">
+          {currentExercise.sets.map((set, setIndex) => {
+            const setKey = `${currentExerciseIndex}-${setIndex}`
+            const isConfirmed = confirmedSets.has(setKey)
+            return (
+            <div 
+              key={setIndex} 
+              className={`bg-slate-700/50 rounded-lg p-4 ${
+                isConfirmed 
+                  ? 'border-2 border-green-500' 
+                  : 'border border-slate-600'
+              }`}
+            >
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold text-slate-200">Set {set.setNumber}</span>
                 {set.targetWeight && (
@@ -608,13 +686,17 @@ export default function WorkoutLogger({
                       (() => {
                         const key = `${currentExerciseIndex}-${setIndex}`
                         const prePop = prePopulatedValues.get(key)
-                        return prePop && set.weight === prePop.weight ? 'text-slate-400' : 'text-slate-100'
+                        return prePop && set.weight === prePop.weight 
+                          ? 'text-slate-400' 
+                          : 'text-slate-100'
                       })()
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-200 mb-1">Reps</label>
+                  <label className="block text-sm font-medium text-slate-200 mb-1">
+                    Reps
+                  </label>
                   <input
                     type="number"
                     value={set.reps || ''}
@@ -625,13 +707,17 @@ export default function WorkoutLogger({
                       (() => {
                         const key = `${currentExerciseIndex}-${setIndex}`
                         const prePop = prePopulatedValues.get(key)
-                        return prePop && set.reps === prePop.reps ? 'text-slate-400' : 'text-slate-100'
+                        return prePop && set.reps === prePop.reps 
+                          ? 'text-slate-400' 
+                          : 'text-slate-100'
                       })()
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-200 mb-1">RPE</label>
+                  <label className="block text-sm font-medium text-slate-200 mb-1">
+                    RPE
+                  </label>
                   <input
                     type="number"
                     min="1"
@@ -645,22 +731,38 @@ export default function WorkoutLogger({
                       (() => {
                         const key = `${currentExerciseIndex}-${setIndex}`
                         const prePop = prePopulatedValues.get(key)
-                        return prePop && set.rpe === prePop.rpe ? 'text-slate-400' : 'text-slate-100'
+                        return prePop && set.rpe === prePop.rpe 
+                          ? 'text-slate-400' 
+                          : 'text-slate-100'
                       })()
                     }`}
                   />
                 </div>
               </div>
-              {currentExercise.sets.length > 1 && (
-                <button
-                  onClick={() => removeSet(currentExerciseIndex, setIndex)}
-                  className="mt-2 text-sm text-red-400 hover:text-red-300"
-                >
-                  Remove Set
-                </button>
-              )}
+              <div className="mt-4 flex items-center justify-between">
+                {!isConfirmed ? (
+                  <button
+                    onClick={() => confirmSet(currentExerciseIndex, setIndex)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500 text-sm font-medium"
+                  >
+                    Confirm Set
+                  </button>
+                ) : (
+                  <span className="text-green-500 text-sm font-medium flex items-center gap-1">
+                    ✓ Set Confirmed
+                  </span>
+                )}
+                {currentExercise.sets.length > 1 && (
+                  <button
+                    onClick={() => removeSet(currentExerciseIndex, setIndex)}
+                    className="text-sm text-red-400 hover:text-red-300"
+                  >
+                    Remove Set
+                  </button>
+                )}
+              </div>
             </div>
-          ))}
+          )})}
         </div>
 
         <div className="mt-4 flex gap-2">
@@ -680,6 +782,12 @@ export default function WorkoutLogger({
 
         {currentExercise.exerciseFeedback && (
           <div className="mt-4 p-4 bg-indigo-900/30 border border-indigo-700 rounded-lg">
+            {currentExercise.exerciseRating !== null && currentExercise.exerciseRating !== undefined && (
+              <div className="mb-3 pb-3 border-b border-indigo-700">
+                <p className="text-sm text-indigo-300 mb-1">Exercise Rating</p>
+                <p className="text-2xl font-bold text-indigo-400">{currentExercise.exerciseRating}/10</p>
+              </div>
+            )}
             <h3 className="font-semibold mb-2 text-indigo-300">Feedback:</h3>
             <p className="text-slate-200">{currentExercise.exerciseFeedback}</p>
           </div>

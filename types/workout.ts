@@ -93,4 +93,5 @@ export interface ExerciseData {
   exerciseName: string
   sets: SetData[]
   exerciseFeedback?: string | null
+  exerciseRating?: number | null
 }

@@ -10,6 +10,7 @@ import PerformanceMetrics from '@/components/dashboard/PerformanceMetrics'
 export default function DashboardPage() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
   const [loading, setLoading] = useState(true)
+  const [selectedExercise, setSelectedExercise] = useState<string>('')
 
   useEffect(() => {
     const currentUser = getCurrentUser()
@@ -56,10 +57,13 @@ export default function DashboardPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2">
-          <ExerciseSelector />
+          <ExerciseSelector 
+            selectedExercise={selectedExercise}
+            onExerciseChange={setSelectedExercise}
+          />
           <div className="mt-6 bg-slate-800 rounded-lg shadow-xl border border-slate-700 p-6">
             <h2 className="text-xl font-semibold mb-4 text-slate-100">Progress Over Time</h2>
-            <ProgressChart />
+            <ProgressChart selectedExercise={selectedExercise} />
           </div>
         </div>
         <div>

@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth-simple'
-import { getWorkoutSessions, getTemplateDay, getTemplates } from '@/lib/storage'
+import { getWorkoutSessions, getTemplateDay, getTemplates, deleteWorkoutSession } from '@/lib/storage'
 import type { WorkoutSession } from '@/types/workout'
 
 export default function WorkoutHistoryPage() {
   const [sessions, setSessions] = useState<WorkoutSession[]>([])
   const [loading, setLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     const user = getCurrentUser()
@@ -23,6 +24,30 @@ export default function WorkoutHistoryPage() {
     setSessions(allSessions)
     setLoading(false)
   }, [])
+
+  const handleDelete = (sessionId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (window.confirm('Are you sure you want to delete this workout? This action cannot be undone.')) {
+      setDeletingId(sessionId)
+      try {
+        deleteWorkoutSession(sessionId)
+        // Refresh the sessions list
+        const user = getCurrentUser()
+        if (user) {
+          const allSessions = getWorkoutSessions()
+            .sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime())
+          setSessions(allSessions)
+        }
+      } catch (error) {
+        console.error('Error deleting workout:', error)
+        alert('Failed to delete workout. Please try again.')
+      } finally {
+        setDeletingId(null)
+      }
+    }
+  }
 
   if (loading) {
     return (
@@ -84,30 +109,48 @@ export default function WorkoutHistoryPage() {
                       const template = day ? templates.find(t => t.id === day.template_id) : null
 
                       return (
-                        <Link
+                        <div
                           key={session.id}
-                          href={`/workout/edit/${session.id}`}
-                          className="block bg-slate-700/50 rounded-lg p-4 hover:bg-slate-700 transition-colors border border-slate-600"
+                          className="bg-slate-700/50 rounded-lg p-4 hover:bg-slate-700 transition-colors border border-slate-600"
                         >
                           <div className="flex justify-between items-center">
-                            <div>
-                              <h3 className="text-lg font-semibold text-slate-100">
-                                {day?.day_label || 'Unknown Workout'}
-                              </h3>
-                              {template && (
-                                <p className="text-sm text-slate-400">{template.name}</p>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              {session.overall_performance_rating && (
-                                <p className="text-indigo-400 font-semibold">
-                                  {session.overall_performance_rating}/10
-                                </p>
-                              )}
-                              <p className="text-sm text-slate-400">Edit →</p>
+                            <Link
+                              href={`/workout/edit/${session.id}`}
+                              className="flex-1"
+                            >
+                              <div>
+                                <h3 className="text-lg font-semibold text-slate-100">
+                                  {day?.day_label || 'Unknown Workout'}
+                                </h3>
+                                {template && (
+                                  <p className="text-sm text-slate-400">{template.name}</p>
+                                )}
+                              </div>
+                            </Link>
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                {session.overall_performance_rating && (
+                                  <p className="text-indigo-400 font-semibold">
+                                    {session.overall_performance_rating}/10
+                                  </p>
+                                )}
+                                <Link
+                                  href={`/workout/edit/${session.id}`}
+                                  className="text-sm text-slate-400 hover:text-slate-200"
+                                >
+                                  Edit →
+                                </Link>
+                              </div>
+                              <button
+                                onClick={(e) => handleDelete(session.id, e)}
+                                disabled={deletingId === session.id}
+                                className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                              >
+                                {deletingId === session.id ? 'Deleting...' : 'Delete'}
+                              </button>
                             </div>
                           </div>
-                        </Link>
+                        </div>
                       )
                     })}
                   </div>

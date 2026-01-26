@@ -8,7 +8,6 @@ interface Metrics {
   totalWorkouts: number
   totalVolume: number
   averageRating: number
-  personalRecords: number
 }
 
 export default function PerformanceMetrics() {
@@ -36,22 +35,10 @@ export default function PerformanceMetrics() {
           ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
           : 0
 
-      // Calculate PRs (simplified - count exercises where weight increased)
-      const exerciseMaxWeights = new Map<string, number>()
-      logs.forEach((log) => {
-        const weight = parseFloat(log.weight.toString())
-        const currentMax = exerciseMaxWeights.get(log.exercise_name) || 0
-        if (weight > currentMax) {
-          exerciseMaxWeights.set(log.exercise_name, weight)
-        }
-      })
-      const personalRecords = exerciseMaxWeights.size
-
       setMetrics({
         totalWorkouts,
         totalVolume: Math.round(totalVolume),
         averageRating: Math.round(averageRating * 10) / 10,
-        personalRecords,
       })
     }
     setLoading(false)
@@ -91,10 +78,7 @@ export default function PerformanceMetrics() {
           <div>
             <p className="text-sm text-slate-400">Average Rating</p>
             <p className="text-2xl font-bold text-indigo-400">{metrics.averageRating}/10</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-400">Personal Records</p>
-            <p className="text-2xl font-bold text-indigo-400">{metrics.personalRecords}</p>
+            <p className="text-xs text-slate-500 mt-1">Average overall workout performance rating across all logged workouts</p>
           </div>
         </div>
       </div>

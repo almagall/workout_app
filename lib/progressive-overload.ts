@@ -186,24 +186,24 @@ export function calculateSetTarget(
   planType: PlanType,
   planSettings: PlanSettings
 ): TargetCalculation {
-  // If no previous target, return null (first week)
-  if (!previousSet.targetWeight || !previousSet.targetReps || !previousSet.targetRpe) {
-    return {
-      targetWeight: null,
-      targetReps: null,
-      targetRpe: null,
-    }
+  // If previous workout had targets, evaluate performance against them
+  // If previous workout was first week (no targets), we'll still calculate targets based on actual performance
+  let setStatus: PerformanceStatus = 'met_target'
+  
+  if (previousSet.targetWeight && previousSet.targetReps && previousSet.targetRpe) {
+    // Previous workout had targets - evaluate performance
+    setStatus = evaluateSetPerformance(
+      previousSet.weight,
+      previousSet.reps,
+      previousSet.rpe,
+      previousSet.targetWeight,
+      previousSet.targetReps,
+      previousSet.targetRpe
+    )
+  } else {
+    // Previous workout was first week (no targets) - treat as "met target" and calculate progressive overload
+    setStatus = 'met_target'
   }
-
-  // Evaluate this set's performance against its target
-  const setStatus = evaluateSetPerformance(
-    previousSet.weight,
-    previousSet.reps,
-    previousSet.rpe,
-    previousSet.targetWeight,
-    previousSet.targetReps,
-    previousSet.targetRpe
-  )
 
   let targetWeight: number
   let targetReps: number

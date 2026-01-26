@@ -31,33 +31,41 @@ export function generateExerciseFeedback(
 
   if (status === 'overperformed') {
     if (planType === 'hypertrophy') {
-      return `Excellent work! You exceeded your targets on ${overperformedCount} set(s). This shows great progress. Next week, we will increase your targets to continue progressive overload. Keep maintaining good form and control.`
+      if (overperformedCount === sets.length) {
+        return `You exceeded targets on all ${overperformedCount} set(s), indicating excellent muscle adaptation and strong recovery. This shows your muscles are growing and adapting to the training stimulus. Targets will increase next week to maintain progressive overload.`
+      } else {
+        return `You exceeded targets on ${overperformedCount} set(s), showing good progress. This indicates your muscles are adapting well. Targets will be adjusted upward next week.`
+      }
     } else {
-      return `Outstanding performance! You lifted more than targeted on ${overperformedCount} set(s). Your strength is improving. We'll adjust your targets upward next week to keep challenging you.`
+      if (overperformedCount === sets.length) {
+        return `You exceeded targets on all ${overperformedCount} set(s), demonstrating significant strength gains. Your nervous system and muscles are adapting effectively. Targets will increase next week.`
+      } else {
+        return `You exceeded targets on ${overperformedCount} set(s), indicating strength progression. This shows good adaptation to the training load. Targets will be adjusted upward next week.`
+      }
     }
   }
 
   if (status === 'underperformed') {
     if (planType === 'hypertrophy') {
       if (underperformedCount === sets.length) {
-        return `You didn't meet your targets this week. This could be due to fatigue, poor recovery, or targets being too aggressive. We'll maintain or slightly reduce targets next week. Focus on proper form, adequate rest, and nutrition.`
+        return `You fell short on all ${underperformedCount} set(s), likely due to fatigue, insufficient recovery, or aggressive targets. This suggests systemic fatigue rather than a single bad set. Targets will be maintained or slightly reduced next week to allow proper recovery.`
       } else {
-        return `You struggled on ${underperformedCount} set(s). This might indicate fatigue or the need for better recovery. Ensure you're getting enough sleep, proper nutrition, and adequate rest between workouts.`
+        return `You struggled on ${underperformedCount} set(s), suggesting partial fatigue or starting too aggressively. This may indicate the need for better recovery between workouts. Targets will be adjusted accordingly.`
       }
     } else {
       if (underperformedCount === sets.length) {
-        return `You didn't hit your strength targets. This is normal and can happen due to various factors like recovery, stress, or sleep. We'll adjust targets accordingly. Make sure you're warming up properly and maintaining technique.`
+        return `You missed targets on all ${underperformedCount} set(s), possibly due to insufficient recovery, stress, or accumulated fatigue. Strength training requires adequate rest between sessions. Targets will be adjusted to ensure continued progress.`
       } else {
-        return `Some sets were challenging. For strength training, quality over quantity is key. Focus on perfect form and controlled movements. Recovery is crucial for strength gains.`
+        return `You fell short on ${underperformedCount} set(s), suggesting fatigue buildup or starting too heavy. Focus on proper warm-up and technique. Targets will be adjusted to match your current capacity.`
       }
     }
   }
 
   // Met target
   if (planType === 'hypertrophy') {
-    return `Great job hitting your targets! You are on track with your hypertrophy goals. We will make a small increase next week to continue your progress. Keep focusing on the mind-muscle connection and controlled movements.`
+    return `You met your targets on ${metTargetCount} set(s), indicating consistent progress and good recovery. This shows you're on track with your hypertrophy goals. Targets will increase slightly next week (2.5-5lbs or 1-2 reps) to continue progressive overload.`
   } else {
-    return `Solid performance! You met your strength targets. We'll make a conservative increase next week. Remember to prioritize form and control over ego lifting.`
+    return `You met your targets on ${metTargetCount} set(s), showing solid strength progression and good recovery. This indicates effective neuromuscular adaptation. Targets will increase conservatively next week (2.5-5lbs) to maintain progressive overload.`
   }
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { getCurrentUser, signOut } from '@/lib/auth-simple'
 
 export default function DashboardLayout({
@@ -11,6 +12,7 @@ export default function DashboardLayout({
 }) {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
   const [loading, setLoading] = useState(true)
+  const pathname = usePathname()
 
   useEffect(() => {
     const currentUser = getCurrentUser()
@@ -53,25 +55,41 @@ export default function DashboardLayout({
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <Link
                   href="/dashboard"
-                  className="border-indigo-500 text-slate-100 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    pathname === '/dashboard'
+                      ? 'border-indigo-500 text-slate-100'
+                      : 'border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/workout/log"
-                  className="border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit')
+                      ? 'border-indigo-500 text-slate-100'
+                      : 'border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
                 >
                   Log Workout
                 </Link>
                 <Link
                   href="/workout/template/create"
-                  className="border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    pathname === '/workout/template/create'
+                      ? 'border-indigo-500 text-slate-100'
+                      : 'border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
                 >
                   Create Template
                 </Link>
                 <Link
                   href="/workout/history"
-                  className="border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    pathname === '/workout/history'
+                      ? 'border-indigo-500 text-slate-100'
+                      : 'border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
                 >
                   History
                 </Link>
