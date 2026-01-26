@@ -54,6 +54,7 @@ export default function CreateTemplatePage() {
     }
 
     fetchPlanType()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const addDay = () => {

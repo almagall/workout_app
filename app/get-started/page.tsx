@@ -73,7 +73,7 @@ export default function GetStartedPage() {
             Sign In
           </h2>
           <p className="mt-2 text-center text-sm text-slate-300">
-            Enter your username and password. We'll create an account if you don't have one.
+            Enter your username and password. We will create an account if you do not have one.
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

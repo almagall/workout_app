@@ -74,6 +74,7 @@ export default function PerformanceMetrics() {
     }
 
     fetchMetrics()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) {

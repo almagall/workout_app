@@ -38,6 +38,7 @@ export default function ExerciseSelector() {
     }
 
     fetchExercises()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) {
