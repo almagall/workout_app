@@ -226,7 +226,13 @@ export default function WorkoutLogger({
         overperformedCount,
         metTargetCount,
         underperformedCount,
-        sets: exercise.sets,
+        sets: exercise.sets.map((set) => ({
+          weight: set.weight,
+          reps: set.reps,
+          rpe: set.rpe,
+          targetWeight: set.targetWeight ?? null,
+          targetReps: set.targetReps ?? null,
+        })),
       },
       planType
     )
@@ -300,7 +306,13 @@ export default function WorkoutLogger({
             overperformedCount,
             metTargetCount,
             underperformedCount,
-            sets: exercise.sets,
+            sets: exercise.sets.map((set) => ({
+              weight: set.weight,
+              reps: set.reps,
+              rpe: set.rpe,
+              targetWeight: set.targetWeight ?? null,
+              targetReps: set.targetReps ?? null,
+            })),
           }
         }),
         overallRating: 0,
