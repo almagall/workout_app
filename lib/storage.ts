@@ -206,8 +206,6 @@ export async function updateTemplate(
     if (deleteDaysError) throw new Error(`Failed to delete template days: ${deleteDaysError.message}`)
   }
 
-  if (deleteDaysError) throw new Error(`Failed to delete template days: ${deleteDaysError.message}`)
-
   // Insert template exercises
   const exercisesToInsert = template.days.flatMap((day, dayIndex) => {
     const dayData = insertedDays?.find(d => d.day_order === day.dayOrder)
