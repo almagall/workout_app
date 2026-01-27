@@ -37,11 +37,14 @@ export interface WorkoutSession {
   created_at: string
 }
 
+export type SetType = 'warmup' | 'working' | 'cooldown'
+
 export interface ExerciseLog {
   id: string
   session_id: string
   exercise_name: string
   set_number: number
+  set_type?: SetType
   weight: number
   reps: number
   rpe: number
@@ -81,6 +84,7 @@ export interface ProgressiveOverloadSettings {
 
 export interface SetData {
   setNumber: number
+  setType: SetType
   weight: number
   reps: number
   rpe: number

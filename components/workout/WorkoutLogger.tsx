@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions } from '@/lib/storage'
 import { calculateSetTarget } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
-import type { PlanType, SetData, ExerciseData, PerformanceStatus } from '@/types/workout'
+import type { PlanType, SetData, ExerciseData, PerformanceStatus, SetType } from '@/types/workout'
 
 interface WorkoutLoggerProps {
   dayId: string
@@ -41,12 +41,17 @@ export default function WorkoutLogger({
   const [prePopulatedValues, setPrePopulatedValues] = useState<Map<string, { weight: number; reps: number; rpe: number }>>(new Map())
   // Track confirmed sets
   const [confirmedSets, setConfirmedSets] = useState<Set<string>>(new Set())
+  // Track completed exercises
+  const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set())
+  // Track if exercise selector dropdown is open
+  const [showExerciseSelector, setShowExerciseSelector] = useState(false)
   const [workoutDate, setWorkoutDate] = useState<string>(() => {
     // Use provided date or default to today's date in YYYY-MM-DD format
     return initialWorkoutDate || new Date().toISOString().split('T')[0]
   })
   const [isEditMode, setIsEditMode] = useState(!!sessionId)
   const router = useRouter()
+  const exerciseSelectorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function initializeWorkout() {
@@ -89,6 +94,7 @@ export default function WorkoutLogger({
               .sort((a, b) => a.set_number - b.set_number)
               .map((log) => ({
                 setNumber: log.set_number,
+                setType: (log.set_type ?? 'working') as SetType,
                 weight: parseFloat(log.weight.toString()),
                 reps: log.reps,
                 rpe: parseFloat(log.rpe.toString()),
@@ -97,10 +103,11 @@ export default function WorkoutLogger({
                 targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
               }))
 
-            // Calculate exercise rating if feedback exists
+            // Calculate exercise rating if feedback exists (only working sets count)
             let exerciseRating: number | null = null
             if (exerciseLogs[0]?.exercise_feedback) {
-              const performanceStatuses = sets.map((set) =>
+              const workingSets = sets.filter((s) => s.setType === 'working')
+              const performanceStatuses = workingSets.map((set) =>
                 evaluateSetPerformance(
                   set.weight,
                   set.reps,
@@ -120,8 +127,8 @@ export default function WorkoutLogger({
                   totalScore += 4
                 }
               })
-              exerciseRating = sets.length > 0 
-                ? Math.round((totalScore / sets.length) * 10) / 10 
+              exerciseRating = workingSets.length > 0 
+                ? Math.round((totalScore / workingSets.length) * 10) / 10 
                 : 5
             }
 
@@ -129,6 +136,7 @@ export default function WorkoutLogger({
               exerciseName,
               sets: sets.length > 0 ? sets : [{
                 setNumber: 1,
+                setType: 'working' as SetType,
                 weight: 0,
                 reps: 0,
                 rpe: 5,
@@ -165,11 +173,11 @@ export default function WorkoutLogger({
                 const session = daySessions[i]
                 const sessionLogs = await getExerciseLogsForSession(session.id)
                 const exerciseSessionLogs = sessionLogs.filter(log => log.exercise_name === exerciseName)
+                const workingLogs = exerciseSessionLogs.filter(log => (log.set_type ?? 'working') === 'working')
+                if (workingLogs.length === 0) break
                 
-                if (exerciseSessionLogs.length === 0) break
-                
-                // Check if this session had underperformance
-                const hadUnderperformance = exerciseSessionLogs.some(log => 
+                // Check if this session had underperformance (only working sets count)
+                const hadUnderperformance = workingLogs.some(log => 
                   log.performance_status === 'underperformed'
                 )
                 
@@ -184,24 +192,22 @@ export default function WorkoutLogger({
             exerciseUnderperformanceMap.set(exerciseName, consecutiveUnderperformance)
           }
 
-          // Initialize exercise data
+          // Initialize exercise data (only working sets from previous session get targets)
           initializedExercises = exercises.map((exerciseName) => {
             const exerciseLogs = allPreviousLogs.filter(
               (log) => log.exercise_name === exerciseName
             )
+            const workingLogs = exerciseLogs.filter((l) => (l.set_type ?? 'working') === 'working')
 
             const consecutiveUnderperformance = exerciseUnderperformanceMap.get(exerciseName) || 0
 
           let sets: SetData[] = []
 
-          if (exerciseLogs.length > 0 && planSettings) {
-            // Calculate individual target for each set based on the corresponding previous set
-
-            // Create sets with targets
-            // Sort logs by set_number to ensure proper ordering
-            const sortedLogs = [...exerciseLogs].sort((a, b) => a.set_number - b.set_number)
+          if (workingLogs.length > 0 && planSettings) {
+            // Calculate individual target for each WORKING set based on the corresponding previous working set
+            const sortedLogs = [...workingLogs].sort((a, b) => a.set_number - b.set_number)
             
-            sets = sortedLogs.map((log) => {
+            sets = sortedLogs.map((log, idx) => {
               const previousSet = {
                 weight: parseFloat(log.weight.toString()),
                 reps: log.reps,
@@ -221,7 +227,8 @@ export default function WorkoutLogger({
               )
 
               return {
-                setNumber: log.set_number, // Use the actual set_number from previous workout
+                setNumber: idx + 1,
+                setType: 'working' as SetType,
                 weight: parseFloat(log.weight.toString()),
                 reps: log.reps,
                 rpe: parseFloat(log.rpe.toString()),
@@ -231,10 +238,11 @@ export default function WorkoutLogger({
               }
             })
           } else {
-            // First week - no targets, create empty sets
+            // First week - no targets, create one empty working set
             sets = [
               {
                 setNumber: 1,
+                setType: 'working' as SetType,
                 weight: 0,
                 reps: 0,
                 rpe: 5,
@@ -279,18 +287,50 @@ export default function WorkoutLogger({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayId, planType, exercises, userId, workoutDate])
 
-  const addSet = (exerciseIndex: number) => {
+  // Close exercise selector when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (exerciseSelectorRef.current && !exerciseSelectorRef.current.contains(event.target as Node)) {
+        setShowExerciseSelector(false)
+      }
+    }
+
+    if (showExerciseSelector) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [showExerciseSelector])
+
+  // Mark exercises as completed when in edit mode if they have feedback
+  useEffect(() => {
+    if (isEditMode && exerciseData.length > 0) {
+      const completed = new Set<number>()
+      exerciseData.forEach((exercise, index) => {
+        if (exercise.exerciseFeedback) {
+          completed.add(index)
+        }
+      })
+      setCompletedExercises(completed)
+    }
+  }, [isEditMode, exerciseData])
+
+  const addSet = (exerciseIndex: number, setType: SetType) => {
     const newData = [...exerciseData]
     const exercise = newData[exerciseIndex]
     const lastSet = exercise.sets[exercise.sets.length - 1]
+    const lastWorking = [...exercise.sets].reverse().find((s) => s.setType === 'working')
+    const template = setType === 'working' ? (lastWorking ?? lastSet) : lastSet
     exercise.sets.push({
       setNumber: exercise.sets.length + 1,
-      weight: lastSet.weight || 0,
-      reps: lastSet.reps || 0,
-      rpe: lastSet.rpe || 5,
-      targetWeight: lastSet.targetWeight,
-      targetReps: lastSet.targetReps,
-      targetRpe: lastSet.targetRpe,
+      setType,
+      weight: template?.weight ?? 0,
+      reps: template?.reps ?? 0,
+      rpe: template?.rpe ?? 5,
+      targetWeight: setType === 'working' ? (template?.targetWeight ?? null) : null,
+      targetReps: setType === 'working' ? (template?.targetReps ?? null) : null,
+      targetRpe: setType === 'working' ? (template?.targetRpe ?? null) : null,
     })
     setExerciseData(newData)
   }
@@ -340,9 +380,10 @@ export default function WorkoutLogger({
 
   const completeExercise = (exerciseIndex: number) => {
     const exercise = exerciseData[exerciseIndex]
+    const workingSets = exercise.sets.filter((s) => s.setType === 'working')
     
-    // Evaluate performance for each set
-    const performanceStatuses = exercise.sets.map((set) =>
+    // Evaluate performance for working sets only (warmup/cooldown don't count)
+    const performanceStatuses = workingSets.map((set) =>
       evaluateSetPerformance(
         set.weight,
         set.reps,
@@ -353,7 +394,7 @@ export default function WorkoutLogger({
       )
     )
 
-    // Calculate overall exercise performance
+    // Calculate overall exercise performance from working sets only
     const overperformedCount = performanceStatuses.filter((s) => s === 'overperformed').length
     const metTargetCount = performanceStatuses.filter((s) => s === 'met_target').length
     const underperformedCount = performanceStatuses.filter((s) => s === 'underperformed').length
@@ -365,7 +406,7 @@ export default function WorkoutLogger({
       overallStatus = 'underperformed'
     }
 
-    // Calculate exercise rating based on set performance
+    // Exercise rating based on working sets only
     let totalScore = 0
     performanceStatuses.forEach((status) => {
       if (status === 'overperformed') {
@@ -376,11 +417,11 @@ export default function WorkoutLogger({
         totalScore += 4
       }
     })
-    const exerciseRating = exercise.sets.length > 0 
-      ? Math.round((totalScore / exercise.sets.length) * 10) / 10 
+    const exerciseRating = workingSets.length > 0 
+      ? Math.round((totalScore / workingSets.length) * 10) / 10 
       : 5
 
-    // Generate feedback
+    // Generate feedback from working sets only
     const feedback = generateExerciseFeedback(
       {
         exerciseName: exercise.exerciseName,
@@ -388,7 +429,7 @@ export default function WorkoutLogger({
         overperformedCount,
         metTargetCount,
         underperformedCount,
-        sets: exercise.sets.map((set) => ({
+        sets: workingSets.map((set) => ({
           weight: set.weight,
           reps: set.reps,
           rpe: set.rpe,
@@ -404,6 +445,9 @@ export default function WorkoutLogger({
     newData[exerciseIndex].exerciseFeedback = feedback
     newData[exerciseIndex].exerciseRating = exerciseRating
     setExerciseData(newData)
+    
+    // Mark exercise as completed
+    setCompletedExercises(prev => new Set(prev).add(exerciseIndex))
   }
 
   const saveWorkout = async () => {
@@ -412,11 +456,11 @@ export default function WorkoutLogger({
 
     try {
       if (isEditMode && sessionId) {
-        // Edit mode: Update existing session
-        // Calculate overall rating and feedback
+        // Edit mode: Update existing session (only working sets count for rating/feedback)
         const workoutPerformance = {
           exercises: exerciseData.map((exercise) => {
-            const statuses = exercise.sets.map((set) =>
+            const workingSets = exercise.sets.filter((s) => s.setType === 'working')
+            const statuses = workingSets.map((set) =>
               evaluateSetPerformance(
                 set.weight,
                 set.reps,
@@ -443,7 +487,7 @@ export default function WorkoutLogger({
               overperformedCount,
               metTargetCount,
               underperformedCount,
-              sets: exercise.sets.map((set) => ({
+              sets: workingSets.map((set) => ({
                 weight: set.weight,
                 reps: set.reps,
                 rpe: set.rpe,
@@ -459,7 +503,7 @@ export default function WorkoutLogger({
         workoutPerformance.overallRating = rating
         const feedback = generateWorkoutFeedback(workoutPerformance, planType)
 
-        // Update workout session
+        // Update workout session (all sets saved; performanceStatus only for working sets)
         await updateWorkoutSession(sessionId, {
           templateDayId: dayId,
           workoutDate,
@@ -468,17 +512,21 @@ export default function WorkoutLogger({
           exercises: exerciseData.map((exercise) => ({
             exerciseName: exercise.exerciseName,
             sets: exercise.sets.map((set) => {
-              const performanceStatus = evaluateSetPerformance(
-                set.weight,
-                set.reps,
-                set.rpe,
-                set.targetWeight ?? null,
-                set.targetReps ?? null,
-                set.targetRpe ?? null
-              )
+              const performanceStatus =
+                set.setType === 'working'
+                  ? evaluateSetPerformance(
+                      set.weight,
+                      set.reps,
+                      set.rpe,
+                      set.targetWeight ?? null,
+                      set.targetReps ?? null,
+                      set.targetRpe ?? null
+                    )
+                  : null
 
               return {
                 setNumber: set.setNumber,
+                setType: set.setType,
                 weight: set.weight,
                 reps: set.reps,
                 rpe: set.rpe,
@@ -507,10 +555,11 @@ export default function WorkoutLogger({
         return
       }
 
-      // Calculate overall rating and feedback
+      // Calculate overall rating and feedback from working sets only
       const workoutPerformance = {
         exercises: exerciseData.map((exercise) => {
-          const statuses = exercise.sets.map((set) =>
+          const workingSets = exercise.sets.filter((s) => s.setType === 'working')
+          const statuses = workingSets.map((set) =>
             evaluateSetPerformance(
               set.weight,
               set.reps,
@@ -537,7 +586,7 @@ export default function WorkoutLogger({
             overperformedCount,
             metTargetCount,
             underperformedCount,
-            sets: exercise.sets.map((set) => ({
+            sets: workingSets.map((set) => ({
               weight: set.weight,
               reps: set.reps,
               rpe: set.rpe,
@@ -553,7 +602,7 @@ export default function WorkoutLogger({
       workoutPerformance.overallRating = rating
       const feedback = generateWorkoutFeedback(workoutPerformance, planType)
 
-      // Save workout session using Supabase
+      // Save workout session (all sets; performanceStatus only for working sets)
       await saveWorkoutSession({
         templateDayId: dayId,
         workoutDate,
@@ -562,17 +611,21 @@ export default function WorkoutLogger({
         exercises: exerciseData.map((exercise) => ({
           exerciseName: exercise.exerciseName,
           sets: exercise.sets.map((set) => {
-            const performanceStatus = evaluateSetPerformance(
-              set.weight,
-              set.reps,
-              set.rpe,
-              set.targetWeight ?? null,
-              set.targetReps ?? null,
-              set.targetRpe ?? null
-            )
+            const performanceStatus =
+              set.setType === 'working'
+                ? evaluateSetPerformance(
+                    set.weight,
+                    set.reps,
+                    set.rpe,
+                    set.targetWeight ?? null,
+                    set.targetReps ?? null,
+                    set.targetRpe ?? null
+                  )
+                : null
 
             return {
               setNumber: set.setNumber,
+              setType: set.setType,
               weight: set.weight,
               reps: set.reps,
               rpe: set.rpe,
@@ -638,6 +691,57 @@ export default function WorkoutLogger({
             Exercise {currentExerciseIndex + 1} of {exercises.length}
           </p>
         </div>
+        <div className="relative" ref={exerciseSelectorRef}>
+          <button
+            onClick={() => setShowExerciseSelector(!showExerciseSelector)}
+            className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors flex items-center gap-2"
+          >
+            <span>Select Exercise</span>
+            <svg 
+              className={`w-4 h-4 transition-transform ${showExerciseSelector ? 'rotate-180' : ''}`}
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showExerciseSelector && (
+            <div className="absolute right-0 mt-2 w-64 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md shadow-lg z-10 max-h-96 overflow-y-auto">
+              <div className="p-2">
+                {exercises.map((exerciseName, index) => {
+                  const isCompleted = completedExercises.has(index)
+                  const isCurrent = index === currentExerciseIndex
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentExerciseIndex(index)
+                        setShowExerciseSelector(false)
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-md mb-1 transition-colors ${
+                        isCurrent
+                          ? 'bg-white text-black font-semibold'
+                          : isCompleted
+                          ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
+                          : 'text-white hover:bg-[#2a2a2a]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{exerciseName}</span>
+                        {isCompleted && (
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex flex-col items-end">
           <label htmlFor="workout-date" className="block text-sm font-medium text-white mb-2">
             Workout Date
@@ -682,6 +786,33 @@ export default function WorkoutLogger({
         </div>
       )}
 
+      {/* Exercise Progress Indicator */}
+      <div className="mb-6 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-[#888888] mr-2">Exercises:</span>
+          {exercises.map((exerciseName, index) => {
+            const isCompleted = completedExercises.has(index)
+            const isCurrent = index === currentExerciseIndex
+            return (
+              <button
+                key={index}
+                onClick={() => setCurrentExerciseIndex(index)}
+                className={`px-3 py-1 rounded-md text-sm transition-colors ${
+                  isCurrent
+                    ? 'bg-white text-black font-semibold'
+                    : isCompleted
+                    ? 'bg-green-600/20 text-green-400 border border-green-600/50 hover:bg-green-600/30'
+                    : 'bg-[#111111] text-white border border-[#2a2a2a] hover:bg-[#2a2a2a]'
+                }`}
+              >
+                {index + 1}. {exerciseName}
+                {isCompleted && ' ✓'}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
@@ -705,9 +836,22 @@ export default function WorkoutLogger({
                   : 'border border-[#2a2a2a]'
               }`}
             >
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold text-white">Set {set.setNumber}</span>
-                {set.targetWeight && (
+              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-white">Set {set.setNumber}</span>
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded ${
+                      set.setType === 'warmup'
+                        ? 'bg-amber-600/30 text-amber-400'
+                        : set.setType === 'cooldown'
+                        ? 'bg-blue-600/30 text-blue-400'
+                        : 'bg-green-600/30 text-green-400'
+                    }`}
+                  >
+                    {set.setType === 'warmup' ? 'Warm-up' : set.setType === 'cooldown' ? 'Cool-down' : 'Working'}
+                  </span>
+                </div>
+                {set.setType === 'working' && set.targetWeight != null && (
                   <span className="text-sm text-[#888888]">
                     Target: {set.targetWeight} lbs × {set.targetReps} reps @ RPE {set.targetRpe}
                   </span>
@@ -808,12 +952,24 @@ export default function WorkoutLogger({
           )})}
         </div>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
-            onClick={() => addSet(currentExerciseIndex)}
-            className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors"
+            onClick={() => addSet(currentExerciseIndex, 'warmup')}
+            className="px-4 py-2 bg-amber-600/20 text-amber-400 rounded-md hover:bg-amber-600/30 border border-amber-600/50 transition-colors text-sm font-medium"
           >
-            + Add Set
+            + Add Warm Up Set
+          </button>
+          <button
+            onClick={() => addSet(currentExerciseIndex, 'working')}
+            className="px-4 py-2 bg-green-600/20 text-green-400 rounded-md hover:bg-green-600/30 border border-green-600/50 transition-colors text-sm font-medium"
+          >
+            + Add Working Set
+          </button>
+          <button
+            onClick={() => addSet(currentExerciseIndex, 'cooldown')}
+            className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-md hover:bg-blue-600/30 border border-blue-600/50 transition-colors text-sm font-medium"
+          >
+            + Add Cool Down Set
           </button>
           <button
             onClick={() => completeExercise(currentExerciseIndex)}

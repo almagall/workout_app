@@ -354,6 +354,7 @@ export async function saveWorkoutSession(session: {
     exerciseName: string
     sets: Array<{
       setNumber: number
+      setType?: 'warmup' | 'working' | 'cooldown'
       weight: number
       reps: number
       rpe: number
@@ -388,12 +389,13 @@ export async function saveWorkoutSession(session: {
 
   const sessionId = sessionData.id
 
-  // Insert exercise logs
+  // Insert exercise logs (include set_type; warmup/cooldown have no targets or performance_status)
   const logsToInsert = session.exercises.flatMap((exercise) =>
     exercise.sets.map((set) => ({
       session_id: sessionId,
       exercise_name: exercise.exerciseName,
       set_number: set.setNumber,
+      set_type: set.setType ?? 'working',
       weight: set.weight,
       reps: set.reps,
       rpe: set.rpe,
@@ -471,6 +473,7 @@ export async function getExerciseLogs(): Promise<ExerciseLog[]> {
     session_id: log.session_id,
     exercise_name: log.exercise_name,
     set_number: log.set_number,
+    set_type: (log.set_type === 'warmup' || log.set_type === 'cooldown' ? log.set_type : 'working') as 'warmup' | 'working' | 'cooldown',
     weight: log.weight,
     reps: log.reps,
     rpe: log.rpe,
@@ -559,6 +562,7 @@ export async function getExerciseLogsForSession(sessionId: string): Promise<Exer
     session_id: log.session_id,
     exercise_name: log.exercise_name,
     set_number: log.set_number,
+    set_type: (log.set_type === 'warmup' || log.set_type === 'cooldown' ? log.set_type : 'working') as 'warmup' | 'working' | 'cooldown',
     weight: log.weight,
     reps: log.reps,
     rpe: log.rpe,
@@ -582,6 +586,7 @@ export async function updateWorkoutSession(
       exerciseName: string
       sets: Array<{
         setNumber: number
+        setType?: 'warmup' | 'working' | 'cooldown'
         weight: number
         reps: number
         rpe: number
@@ -621,12 +626,13 @@ export async function updateWorkoutSession(
 
   if (deleteError) throw new Error(`Failed to delete old exercise logs: ${deleteError.message}`)
 
-  // Insert new logs
+  // Insert new logs (include set_type)
   const logsToInsert = session.exercises.flatMap((exercise) =>
     exercise.sets.map((set) => ({
       session_id: sessionId,
       exercise_name: exercise.exerciseName,
       set_number: set.setNumber,
+      set_type: set.setType ?? 'working',
       weight: set.weight,
       reps: set.reps,
       rpe: set.rpe,
