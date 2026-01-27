@@ -108,7 +108,7 @@ export default function TemplatePage() {
       {templates.length === 0 ? (
         <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
           <p className="text-[#a1a1a1] mb-4">
-            You haven't created any templates yet. Create your first template to get started.
+            You have not created any templates yet. Create your first template to get started.
           </p>
           <Link
             href="/workout/template/create"
