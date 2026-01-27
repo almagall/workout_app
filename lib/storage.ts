@@ -80,6 +80,102 @@ export async function saveTemplate(template: {
   return templateId
 }
 
+export async function updateTemplate(
+  templateId: string,
+  template: {
+    name: string
+    planType: PlanType
+    days: Array<{
+      dayLabel: string
+      dayOrder: number
+      exercises: string[]
+    }>
+  }
+): Promise<void> {
+  const user = getCurrentUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const supabase = createClient()
+
+  // Update template
+  const { error: templateError } = await supabase
+    .from('workout_templates')
+    .update({
+      plan_type: template.planType,
+      name: template.name,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', templateId)
+    .eq('user_id', user.id)
+
+  if (templateError) throw new Error(`Failed to update template: ${templateError.message}`)
+
+  // Delete existing days and exercises (cascade will handle exercises)
+  const { error: deleteDaysError } = await supabase
+    .from('template_days')
+    .delete()
+    .eq('template_id', templateId)
+
+  if (deleteDaysError) throw new Error(`Failed to delete template days: ${deleteDaysError.message}`)
+
+  // Insert new template days
+  const daysToInsert = template.days.map((day) => ({
+    template_id: templateId,
+    day_label: day.dayLabel,
+    day_order: day.dayOrder,
+  }))
+
+  const { error: daysError } = await supabase
+    .from('template_days')
+    .insert(daysToInsert)
+
+  if (daysError) throw new Error(`Failed to save template days: ${daysError.message}`)
+
+  // Get the inserted days to get their IDs
+  const { data: insertedDays, error: fetchDaysError } = await supabase
+    .from('template_days')
+    .select('id, day_order')
+    .eq('template_id', templateId)
+
+  if (fetchDaysError) throw new Error(`Failed to fetch template days: ${fetchDaysError.message}`)
+
+  // Insert template exercises
+  const exercisesToInsert = template.days.flatMap((day, dayIndex) => {
+    const dayData = insertedDays?.find(d => d.day_order === day.dayOrder)
+    if (!dayData) return []
+    
+    return day.exercises.map((exerciseName, exerciseIndex) => ({
+      template_day_id: dayData.id,
+      exercise_name: exerciseName,
+      exercise_order: exerciseIndex + 1,
+    }))
+  })
+
+  if (exercisesToInsert.length > 0) {
+    const { error: exercisesError } = await supabase
+      .from('template_exercises')
+      .insert(exercisesToInsert)
+
+    if (exercisesError) throw new Error(`Failed to save template exercises: ${exercisesError.message}`)
+  }
+}
+
+export async function deleteTemplate(templateId: string): Promise<void> {
+  const user = getCurrentUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const supabase = createClient()
+
+  // Delete template (cascade will handle days and exercises)
+  const { error: templateError } = await supabase
+    .from('workout_templates')
+    .delete()
+    .eq('id', templateId)
+    .eq('user_id', user.id)
+
+  if (templateError) throw new Error(`Failed to delete template: ${templateError.message}`)
+}
+
 export async function getTemplates(): Promise<WorkoutTemplate[]> {
   const user = getCurrentUser()
   if (!user) return []

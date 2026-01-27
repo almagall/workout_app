@@ -24,10 +24,261 @@ interface PlanSettings {
   target_rpe_max: number
   weight_increase_percent: number
   rep_increase: number
+  deload_frequency_weeks?: number
+}
+
+/**
+ * Calculate target for a single set based on the previous set's performance
+ * Uses double progression: increase reps to max, then increase weight and reset reps
+ */
+export function calculateSetTarget(
+  previousSet: {
+    weight: number
+    reps: number
+    rpe: number
+    targetWeight: number | null
+    targetReps: number | null
+    targetRpe: number | null
+  },
+  planType: PlanType,
+  planSettings: PlanSettings,
+  consecutiveUnderperformance: number = 0
+): TargetCalculation {
+  // If previous workout had targets, evaluate performance against them
+  let setStatus: PerformanceStatus = 'met_target'
+  
+  if (previousSet.targetWeight && previousSet.targetReps && previousSet.targetRpe) {
+    // Previous workout had targets - evaluate performance
+    setStatus = evaluateSetPerformance(
+      previousSet.weight,
+      previousSet.reps,
+      previousSet.rpe,
+      previousSet.targetWeight,
+      previousSet.targetReps,
+      previousSet.targetRpe
+    )
+  } else {
+    // Previous workout was first week (no targets) - treat as "met target" and calculate progressive overload
+    setStatus = 'met_target'
+  }
+
+  let targetWeight: number
+  let targetReps: number
+  let targetRpe: number
+
+  if (planType === 'hypertrophy') {
+    // Hypertrophy: Double progression - prioritize rep progression, then weight
+    const isAtRepMax = previousSet.reps >= planSettings.rep_range_max
+    const isAtRepMin = previousSet.reps <= planSettings.rep_range_min
+
+    if (setStatus === 'overperformed') {
+      if (isAtRepMax) {
+        // Double progression: increase weight, reset to rep min
+        targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 100)
+        targetReps = planSettings.rep_range_min
+        targetRpe = planSettings.target_rpe_max
+      } else {
+        // Increase reps first (volume progression priority)
+        targetWeight = previousSet.weight // Maintain weight
+        targetReps = Math.min(
+          previousSet.reps + planSettings.rep_increase,
+          planSettings.rep_range_max
+        )
+        targetRpe = planSettings.target_rpe_max
+      }
+    } else if (setStatus === 'underperformed') {
+      if (consecutiveUnderperformance === 0) {
+        // First underperformance: maintain targets
+        targetWeight = previousSet.weight
+        targetReps = previousSet.reps
+        targetRpe = planSettings.target_rpe_max
+      } else if (consecutiveUnderperformance === 1) {
+        // Second consecutive: slight reduction
+        targetWeight = previousSet.weight * 0.975
+        targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
+        targetRpe = planSettings.target_rpe_max
+      } else {
+        // 3+ consecutive: maintain or slight reduction
+        targetWeight = previousSet.weight * 0.95
+        targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
+        targetRpe = planSettings.target_rpe_max
+      }
+    } else {
+      // Met target: slight progression
+      if (isAtRepMax) {
+        // At rep max: increase weight, reset reps
+        targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200) // Half the increase
+        targetReps = planSettings.rep_range_min
+        targetRpe = planSettings.target_rpe_max
+      } else {
+        // Increase reps (volume priority)
+        targetWeight = previousSet.weight // Maintain weight
+        targetReps = Math.min(previousSet.reps + 1, planSettings.rep_range_max)
+        targetRpe = planSettings.target_rpe_max
+      }
+    }
+
+    // Ensure targets are within rep range
+    targetReps = Math.max(
+      planSettings.rep_range_min,
+      Math.min(targetReps, planSettings.rep_range_max)
+    )
+  } else {
+    // Strength: Focus on weight progression, maintain rep range
+    if (setStatus === 'overperformed') {
+      // Increase weight, maintain or slightly adjust reps within range
+      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 100)
+      targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
+      // If at rep max, try to maintain; if below, can increase slightly
+      if (previousSet.reps < planSettings.rep_range_max) {
+        targetReps = Math.min(previousSet.reps + 1, planSettings.rep_range_max)
+      }
+      targetRpe = planSettings.target_rpe_max
+    } else if (setStatus === 'underperformed') {
+      if (consecutiveUnderperformance === 0) {
+        // First underperformance: maintain targets
+        targetWeight = previousSet.weight
+        targetReps = previousSet.reps
+        targetRpe = planSettings.target_rpe_max
+      } else if (consecutiveUnderperformance === 1) {
+        // Second consecutive: slight reduction
+        targetWeight = previousSet.weight * 0.95
+        targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
+        targetRpe = planSettings.target_rpe_max
+      } else {
+        // 3+ consecutive: maintain or slight reduction
+        targetWeight = previousSet.weight * 0.95
+        targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
+        targetRpe = planSettings.target_rpe_max
+      }
+    } else {
+      // Met target: slight weight increase, maintain reps
+      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200) // Half the increase
+      targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
+      targetRpe = planSettings.target_rpe_max
+    }
+
+    // Ensure targets are within rep range
+    targetReps = Math.max(
+      planSettings.rep_range_min,
+      Math.min(targetReps, planSettings.rep_range_max)
+    )
+  }
+
+  // Round weight to nearest 2.5 lbs (or 1.25 kg for metric)
+  targetWeight = Math.round(targetWeight / 2.5) * 2.5
+
+  return {
+    targetWeight,
+    targetReps: Math.round(targetReps),
+    targetRpe,
+  }
+}
+
+/**
+ * Determine performance status for a set
+ * Enhanced with better RPE consideration for fatigue detection
+ */
+export function evaluateSetPerformance(
+  actualWeight: number,
+  actualReps: number,
+  actualRpe: number,
+  targetWeight: number | null,
+  targetReps: number | null,
+  targetRpe: number | null
+): PerformanceStatus {
+  if (!targetWeight || !targetReps || !targetRpe) {
+    return 'met_target' // No target means first week
+  }
+
+  const weightMet = actualWeight >= targetWeight * 0.95 // 5% tolerance
+  const repsMet = actualReps >= targetReps
+  const rpeMet = actualRpe <= targetRpe + 1 // 1 RPE tolerance
+
+  // Enhanced RPE consideration: if RPE is significantly higher despite meeting weight/reps,
+  // it may indicate fatigue or overreaching
+  const rpeTooHigh = actualRpe > targetRpe + 2 // More than 2 RPE above target
+
+  if (weightMet && repsMet && rpeMet) {
+    // Check for overperformance
+    if (
+      actualWeight > targetWeight * 1.05 ||
+      actualReps > targetReps + 1 ||
+      actualRpe < targetRpe - 1
+    ) {
+      return 'overperformed'
+    }
+    // If RPE is too high despite meeting targets, consider it underperformance (fatigue)
+    if (rpeTooHigh) {
+      return 'underperformed'
+    }
+    return 'met_target'
+  }
+
+  // If RPE is way too high, definitely underperformed (fatigue indicator)
+  if (rpeTooHigh) {
+    return 'underperformed'
+  }
+
+  return 'underperformed'
+}
+
+/**
+ * Calculate overall exercise performance
+ */
+export function calculateExercisePerformance(
+  sets: Array<{
+    weight: number
+    reps: number
+    rpe: number
+    targetWeight: number | null
+    targetReps: number | null
+    targetRpe: number | null
+  }>
+): {
+  status: PerformanceStatus
+  overperformedCount: number
+  metTargetCount: number
+  underperformedCount: number
+} {
+  let overperformedCount = 0
+  let metTargetCount = 0
+  let underperformedCount = 0
+
+  sets.forEach((set) => {
+    const status = evaluateSetPerformance(
+      set.weight,
+      set.reps,
+      set.rpe,
+      set.targetWeight,
+      set.targetReps,
+      set.targetRpe
+    )
+
+    if (status === 'overperformed') overperformedCount++
+    else if (status === 'met_target') metTargetCount++
+    else underperformedCount++
+  })
+
+  let overallStatus: PerformanceStatus = 'met_target'
+  if (overperformedCount > underperformedCount) {
+    overallStatus = 'overperformed'
+  } else if (underperformedCount > metTargetCount) {
+    overallStatus = 'underperformed'
+  }
+
+  return {
+    status: overallStatus,
+    overperformedCount,
+    metTargetCount,
+    underperformedCount,
+  }
 }
 
 /**
  * Calculate targets for the next workout based on previous performance
+ * @deprecated This function uses average-based progression which is less precise.
+ * Use calculateSetTarget for set-by-set progression instead.
  */
 export function calculateTargets(
   previousExerciseData: PreviousExerciseData | null,
@@ -89,14 +340,22 @@ export function calculateTargets(
   let targetRpe: number
 
   if (planType === 'hypertrophy') {
-    // Hypertrophy: Focus on volume (weight × reps) progression
+    // Hypertrophy: Double progression - prioritize rep progression
+    const isAtRepMax = avgReps >= planSettings.rep_range_max
+
     if (performanceStatus === 'overperformed') {
-      // Gradual increase: 2.5-5% weight or +1-2 reps
-      targetWeight = avgWeight * (1 + planSettings.weight_increase_percent / 100)
-      targetReps = Math.min(
-        avgReps + planSettings.rep_increase,
-        planSettings.rep_range_max
-      )
+      if (isAtRepMax) {
+        // Double progression: increase weight, reset to rep min
+        targetWeight = avgWeight * (1 + planSettings.weight_increase_percent / 100)
+        targetReps = planSettings.rep_range_min
+      } else {
+        // Increase reps first (volume priority)
+        targetWeight = avgWeight // Maintain weight
+        targetReps = Math.min(
+          avgReps + planSettings.rep_increase,
+          planSettings.rep_range_max
+        )
+      }
       targetRpe = planSettings.target_rpe_max
     } else if (performanceStatus === 'underperformed') {
       if (consecutiveUnderperformance === 0) {
@@ -110,15 +369,20 @@ export function calculateTargets(
         targetReps = Math.max(avgReps - 1, planSettings.rep_range_min)
         targetRpe = planSettings.target_rpe_max
       } else {
-        // 2+ consecutive: deload
-        targetWeight = avgWeight * 0.9
-        targetReps = Math.max(avgReps - 2, planSettings.rep_range_min)
-        targetRpe = planSettings.target_rpe_min
+        // 3+ consecutive: maintain or slight reduction
+        targetWeight = avgWeight * 0.95
+        targetReps = Math.max(avgReps - 1, planSettings.rep_range_min)
+        targetRpe = planSettings.target_rpe_max
       }
     } else {
-      // Met target: slight increase
-      targetWeight = avgWeight * (1 + planSettings.weight_increase_percent / 200)
-      targetReps = Math.min(avgReps + 1, planSettings.rep_range_max)
+      // Met target: slight progression
+      if (isAtRepMax) {
+        targetWeight = avgWeight * (1 + planSettings.weight_increase_percent / 200)
+        targetReps = planSettings.rep_range_min
+      } else {
+        targetWeight = avgWeight // Maintain weight
+        targetReps = Math.min(avgReps + 1, planSettings.rep_range_max)
+      }
       targetRpe = planSettings.target_rpe_max
     }
 
@@ -130,7 +394,6 @@ export function calculateTargets(
   } else {
     // Strength: Focus on weight progression
     if (performanceStatus === 'overperformed') {
-      // More aggressive weight increase for strength
       targetWeight = avgWeight * (1 + planSettings.weight_increase_percent / 100)
       targetReps = Math.min(avgReps, planSettings.rep_range_max)
       targetRpe = planSettings.target_rpe_max
@@ -144,9 +407,9 @@ export function calculateTargets(
         targetReps = Math.max(avgReps - 1, planSettings.rep_range_min)
         targetRpe = planSettings.target_rpe_max
       } else {
-        targetWeight = avgWeight * 0.85
+        targetWeight = avgWeight * 0.95
         targetReps = Math.max(avgReps - 1, planSettings.rep_range_min)
-        targetRpe = planSettings.target_rpe_min
+        targetRpe = planSettings.target_rpe_max
       }
     } else {
       targetWeight = avgWeight * (1 + planSettings.weight_increase_percent / 200)
@@ -168,191 +431,5 @@ export function calculateTargets(
     targetWeight,
     targetReps: Math.round(targetReps),
     targetRpe,
-  }
-}
-
-/**
- * Calculate target for a single set based on the previous set's performance
- */
-export function calculateSetTarget(
-  previousSet: {
-    weight: number
-    reps: number
-    rpe: number
-    targetWeight: number | null
-    targetReps: number | null
-    targetRpe: number | null
-  },
-  planType: PlanType,
-  planSettings: PlanSettings
-): TargetCalculation {
-  // If previous workout had targets, evaluate performance against them
-  // If previous workout was first week (no targets), we'll still calculate targets based on actual performance
-  let setStatus: PerformanceStatus = 'met_target'
-  
-  if (previousSet.targetWeight && previousSet.targetReps && previousSet.targetRpe) {
-    // Previous workout had targets - evaluate performance
-    setStatus = evaluateSetPerformance(
-      previousSet.weight,
-      previousSet.reps,
-      previousSet.rpe,
-      previousSet.targetWeight,
-      previousSet.targetReps,
-      previousSet.targetRpe
-    )
-  } else {
-    // Previous workout was first week (no targets) - treat as "met target" and calculate progressive overload
-    setStatus = 'met_target'
-  }
-
-  let targetWeight: number
-  let targetReps: number
-  let targetRpe: number
-
-  if (planType === 'hypertrophy') {
-    // Hypertrophy: Focus on volume progression
-    if (setStatus === 'overperformed') {
-      // Gradual increase: 2.5-5% weight or +1-2 reps
-      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 100)
-      targetReps = Math.min(
-        previousSet.reps + planSettings.rep_increase,
-        planSettings.rep_range_max
-      )
-      targetRpe = planSettings.target_rpe_max
-    } else if (setStatus === 'underperformed') {
-      // Maintain or slight reduction
-      targetWeight = previousSet.weight * 0.975
-      targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
-      targetRpe = planSettings.target_rpe_max
-    } else {
-      // Met target: slight increase
-      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200)
-      targetReps = Math.min(previousSet.reps + 1, planSettings.rep_range_max)
-      targetRpe = planSettings.target_rpe_max
-    }
-
-    // Ensure targets are within rep range
-    targetReps = Math.max(
-      planSettings.rep_range_min,
-      Math.min(targetReps, planSettings.rep_range_max)
-    )
-  } else {
-    // Strength: Focus on weight progression
-    if (setStatus === 'overperformed') {
-      // More aggressive weight increase for strength
-      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 100)
-      targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
-      targetRpe = planSettings.target_rpe_max
-    } else if (setStatus === 'underperformed') {
-      // Slight reduction
-      targetWeight = previousSet.weight * 0.95
-      targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
-      targetRpe = planSettings.target_rpe_max
-    } else {
-      // Met target: slight increase
-      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200)
-      targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
-      targetRpe = planSettings.target_rpe_max
-    }
-
-    // Ensure targets are within rep range
-    targetReps = Math.max(
-      planSettings.rep_range_min,
-      Math.min(targetReps, planSettings.rep_range_max)
-    )
-  }
-
-  // Round weight to nearest 2.5 lbs
-  targetWeight = Math.round(targetWeight / 2.5) * 2.5
-
-  return {
-    targetWeight,
-    targetReps: Math.round(targetReps),
-    targetRpe,
-  }
-}
-
-/**
- * Determine performance status for a set
- */
-export function evaluateSetPerformance(
-  actualWeight: number,
-  actualReps: number,
-  actualRpe: number,
-  targetWeight: number | null,
-  targetReps: number | null,
-  targetRpe: number | null
-): PerformanceStatus {
-  if (!targetWeight || !targetReps || !targetRpe) {
-    return 'met_target' // No target means first week
-  }
-
-  const weightMet = actualWeight >= targetWeight * 0.95
-  const repsMet = actualReps >= targetReps
-  const rpeMet = actualRpe <= targetRpe + 1
-
-  if (weightMet && repsMet && rpeMet) {
-    if (
-      actualWeight > targetWeight * 1.05 ||
-      actualReps > targetReps + 1 ||
-      actualRpe < targetRpe - 1
-    ) {
-      return 'overperformed'
-    }
-    return 'met_target'
-  }
-
-  return 'underperformed'
-}
-
-/**
- * Calculate overall exercise performance
- */
-export function calculateExercisePerformance(
-  sets: Array<{
-    weight: number
-    reps: number
-    rpe: number
-    targetWeight: number | null
-    targetReps: number | null
-    targetRpe: number | null
-  }>
-): {
-  status: PerformanceStatus
-  overperformedCount: number
-  metTargetCount: number
-  underperformedCount: number
-} {
-  let overperformedCount = 0
-  let metTargetCount = 0
-  let underperformedCount = 0
-
-  sets.forEach((set) => {
-    const status = evaluateSetPerformance(
-      set.weight,
-      set.reps,
-      set.rpe,
-      set.targetWeight,
-      set.targetReps,
-      set.targetRpe
-    )
-
-    if (status === 'overperformed') overperformedCount++
-    else if (status === 'met_target') metTargetCount++
-    else underperformedCount++
-  })
-
-  let overallStatus: PerformanceStatus = 'met_target'
-  if (overperformedCount > underperformedCount) {
-    overallStatus = 'overperformed'
-  } else if (underperformedCount > metTargetCount) {
-    overallStatus = 'underperformed'
-  }
-
-  return {
-    status: overallStatus,
-    overperformedCount,
-    metTargetCount,
-    underperformedCount,
   }
 }

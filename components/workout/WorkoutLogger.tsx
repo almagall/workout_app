@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
-import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession } from '@/lib/storage'
+import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions } from '@/lib/storage'
 import { calculateSetTarget } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
@@ -144,16 +144,53 @@ export default function WorkoutLogger({
           // New workout mode: Get the most recent previous session for THIS SPECIFIC template day
           const previousSession = await getPreviousWorkoutSession(dayId, workoutDate)
 
+          // Get all previous sessions for this day to calculate consecutive underperformance
+          const allSessions = await getWorkoutSessions()
+          const daySessions = allSessions
+            .filter(s => s.template_day_id === dayId)
+            .sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime())
+
           // Get exercise logs for previous session
           const allPreviousLogs = previousSession 
             ? await getExerciseLogsForSession(previousSession.id)
             : []
+
+          // Pre-calculate consecutive underperformance for each exercise
+          const exerciseUnderperformanceMap = new Map<string, number>()
+          for (const exerciseName of exercises) {
+            let consecutiveUnderperformance = 0
+            if (daySessions.length > 0) {
+              // Check previous sessions in reverse chronological order
+              for (let i = 0; i < Math.min(daySessions.length, 5); i++) {
+                const session = daySessions[i]
+                const sessionLogs = await getExerciseLogsForSession(session.id)
+                const exerciseSessionLogs = sessionLogs.filter(log => log.exercise_name === exerciseName)
+                
+                if (exerciseSessionLogs.length === 0) break
+                
+                // Check if this session had underperformance
+                const hadUnderperformance = exerciseSessionLogs.some(log => 
+                  log.performance_status === 'underperformed'
+                )
+                
+                if (hadUnderperformance) {
+                  consecutiveUnderperformance++
+                } else {
+                  // Stop counting if we hit a non-underperformance session
+                  break
+                }
+              }
+            }
+            exerciseUnderperformanceMap.set(exerciseName, consecutiveUnderperformance)
+          }
 
           // Initialize exercise data
           initializedExercises = exercises.map((exerciseName) => {
             const exerciseLogs = allPreviousLogs.filter(
               (log) => log.exercise_name === exerciseName
             )
+
+            const consecutiveUnderperformance = exerciseUnderperformanceMap.get(exerciseName) || 0
 
           let sets: SetData[] = []
 
@@ -175,7 +212,13 @@ export default function WorkoutLogger({
               }
 
               // Calculate target for this specific set number based on the same set number from previous workout
-              const setTarget = calculateSetTarget(previousSet, planType, planSettings)
+              // Pass consecutive underperformance
+              const setTarget = calculateSetTarget(
+                previousSet, 
+                planType, 
+                planSettings,
+                consecutiveUnderperformance
+              )
 
               return {
                 setNumber: log.set_number, // Use the actual set_number from previous workout

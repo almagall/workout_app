@@ -49,16 +49,18 @@ export default function OnboardingPage() {
           rep_range_max: 15,
           target_rpe_min: 6,
           target_rpe_max: 8,
-          weight_increase_percent: 2.5,
+          weight_increase_percent: 1.75, // More conservative: 1.5-2% range
           rep_increase: 1,
+          deload_frequency_weeks: 5, // Proactive deload every 5 weeks
         },
         strength: {
           rep_range_min: 3,
           rep_range_max: 6,
           target_rpe_min: 7,
           target_rpe_max: 9,
-          weight_increase_percent: 5,
+          weight_increase_percent: 2.75, // More realistic: 2.5-3% range
           rep_increase: 0,
+          deload_frequency_weeks: 7, // Proactive deload every 7 weeks
         },
       }
 

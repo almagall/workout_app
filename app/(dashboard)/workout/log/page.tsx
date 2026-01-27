@@ -85,23 +85,47 @@ export default function LogWorkoutPage() {
     })
   })
 
+  // Group days by template for display
+  const templatesMap = new Map<string, Array<{
+    templateId: string
+    templateName: string
+    dayId: string
+    dayLabel: string
+    dayOrder: number
+  }>>()
+
+  allDays.forEach((day) => {
+    if (!templatesMap.has(day.templateId)) {
+      templatesMap.set(day.templateId, [])
+    }
+    templatesMap.get(day.templateId)!.push(day)
+  })
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-white mb-8">Log Workout</h1>
       <p className="text-[#888888] mb-6">Select a workout day to log:</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {allDays.map((day) => (
-          <Link
-            key={day.dayId}
-            href={`/workout/log/${day.dayId}`}
-            className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 hover:border-white transition-all"
-          >
-            <h3 className="text-xl font-semibold text-white mb-2">{day.dayLabel}</h3>
-            <p className="text-sm text-[#888888]">{day.templateName}</p>
-          </Link>
-        ))}
-      </div>
+      {Array.from(templatesMap.entries()).map(([templateId, days]) => {
+        const template = templates.find(t => t.template.id === templateId)?.template
+        return (
+          <div key={templateId} className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">{template?.name || 'Template'}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {days.map((day) => (
+                <Link
+                  key={day.dayId}
+                  href={`/workout/log/${day.dayId}`}
+                  className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 hover:border-white transition-all"
+                >
+                  <h3 className="text-xl font-semibold text-white mb-2">{day.dayLabel}</h3>
+                  <p className="text-sm text-[#888888]">{day.templateName}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
