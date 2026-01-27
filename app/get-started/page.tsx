@@ -36,11 +36,11 @@ export default function GetStartedPage() {
 
     try {
       // First try to sign in
-      let user = signIn(username, password)
+      let user = await signIn(username, password)
 
       // If sign in failed, create new account
       if (!user) {
-        user = createUser(username, password)
+        user = await createUser(username, password)
       }
 
       if (user) {
