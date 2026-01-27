@@ -50,6 +50,7 @@ export default function WorkoutLogger({
     return initialWorkoutDate || new Date().toISOString().split('T')[0]
   })
   const [isEditMode, setIsEditMode] = useState(!!sessionId)
+  const [isBaselineWorkout, setIsBaselineWorkout] = useState(false)
   const router = useRouter()
   const exerciseSelectorRef = useRef<HTMLDivElement>(null)
 
@@ -151,6 +152,9 @@ export default function WorkoutLogger({
         } else {
           // New workout mode: Get the most recent previous session for THIS SPECIFIC template day
           const previousSession = await getPreviousWorkoutSession(dayId, workoutDate)
+          
+          // Track if this is a baseline workout (first time logging this template day)
+          setIsBaselineWorkout(previousSession === null)
 
           // Get all previous sessions for this day to calculate consecutive underperformance
           const allSessions = await getWorkoutSessions()
@@ -587,6 +591,38 @@ export default function WorkoutLogger({
         return
       }
 
+      // Baseline workout: skip rating and feedback calculation
+      if (isBaselineWorkout) {
+        // Save workout session without rating/feedback (baseline week)
+        await saveWorkoutSession({
+          templateDayId: dayId,
+          workoutDate,
+          exercises: exerciseData.map((exercise) => ({
+            exerciseName: exercise.exerciseName,
+            sets: exercise.sets.map((set) => {
+              // Baseline workouts have no targets, so no performance status
+              return {
+                setNumber: set.setNumber,
+                setType: set.setType,
+                weight: set.weight,
+                reps: set.reps,
+                rpe: set.rpe,
+                targetWeight: set.targetWeight ?? null,
+                targetReps: set.targetReps ?? null,
+                targetRpe: set.targetRpe ?? null,
+                performanceStatus: null,
+                exerciseFeedback: exercise.exerciseFeedback || null,
+              }
+            }),
+          })),
+        })
+
+        setOverallRating(null)
+        setOverallFeedback(null)
+        setWorkoutComplete(true)
+        return
+      }
+
       // Calculate overall rating and feedback from working sets only
       const workoutPerformance = {
         exercises: exerciseData.map((exercise) => {
@@ -694,13 +730,22 @@ export default function WorkoutLogger({
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
           <h2 className="text-2xl font-bold mb-4 text-white">Workout Complete!</h2>
-          <div className="mb-4">
-            <p className="text-lg font-semibold text-white">Overall Rating: <span className="text-white font-bold">{overallRating}/10</span></p>
-          </div>
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2 text-white">Overall Feedback:</h3>
-            <p className="text-[#a1a1a1]">{overallFeedback}</p>
-          </div>
+          {overallRating === null ? (
+            <div className="mb-6">
+              <p className="text-lg font-semibold text-white mb-2">Baseline Recorded</p>
+              <p className="text-[#a1a1a1]">This was your first workout for this day. Targets and a rating will appear from your next workout for this day.</p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4">
+                <p className="text-lg font-semibold text-white">Overall Rating: <span className="text-white font-bold">{overallRating}/10</span></p>
+              </div>
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2 text-white">Overall Feedback:</h3>
+                <p className="text-[#a1a1a1]">{overallFeedback}</p>
+              </div>
+            </>
+          )}
           <button
             onClick={() => router.push('/dashboard')}
             className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
