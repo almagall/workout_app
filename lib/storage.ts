@@ -110,34 +110,103 @@ export async function updateTemplate(
 
   if (templateError) throw new Error(`Failed to update template: ${templateError.message}`)
 
-  // Delete existing days and exercises (cascade will handle exercises)
-  const { error: deleteDaysError } = await supabase
+  // Get existing days BEFORE deleting to preserve workout sessions
+  const { data: existingDays, error: fetchExistingError } = await supabase
     .from('template_days')
-    .delete()
+    .select('id, day_label, day_order')
     .eq('template_id', templateId)
 
-  if (deleteDaysError) throw new Error(`Failed to delete template days: ${deleteDaysError.message}`)
+  if (fetchExistingError) throw new Error(`Failed to fetch existing template days: ${fetchExistingError.message}`)
 
-  // Insert new template days
+  // Get all workout sessions for existing days to preserve them
+  const existingDayIds = (existingDays || []).map(d => d.id)
+  const dayIdToSessionsMap = new Map<string, string[]>() // day_id -> session_ids[]
+
+  if (existingDayIds.length > 0) {
+    const { data: sessions, error: sessionsError } = await supabase
+      .from('workout_sessions')
+      .select('id, template_day_id')
+      .in('template_day_id', existingDayIds)
+      .eq('user_id', user.id)
+
+    if (sessionsError) throw new Error(`Failed to fetch workout sessions: ${sessionsError.message}`)
+
+    // Group sessions by template_day_id
+    for (const session of sessions || []) {
+      const dayId = session.template_day_id
+      if (!dayIdToSessionsMap.has(dayId)) {
+        dayIdToSessionsMap.set(dayId, [])
+      }
+      dayIdToSessionsMap.get(dayId)!.push(session.id)
+    }
+  }
+
+  // Insert new template days BEFORE deleting old ones to preserve foreign key references
   const daysToInsert = template.days.map((day) => ({
     template_id: templateId,
     day_label: day.dayLabel,
     day_order: day.dayOrder,
   }))
 
-  const { error: daysError } = await supabase
+  const { data: insertedDaysData, error: daysError } = await supabase
     .from('template_days')
     .insert(daysToInsert)
+    .select('id, day_label, day_order')
 
   if (daysError) throw new Error(`Failed to save template days: ${daysError.message}`)
+  if (!insertedDaysData) throw new Error('Failed to save template days: No data returned')
 
-  // Get the inserted days to get their IDs
-  const { data: insertedDays, error: fetchDaysError } = await supabase
-    .from('template_days')
-    .select('id, day_order')
-    .eq('template_id', templateId)
+  const insertedDays = insertedDaysData
 
-  if (fetchDaysError) throw new Error(`Failed to fetch template days: ${fetchDaysError.message}`)
+  // Build mapping: match old days to new days by day_order and day_label
+  const oldDayToNewDayMap = new Map<string, string>() // old_day_id -> new_day_id
+  const daysToDelete: string[] = [] // Track which old days can be safely deleted
+
+  for (const oldDay of existingDays || []) {
+    // Try to find matching new day by day_order first
+    let newDay = insertedDays?.find(d => d.day_order === oldDay.day_order)
+    
+    // If no match by order, try by label
+    if (!newDay) {
+      newDay = insertedDays?.find(d => d.day_label === oldDay.day_label)
+    }
+
+    if (newDay) {
+      oldDayToNewDayMap.set(oldDay.id, newDay.id)
+      daysToDelete.push(oldDay.id) // Safe to delete after migrating sessions
+    }
+    // If no match found, keep the old day to preserve its workout sessions
+  }
+
+  // Update workout sessions to point to new template_day_ids BEFORE deleting old days
+  // This preserves all workout logs for days that still exist in the template
+  for (const [oldDayId, sessionIds] of dayIdToSessionsMap.entries()) {
+    const newDayId = oldDayToNewDayMap.get(oldDayId)
+    if (newDayId && sessionIds.length > 0) {
+      // Update all sessions that were pointing to the old day_id
+      const { error: updateSessionsError } = await supabase
+        .from('workout_sessions')
+        .update({ template_day_id: newDayId })
+        .in('id', sessionIds)
+
+      if (updateSessionsError) {
+        throw new Error(`Failed to update workout sessions for day ${oldDayId}: ${updateSessionsError.message}`)
+      }
+    }
+  }
+
+  // Delete old days that have been successfully migrated to new days
+  // Days without matches are kept to preserve their workout sessions
+  if (daysToDelete.length > 0) {
+    const { error: deleteDaysError } = await supabase
+      .from('template_days')
+      .delete()
+      .in('id', daysToDelete)
+
+    if (deleteDaysError) throw new Error(`Failed to delete template days: ${deleteDaysError.message}`)
+  }
+
+  if (deleteDaysError) throw new Error(`Failed to delete template days: ${deleteDaysError.message}`)
 
   // Insert template exercises
   const exercisesToInsert = template.days.flatMap((day, dayIndex) => {
