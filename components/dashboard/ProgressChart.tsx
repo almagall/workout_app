@@ -16,6 +16,12 @@ interface ProgressChartProps {
   selectedExercise: string
 }
 
+function formatWorkoutDate(dateString: string): string {
+  const [year, month, day] = dateString.split('-').map(Number)
+  const dateObj = new Date(year, month - 1, day)
+  return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 export default function ProgressChart({ selectedExercise }: ProgressChartProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,7 +53,7 @@ export default function ProgressChart({ selectedExercise }: ProgressChartProps) 
 
           if (sessionLogs.length === 0) {
             return {
-              date: new Date(session.workout_date).toLocaleDateString(),
+              date: formatWorkoutDate(session.workout_date),
               weight: 0,
               reps: 0,
               volume: 0,
@@ -70,7 +76,7 @@ export default function ProgressChart({ selectedExercise }: ProgressChartProps) 
           const volume = avgWeight * avgReps
 
           return {
-            date: new Date(session.workout_date).toLocaleDateString(),
+            date: formatWorkoutDate(session.workout_date),
             weight: Math.round(avgWeight * 10) / 10,
             reps: Math.round(avgReps * 10) / 10,
             volume: Math.round(volume * 10) / 10,
