@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth-simple'
 import ProgressChart from '@/components/dashboard/ProgressChart'
 import ExerciseSelector from '@/components/dashboard/ExerciseSelector'
 import PerformanceMetrics from '@/components/dashboard/PerformanceMetrics'
+import WorkoutCalendar from '@/components/dashboard/WorkoutCalendar'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
@@ -66,7 +67,8 @@ export default function DashboardPage() {
             <ProgressChart selectedExercise={selectedExercise} />
           </div>
         </div>
-        <div>
+        <div className="space-y-6">
+          <WorkoutCalendar />
           <PerformanceMetrics />
         </div>
       </div>

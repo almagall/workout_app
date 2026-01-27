@@ -316,13 +316,21 @@ export default function WorkoutLogger({
     }
   }, [isEditMode, exerciseData])
 
+  // Helper function to get sort order for set types
+  const getSetTypeOrder = (setType: SetType): number => {
+    if (setType === 'warmup') return 0
+    if (setType === 'working') return 1
+    return 2 // cooldown
+  }
+
   const addSet = (exerciseIndex: number, setType: SetType) => {
     const newData = [...exerciseData]
     const exercise = newData[exerciseIndex]
     const lastSet = exercise.sets[exercise.sets.length - 1]
     const lastWorking = [...exercise.sets].reverse().find((s) => s.setType === 'working')
     const template = setType === 'working' ? (lastWorking ?? lastSet) : lastSet
-    exercise.sets.push({
+    
+    const newSet: SetData = {
       setNumber: exercise.sets.length + 1,
       setType,
       weight: template?.weight ?? 0,
@@ -331,7 +339,31 @@ export default function WorkoutLogger({
       targetWeight: setType === 'working' ? (template?.targetWeight ?? null) : null,
       targetReps: setType === 'working' ? (template?.targetReps ?? null) : null,
       targetRpe: setType === 'working' ? (template?.targetRpe ?? null) : null,
+    }
+
+    // Insert set in the correct position based on type
+    const setTypeOrder = getSetTypeOrder(setType)
+    let insertIndex = exercise.sets.length
+    
+    if (setType === 'warmup') {
+      // Insert at the beginning (before all working sets)
+      insertIndex = 0
+    } else if (setType === 'working') {
+      // Insert after warm-up sets, before cool-down sets
+      insertIndex = exercise.sets.findIndex((s) => getSetTypeOrder(s.setType) > setTypeOrder)
+      if (insertIndex === -1) insertIndex = exercise.sets.length
+    } else {
+      // Cool-down: insert at the end (after all working sets)
+      insertIndex = exercise.sets.length
+    }
+
+    exercise.sets.splice(insertIndex, 0, newSet)
+    
+    // Renumber all sets after insertion
+    exercise.sets.forEach((set, index) => {
+      set.setNumber = index + 1
     })
+    
     setExerciseData(newData)
   }
 
@@ -765,6 +797,7 @@ export default function WorkoutLogger({
             }}
             max={new Date().toISOString().split('T')[0]} // Prevent future dates
             className="px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
+            style={{ colorScheme: 'dark' }}
           />
           <p className="text-xs text-[#888888] mt-1">
             {workoutDate === new Date().toISOString().split('T')[0] 
@@ -786,33 +819,6 @@ export default function WorkoutLogger({
         </div>
       )}
 
-      {/* Exercise Progress Indicator */}
-      <div className="mb-6 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-[#888888] mr-2">Exercises:</span>
-          {exercises.map((exerciseName, index) => {
-            const isCompleted = completedExercises.has(index)
-            const isCurrent = index === currentExerciseIndex
-            return (
-              <button
-                key={index}
-                onClick={() => setCurrentExerciseIndex(index)}
-                className={`px-3 py-1 rounded-md text-sm transition-colors ${
-                  isCurrent
-                    ? 'bg-white text-black font-semibold'
-                    : isCompleted
-                    ? 'bg-green-600/20 text-green-400 border border-green-600/50 hover:bg-green-600/30'
-                    : 'bg-[#111111] text-white border border-[#2a2a2a] hover:bg-[#2a2a2a]'
-                }`}
-              >
-                {index + 1}. {exerciseName}
-                {isCompleted && ' ✓'}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
       <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
@@ -824,19 +830,28 @@ export default function WorkoutLogger({
         </div>
 
         <div className="space-y-4">
-          {currentExercise.sets.map((set, setIndex) => {
-            const setKey = `${currentExerciseIndex}-${setIndex}`
+          {currentExercise.sets
+            .slice()
+            .sort((a, b) => {
+              const orderDiff = getSetTypeOrder(a.setType) - getSetTypeOrder(b.setType)
+              // If same type, maintain original order (by setNumber)
+              return orderDiff !== 0 ? orderDiff : a.setNumber - b.setNumber
+            })
+            .map((set, displayIndex) => {
+            // Find original index in unsorted array for setKey
+            const originalIndex = currentExercise.sets.findIndex((s) => s === set)
+            const setKey = `${currentExerciseIndex}-${originalIndex}`
             const isConfirmed = confirmedSets.has(setKey)
             return (
             <div 
-              key={setIndex} 
+              key={originalIndex} 
               className={`bg-[#1a1a1a] rounded-lg p-4 ${
                 isConfirmed 
                   ? 'border-2 border-green-500' 
                   : 'border border-[#2a2a2a]'
               }`}
             >
-              <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+              <div className="flex justify-between items-start mb-2 flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-white">Set {set.setNumber}</span>
                   <span
@@ -851,11 +866,26 @@ export default function WorkoutLogger({
                     {set.setType === 'warmup' ? 'Warm-up' : set.setType === 'cooldown' ? 'Cool-down' : 'Working'}
                   </span>
                 </div>
-                {set.setType === 'working' && set.targetWeight != null && (
-                  <span className="text-sm text-[#888888]">
-                    Target: {set.targetWeight} lbs × {set.targetReps} reps @ RPE {set.targetRpe}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {set.setType === 'working' && set.targetWeight != null && (
+                    <span className="text-sm text-[#888888]">
+                      Target: {set.targetWeight} lbs × {set.targetReps} reps @ RPE {set.targetRpe}
+                    </span>
+                  )}
+                  {currentExercise.sets.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeSet(currentExerciseIndex, originalIndex)}
+                      className="p-1.5 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-colors"
+                      title="Remove set"
+                      aria-label="Remove set"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -867,11 +897,11 @@ export default function WorkoutLogger({
                     step="2.5"
                     value={set.weight || ''}
                     onChange={(e) =>
-                      updateSet(currentExerciseIndex, setIndex, 'weight', parseFloat(e.target.value) || 0)
+                      updateSet(currentExerciseIndex, originalIndex, 'weight', parseFloat(e.target.value) || 0)
                     }
                     className={`w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
                       (() => {
-                        const key = `${currentExerciseIndex}-${setIndex}`
+                        const key = `${currentExerciseIndex}-${originalIndex}`
                         const prePop = prePopulatedValues.get(key)
                         return prePop && set.weight === prePop.weight 
                           ? 'text-[#888888]' 
@@ -888,11 +918,11 @@ export default function WorkoutLogger({
                     type="number"
                     value={set.reps || ''}
                     onChange={(e) =>
-                      updateSet(currentExerciseIndex, setIndex, 'reps', parseInt(e.target.value) || 0)
+                      updateSet(currentExerciseIndex, originalIndex, 'reps', parseInt(e.target.value) || 0)
                     }
                     className={`w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
                       (() => {
-                        const key = `${currentExerciseIndex}-${setIndex}`
+                        const key = `${currentExerciseIndex}-${originalIndex}`
                         const prePop = prePopulatedValues.get(key)
                         return prePop && set.reps === prePop.reps 
                           ? 'text-[#888888]' 
@@ -912,11 +942,11 @@ export default function WorkoutLogger({
                     step="0.5"
                     value={set.rpe || ''}
                     onChange={(e) =>
-                      updateSet(currentExerciseIndex, setIndex, 'rpe', parseFloat(e.target.value) || 0)
+                      updateSet(currentExerciseIndex, originalIndex, 'rpe', parseFloat(e.target.value) || 0)
                     }
                     className={`w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
                       (() => {
-                        const key = `${currentExerciseIndex}-${setIndex}`
+                        const key = `${currentExerciseIndex}-${originalIndex}`
                         const prePop = prePopulatedValues.get(key)
                         return prePop && set.rpe === prePop.rpe 
                           ? 'text-[#888888]' 
@@ -929,7 +959,7 @@ export default function WorkoutLogger({
               <div className="mt-4 flex items-center justify-between">
                 {!isConfirmed ? (
                   <button
-                    onClick={() => confirmSet(currentExerciseIndex, setIndex)}
+                    onClick={() => confirmSet(currentExerciseIndex, originalIndex)}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500 text-sm font-medium"
                   >
                     Confirm Set
@@ -938,14 +968,6 @@ export default function WorkoutLogger({
                   <span className="text-green-500 text-sm font-medium flex items-center gap-1">
                     ✓ Set Confirmed
                   </span>
-                )}
-                {currentExercise.sets.length > 1 && (
-                  <button
-                    onClick={() => removeSet(currentExerciseIndex, setIndex)}
-                    className="text-sm text-red-400 hover:text-red-300"
-                  >
-                    Remove Set
-                  </button>
                 )}
               </div>
             </div>
@@ -957,19 +979,19 @@ export default function WorkoutLogger({
             onClick={() => addSet(currentExerciseIndex, 'warmup')}
             className="px-4 py-2 bg-amber-600/20 text-amber-400 rounded-md hover:bg-amber-600/30 border border-amber-600/50 transition-colors text-sm font-medium"
           >
-            + Add Warm Up Set
+            Add Warm Up Set
           </button>
           <button
             onClick={() => addSet(currentExerciseIndex, 'working')}
             className="px-4 py-2 bg-green-600/20 text-green-400 rounded-md hover:bg-green-600/30 border border-green-600/50 transition-colors text-sm font-medium"
           >
-            + Add Working Set
+            Add Working Set
           </button>
           <button
             onClick={() => addSet(currentExerciseIndex, 'cooldown')}
             className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-md hover:bg-blue-600/30 border border-blue-600/50 transition-colors text-sm font-medium"
           >
-            + Add Cool Down Set
+            Add Cool Down Set
           </button>
           <button
             onClick={() => completeExercise(currentExerciseIndex)}

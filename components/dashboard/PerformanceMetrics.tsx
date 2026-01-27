@@ -6,7 +6,8 @@ import { getWorkoutSessions, getExerciseLogs } from '@/lib/storage'
 
 interface Metrics {
   totalWorkouts: number
-  totalVolume: number
+  workoutsThisMonth: number
+  targetHitRate: number | null
   averageRating: number
 }
 
@@ -24,12 +25,31 @@ export default function PerformanceMetrics() {
         getExerciseLogs()
       ])
 
-      if (sessions.length > 0 && logs.length > 0) {
+      if (sessions.length > 0) {
         const totalWorkouts = sessions.length
-        const totalVolume = logs.reduce(
-          (sum, log) => sum + parseFloat(log.weight.toString()) * log.reps,
-          0
+        const now = new Date()
+        const workoutsThisMonth = sessions.filter(
+          (s) =>
+            new Date(s.workout_date).getMonth() === now.getMonth() &&
+            new Date(s.workout_date).getFullYear() === now.getFullYear()
+        ).length
+
+        const logsWithStatus = logs.filter(
+          (l) =>
+            l.performance_status === 'met_target' ||
+            l.performance_status === 'overperformed' ||
+            l.performance_status === 'underperformed'
         )
+        const hitCount = logs.filter(
+          (l) =>
+            l.performance_status === 'met_target' ||
+            l.performance_status === 'overperformed'
+        ).length
+        const targetHitRate =
+          logsWithStatus.length > 0
+            ? (hitCount / logsWithStatus.length) * 100
+            : null
+
         const ratings = sessions
           .map((s) => s.overall_performance_rating)
           .filter((r) => r !== null) as number[]
@@ -40,7 +60,8 @@ export default function PerformanceMetrics() {
 
         setMetrics({
           totalWorkouts,
-          totalVolume: Math.round(totalVolume),
+          workoutsThisMonth,
+          targetHitRate: targetHitRate !== null ? Math.round(targetHitRate * 10) / 10 : null,
           averageRating: Math.round(averageRating * 10) / 10,
         })
       }
@@ -76,10 +97,16 @@ export default function PerformanceMetrics() {
             <p className="text-2xl font-bold text-white">{metrics.totalWorkouts}</p>
           </div>
           <div>
-            <p className="text-sm text-[#888888]">Total Volume</p>
+            <p className="text-sm text-[#888888]">Workouts This Month</p>
+            <p className="text-2xl font-bold text-white">{metrics.workoutsThisMonth}</p>
+            <p className="text-xs text-[#666666] mt-1">Sessions logged in the current month</p>
+          </div>
+          <div>
+            <p className="text-sm text-[#888888]">Target Hit Rate</p>
             <p className="text-2xl font-bold text-white">
-              {metrics.totalVolume.toLocaleString()} lbs
+              {metrics.targetHitRate !== null ? `${metrics.targetHitRate}%` : '—'}
             </p>
+            <p className="text-xs text-[#666666] mt-1">Share of sets that met or exceeded target</p>
           </div>
           <div>
             <p className="text-sm text-[#888888]">Average Rating</p>

@@ -9,7 +9,6 @@ interface ChartData {
   date: string
   weight: number
   reps: number
-  volume: number
 }
 
 interface ProgressChartProps {
@@ -25,7 +24,7 @@ function formatWorkoutDate(dateString: string): string {
 export default function ProgressChart({ selectedExercise }: ProgressChartProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedMetric, setSelectedMetric] = useState<'weight' | 'reps' | 'volume'>('weight')
+  const [selectedMetric, setSelectedMetric] = useState<'weight' | 'reps'>('weight')
 
   useEffect(() => {
     async function loadChartData() {
@@ -56,7 +55,6 @@ export default function ProgressChart({ selectedExercise }: ProgressChartProps) 
               date: formatWorkoutDate(session.workout_date),
               weight: 0,
               reps: 0,
-              volume: 0,
             }
           }
 
@@ -73,13 +71,11 @@ export default function ProgressChart({ selectedExercise }: ProgressChartProps) 
 
           const avgWeight = count > 0 ? totalWeight / count : 0
           const avgReps = count > 0 ? totalReps / count : 0
-          const volume = avgWeight * avgReps
 
           return {
             date: formatWorkoutDate(session.workout_date),
             weight: Math.round(avgWeight * 10) / 10,
             reps: Math.round(avgReps * 10) / 10,
-            volume: Math.round(volume * 10) / 10,
           }
         })
 
@@ -126,16 +122,6 @@ export default function ProgressChart({ selectedExercise }: ProgressChartProps) 
         >
           Reps
         </button>
-        <button
-          onClick={() => setSelectedMetric('volume')}
-          className={`px-4 py-2 rounded transition-colors ${
-            selectedMetric === 'volume'
-              ? 'bg-white text-black'
-              : 'bg-[#1a1a1a] text-[#a1a1a1] hover:bg-[#2a2a2a] border border-[#2a2a2a]'
-          }`}
-        >
-          Volume
-        </button>
       </div>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={data}>
@@ -167,15 +153,6 @@ export default function ProgressChart({ selectedExercise }: ProgressChartProps) 
               stroke="#ffffff"
               strokeWidth={2}
               name="Average Reps"
-            />
-          )}
-          {selectedMetric === 'volume' && (
-            <Line
-              type="monotone"
-              dataKey="volume"
-              stroke="#ffffff"
-              strokeWidth={2}
-              name="Volume (weight × reps)"
             />
           )}
         </LineChart>
