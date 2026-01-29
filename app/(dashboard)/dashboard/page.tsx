@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth-simple'
 import ProgressChart from '@/components/dashboard/ProgressChart'
-import ExerciseSelector from '@/components/dashboard/ExerciseSelector'
+import ProgressSelectors from '@/components/dashboard/ProgressSelectors'
 import PerformanceMetrics from '@/components/dashboard/PerformanceMetrics'
 import WorkoutCalendar from '@/components/dashboard/WorkoutCalendar'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
   const [loading, setLoading] = useState(true)
+  const [selectedTemplateDayId, setSelectedTemplateDayId] = useState<string | null>(null)
   const [selectedExercise, setSelectedExercise] = useState<string>('')
 
   useEffect(() => {
@@ -58,13 +59,18 @@ export default function DashboardPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2">
-          <ExerciseSelector 
+          <ProgressSelectors
+            selectedTemplateDayId={selectedTemplateDayId}
+            onTemplateDayChange={setSelectedTemplateDayId}
             selectedExercise={selectedExercise}
             onExerciseChange={setSelectedExercise}
           />
           <div className="mt-6 bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
             <h2 className="text-xl font-semibold mb-4 text-white">Progress Over Time</h2>
-            <ProgressChart selectedExercise={selectedExercise} />
+            <ProgressChart
+              selectedTemplateDayId={selectedTemplateDayId}
+              selectedExercise={selectedExercise}
+            />
           </div>
         </div>
         <div className="space-y-6">

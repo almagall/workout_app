@@ -148,20 +148,18 @@ export default function WorkoutHistoryPage() {
                                 )}
                               </div>
                             </Link>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                {session.overall_performance_rating && (
-                                  <p className="text-white font-semibold">
-                                    {session.overall_performance_rating}/10
-                                  </p>
-                                )}
-                                <Link
-                                  href={`/workout/edit/${session.id}`}
-                                  className="text-sm text-[#888888] hover:text-white transition-colors"
-                                >
-                                  Edit →
-                                </Link>
-                              </div>
+                            <div className="flex items-center gap-3">
+                              {session.overall_performance_rating != null && (
+                                <p className="text-white font-semibold">
+                                  Rating: {session.overall_performance_rating}/10
+                                </p>
+                              )}
+                              <Link
+                                href={`/workout/edit/${session.id}`}
+                                className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors text-sm font-medium"
+                              >
+                                Edit
+                              </Link>
                               <button
                                 onClick={(e) => handleDelete(session.id, e)}
                                 disabled={deletingId === session.id}

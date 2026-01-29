@@ -2,16 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { getWorkoutSessions } from '@/lib/storage'
+import { toYYYYMMDD, getTodayLocalYYYYMMDD } from '@/lib/date-utils'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
-function toYYYYMMDD(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
 
 function getDaysForMonthView(year: number, month: number): (number | null)[][] {
   const first = new Date(year, month, 1)
@@ -58,7 +52,7 @@ export default function WorkoutCalendar() {
     load()
   }, [])
 
-  const todayStr = toYYYYMMDD(new Date())
+  const todayStr = getTodayLocalYYYYMMDD()
   const grid = getDaysForMonthView(viewYear, viewMonth)
 
   const prevMonth = () => {

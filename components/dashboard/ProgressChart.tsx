@@ -1,17 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getWorkoutSessions, getExerciseLogs } from '@/lib/storage'
+import { estimated1RM } from '@/lib/estimated-1rm'
+import { getStartDateForInterval, getTodayLocalYYYYMMDD } from '@/lib/date-utils'
+import type { TimeIntervalKey } from '@/lib/date-utils'
 
 interface ChartData {
   date: string
-  weight: number
-  reps: number
+  estimated1RM: number
+  heaviestSet: number
 }
 
 interface ProgressChartProps {
+  selectedTemplateDayId: string | null
   selectedExercise: string
 }
 
@@ -21,15 +25,25 @@ function formatWorkoutDate(dateString: string): string {
   return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function ProgressChart({ selectedExercise }: ProgressChartProps) {
+function formatAsMonthYear(displayDate: string): string {
+  const d = new Date(displayDate)
+  if (Number.isNaN(d.getTime())) return displayDate
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
+
+export default function ProgressChart({ selectedTemplateDayId, selectedExercise }: ProgressChartProps) {
   const [data, setData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedMetric, setSelectedMetric] = useState<'weight' | 'reps'>('weight')
+  const [selectedMetric, setSelectedMetric] = useState<'estimated1RM' | 'heaviestSet'>('heaviestSet')
+  const [selectedInterval, setSelectedInterval] = useState<TimeIntervalKey>('All')
 
   useEffect(() => {
+    setLoading(true)
+
     async function loadChartData() {
       const user = getCurrentUser()
-      if (!user || !selectedExercise) {
+      if (!user || !selectedTemplateDayId || !selectedExercise) {
+        setData([])
         setLoading(false)
         return
       }
@@ -38,95 +52,129 @@ export default function ProgressChart({ selectedExercise }: ProgressChartProps) 
         getWorkoutSessions(),
         getExerciseLogs()
       ])
-      
-      sessions.sort((a, b) => 
-        new Date(a.workout_date).getTime() - new Date(b.workout_date).getTime()
+
+      const daySessions = sessions
+        .filter((s) => s.template_day_id === selectedTemplateDayId)
+        .sort((a, b) =>
+          new Date(a.workout_date).getTime() - new Date(b.workout_date).getTime()
+        )
+
+      const today = getTodayLocalYYYYMMDD()
+      const startDate = getStartDateForInterval(selectedInterval, today)
+      const filteredSessions = daySessions.filter(
+        (s) => s.workout_date >= startDate
       )
 
-      if (sessions.length > 0) {
-        const chartData: ChartData[] = sessions.map((session) => {
-          // Filter logs for this session AND this specific exercise
-          const sessionLogs = allLogs.filter(
-            log => log.session_id === session.id && log.exercise_name === selectedExercise
+      const chartData: ChartData[] = filteredSessions
+        .map((session) => {
+          const allSessionLogs = allLogs.filter(
+            (log) =>
+              log.session_id === session.id && log.exercise_name === selectedExercise
+          )
+          const sessionLogs = allSessionLogs.filter(
+            (log) => (log.set_type ?? 'working') === 'working'
           )
 
-          if (sessionLogs.length === 0) {
-            return {
-              date: formatWorkoutDate(session.workout_date),
-              weight: 0,
-              reps: 0,
-            }
-          }
+          if (sessionLogs.length === 0) return null
 
-          // Calculate average weight and reps for this specific exercise
-          const totalWeight = sessionLogs.reduce(
-            (sum, log) => sum + parseFloat(log.weight.toString()),
-            0
+          const set1RMs = sessionLogs.map((log) =>
+            estimated1RM(parseFloat(log.weight.toString()), log.reps)
           )
-          const totalReps = sessionLogs.reduce(
-            (sum, log) => sum + log.reps,
-            0
-          )
-          const count = sessionLogs.length
+          const max1RM = set1RMs.length > 0 ? Math.max(...set1RMs) : 0
 
-          const avgWeight = count > 0 ? totalWeight / count : 0
-          const avgReps = count > 0 ? totalReps / count : 0
+          const weights = sessionLogs.map((log) => parseFloat(log.weight.toString()))
+          const heaviestSet = weights.length > 0 ? Math.max(...weights) : 0
 
           return {
             date: formatWorkoutDate(session.workout_date),
-            weight: Math.round(avgWeight * 10) / 10,
-            reps: Math.round(avgReps * 10) / 10,
+            estimated1RM: Math.round(max1RM * 10) / 10,
+            heaviestSet: Math.round(heaviestSet * 10) / 10,
           }
         })
+        .filter((row): row is ChartData => row !== null)
 
-        setData(chartData)
-      }
+      setData(chartData)
       setLoading(false)
     }
 
     loadChartData()
-  }, [selectedExercise])
+  }, [selectedTemplateDayId, selectedExercise, selectedInterval])
 
   if (loading) {
     return <div className="text-[#888888]">Loading chart data...</div>
   }
 
-  if (data.length === 0) {
+  if (!selectedTemplateDayId || !selectedExercise) {
     return (
       <div className="text-[#a1a1a1] text-center py-8">
-        No workout data available yet. Start logging workouts to see your progress!
+        Select a workout day and exercise above.
       </div>
     )
   }
 
+  if (data.length === 0) {
+    return (
+      <div className="text-[#a1a1a1] text-center py-8">
+        No sessions logged for this workout day yet.
+      </div>
+    )
+  }
+
+  const intervalOptions: TimeIntervalKey[] = ['All', '1M', '3M', '6M', '1Y', 'YTD']
+
   return (
     <div>
-      <div className="mb-4 flex gap-2">
-        <button
-          onClick={() => setSelectedMetric('weight')}
-          className={`px-4 py-2 rounded transition-colors ${
-            selectedMetric === 'weight'
-              ? 'bg-white text-black'
-              : 'bg-[#1a1a1a] text-[#a1a1a1] hover:bg-[#2a2a2a] border border-[#2a2a2a]'
-          }`}
-        >
-          Weight
-        </button>
-        <button
-          onClick={() => setSelectedMetric('reps')}
-          className={`px-4 py-2 rounded transition-colors ${
-            selectedMetric === 'reps'
-              ? 'bg-white text-black'
-              : 'bg-[#1a1a1a] text-[#a1a1a1] hover:bg-[#2a2a2a] border border-[#2a2a2a]'
-          }`}
-        >
-          Reps
-        </button>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSelectedMetric('heaviestSet')}
+            className={`text-sm px-2.5 py-1 rounded transition-colors ${
+              selectedMetric === 'heaviestSet'
+                ? 'bg-white text-black'
+                : 'bg-[#1a1a1a] text-[#a1a1a1] hover:bg-[#2a2a2a] border border-[#2a2a2a]'
+            }`}
+          >
+            Top Set
+          </button>
+          <button
+            onClick={() => setSelectedMetric('estimated1RM')}
+            className={`text-sm px-2.5 py-1 rounded transition-colors ${
+              selectedMetric === 'estimated1RM'
+                ? 'bg-white text-black'
+                : 'bg-[#1a1a1a] text-[#a1a1a1] hover:bg-[#2a2a2a] border border-[#2a2a2a]'
+            }`}
+          >
+            Estimated 1RM
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-1.5 justify-end">
+          {intervalOptions.map((interval) => (
+            <button
+              key={interval}
+              onClick={() => setSelectedInterval(interval)}
+              className={`text-sm px-2.5 py-1 rounded transition-colors ${
+                selectedInterval === interval
+                  ? 'bg-white text-black'
+                  : 'bg-[#1a1a1a] text-[#a1a1a1] hover:bg-[#2a2a2a] border border-[#2a2a2a]'
+              }`}
+            >
+              {interval}
+            </button>
+          ))}
+        </div>
       </div>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-          <XAxis dataKey="date" stroke="#888888" tick={{ fill: '#888888' }} />
+          <XAxis
+            dataKey="date"
+            stroke="#888888"
+            tick={{ fill: '#888888' }}
+            label={false}
+            tickFormatter={(value) =>
+              data.length > 4 ? formatAsMonthYear(value) : value
+            }
+          />
           <YAxis stroke="#888888" tick={{ fill: '#888888' }} />
           <Tooltip 
             contentStyle={{ 
@@ -136,23 +184,22 @@ export default function ProgressChart({ selectedExercise }: ProgressChartProps) 
               borderRadius: '8px'
             }} 
           />
-          <Legend wrapperStyle={{ color: '#a1a1a1' }} />
-          {selectedMetric === 'weight' && (
+          {selectedMetric === 'estimated1RM' && (
             <Line
               type="monotone"
-              dataKey="weight"
+              dataKey="estimated1RM"
               stroke="#ffffff"
               strokeWidth={2}
-              name="Average Weight (lbs)"
+              name="Estimated 1RM (lbs)"
             />
           )}
-          {selectedMetric === 'reps' && (
+          {selectedMetric === 'heaviestSet' && (
             <Line
               type="monotone"
-              dataKey="reps"
+              dataKey="heaviestSet"
               stroke="#ffffff"
               strokeWidth={2}
-              name="Average Reps"
+              name="Top Set (lbs)"
             />
           )}
         </LineChart>

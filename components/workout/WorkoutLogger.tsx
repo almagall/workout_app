@@ -7,6 +7,7 @@ import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSessio
 import { calculateSetTarget } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
+import { getTodayLocalYYYYMMDD } from '@/lib/date-utils'
 import type { PlanType, SetData, ExerciseData, PerformanceStatus, SetType } from '@/types/workout'
 
 interface WorkoutLoggerProps {
@@ -46,8 +47,8 @@ export default function WorkoutLogger({
   // Track if exercise selector dropdown is open
   const [showExerciseSelector, setShowExerciseSelector] = useState(false)
   const [workoutDate, setWorkoutDate] = useState<string>(() => {
-    // Use provided date or default to today's date in YYYY-MM-DD format
-    return initialWorkoutDate || new Date().toISOString().split('T')[0]
+    // Use provided date or default to today's date in YYYY-MM-DD format (local timezone)
+    return initialWorkoutDate || getTodayLocalYYYYMMDD()
   })
   const [isEditMode, setIsEditMode] = useState(!!sessionId)
   const [isBaselineWorkout, setIsBaselineWorkout] = useState(false)
@@ -829,7 +830,7 @@ export default function WorkoutLogger({
             value={workoutDate}
             onChange={(e) => {
               const newDate = e.target.value
-              const today = new Date().toISOString().split('T')[0]
+              const today = getTodayLocalYYYYMMDD()
               if (newDate > today) {
                 setError('Cannot log workouts for future dates. Please select today or a past date.')
                 return
@@ -840,12 +841,12 @@ export default function WorkoutLogger({
               setLoading(true)
               setCurrentExerciseIndex(0)
             }}
-            max={new Date().toISOString().split('T')[0]} // Prevent future dates
+            max={getTodayLocalYYYYMMDD()} // Prevent future dates
             className="px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
             style={{ colorScheme: 'dark' }}
           />
           <p className="text-xs text-[#888888] mt-1">
-            {workoutDate === new Date().toISOString().split('T')[0] 
+            {workoutDate === getTodayLocalYYYYMMDD() 
               ? 'Logging today\'s workout' 
               : (() => {
                   // Parse date string directly to avoid timezone issues
