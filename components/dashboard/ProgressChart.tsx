@@ -170,7 +170,6 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
             dataKey="date"
             stroke="#888888"
             tick={{ fill: '#888888' }}
-            label={false}
             tickFormatter={(value) =>
               data.length > 4 ? formatAsMonthYear(value) : value
             }

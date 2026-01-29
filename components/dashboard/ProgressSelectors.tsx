@@ -103,6 +103,8 @@ export default function ProgressSelectors({
     return () => {
       cancelled = true
     }
+    // Only run when selectedTemplateDayId changes; onExerciseChange/selectedExercise intentionally omitted to avoid loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTemplateDayId])
 
   if (loadingDays) {
