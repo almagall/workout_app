@@ -301,7 +301,7 @@ export default function TemplatePage() {
                       key={day.dayOrder}
                       className="text-xs px-2 py-0.5 bg-[#1a1a1a] text-[#888888] rounded border border-[#2a2a2a]"
                     >
-                      {day.day_label}
+                      {day.dayLabel}
                     </span>
                   ))}
                 </div>
