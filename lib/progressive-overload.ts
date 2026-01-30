@@ -17,7 +17,7 @@ interface PreviousExerciseData {
   }>
 }
 
-interface PlanSettings {
+export interface PlanSettings {
   rep_range_min: number
   rep_range_max: number
   target_rpe_min: number
@@ -25,6 +25,32 @@ interface PlanSettings {
   weight_increase_percent: number
   rep_increase: number
   deload_frequency_weeks?: number
+}
+
+const DEFAULT_PLAN_SETTINGS: Record<PlanType, PlanSettings> = {
+  hypertrophy: {
+    rep_range_min: 8,
+    rep_range_max: 15,
+    target_rpe_min: 6,
+    target_rpe_max: 8,
+    weight_increase_percent: 1.75,
+    rep_increase: 1,
+    deload_frequency_weeks: 5,
+  },
+  strength: {
+    rep_range_min: 3,
+    rep_range_max: 6,
+    target_rpe_min: 7,
+    target_rpe_max: 9,
+    weight_increase_percent: 2.75,
+    rep_increase: 0,
+    deload_frequency_weeks: 7,
+  },
+}
+
+/** Default progressive overload settings per plan type. Used when no user settings exist (e.g. plan type is chosen per template). */
+export function getDefaultPlanSettings(planType: PlanType): PlanSettings {
+  return DEFAULT_PLAN_SETTINGS[planType]
 }
 
 /**

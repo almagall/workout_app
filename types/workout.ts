@@ -7,6 +7,7 @@ export interface WorkoutTemplate {
   user_id: string
   plan_type: PlanType
   name: string
+  preset_id?: string | null
   created_at: string
   updated_at: string
 }

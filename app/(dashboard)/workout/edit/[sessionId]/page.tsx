@@ -16,6 +16,7 @@ export default function EditWorkoutPage() {
     dayId: string
     dayLabel: string
     planType: PlanType
+    presetId: string | null
     exercises: string[]
     userId: string
     workoutDate: string
@@ -60,6 +61,7 @@ export default function EditWorkoutPage() {
         dayId: day.id,
         dayLabel: day.day_label,
         planType: template.plan_type,
+        presetId: template.preset_id ?? null,
         exercises,
         userId: user.id,
         workoutDate: session.workout_date,
@@ -87,6 +89,7 @@ export default function EditWorkoutPage() {
       dayId={workoutData.dayId}
       dayLabel={workoutData.dayLabel}
       planType={workoutData.planType}
+      presetId={workoutData.presetId}
       exercises={workoutData.exercises}
       userId={workoutData.userId}
       sessionId={sessionId}

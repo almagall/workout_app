@@ -163,8 +163,9 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
           ))}
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart data={data}>
+      <div className="h-[220px] sm:h-[300px] lg:h-[400px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
           <XAxis
             dataKey="date"
@@ -202,7 +203,8 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
             />
           )}
         </LineChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

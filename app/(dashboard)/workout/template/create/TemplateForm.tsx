@@ -36,17 +36,8 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
         return
       }
 
-      const settings = localStorage.getItem(`workout_settings_${user.id}`)
-      if (!settings) {
-        window.location.href = '/onboarding'
-        return
-      }
-
       try {
-        const settingsData = JSON.parse(settings)
-        setPlanType(settingsData.plan_type)
-
-        // If editing, load existing template data
+        // If editing, load existing template data (including plan type)
         if (isEditMode && templateId) {
           const templates = await getTemplates()
           const template = templates.find(t => t.id === templateId)
@@ -75,6 +66,9 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
           )
 
           setDays(daysWithExercises)
+        } else {
+          // Creating: plan type is selected in the form (no default from onboarding)
+          setPlanType(null)
         }
       } catch (err: any) {
         setError(err.message || 'Failed to load template')
@@ -143,6 +137,11 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
       return
     }
 
+    if (!planType) {
+      setError('Please select a workout focus (Hypertrophy or Strength)')
+      return
+    }
+
     if (days.length === 0) {
       setError('At least one day is required')
       return
@@ -205,7 +204,12 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
     }
   }
 
-  if (initialLoading || !planType) {
+  if (initialLoading) {
+    return <div className="p-8 text-[#888888]">Loading...</div>
+  }
+
+  // When editing we must have planType from template; when creating we allow null until user selects
+  if (isEditMode && !planType) {
     return <div className="p-8 text-[#888888]">Loading...</div>
   }
 
@@ -233,6 +237,39 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
             placeholder="e.g., 6-Day Push/Pull/Legs"
             required
           />
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-white mb-2">Workout focus</label>
+          <p className="text-sm text-[#888888] mb-3">
+            Choose whether this template is for building muscle size (hypertrophy) or strength. Targets and rep ranges will adjust accordingly.
+          </p>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="planType"
+                value="hypertrophy"
+                checked={planType === 'hypertrophy'}
+                onChange={() => setPlanType('hypertrophy')}
+                className="w-4 h-4 accent-white"
+              />
+              <span className="text-white">Hypertrophy</span>
+              <span className="text-[#888888] text-sm">(8–15 reps, volume focus)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="planType"
+                value="strength"
+                checked={planType === 'strength'}
+                onChange={() => setPlanType('strength')}
+                className="w-4 h-4 accent-white"
+              />
+              <span className="text-white">Strength</span>
+              <span className="text-[#888888] text-sm">(3–6 reps, weight focus)</span>
+            </label>
+          </div>
         </div>
 
         <div className="mb-6">

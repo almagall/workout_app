@@ -2,21 +2,25 @@
 
 import { useEffect } from 'react'
 import { getCurrentUser } from '@/lib/auth-simple'
+import { getTemplates } from '@/lib/storage'
 
 export default function Home() {
   useEffect(() => {
-    const user = getCurrentUser()
-    if (!user) {
-      window.location.href = '/get-started'
-      return
-    }
+    async function redirect() {
+      const user = getCurrentUser()
+      if (!user) {
+        window.location.href = '/get-started'
+        return
+      }
 
-    const settings = localStorage.getItem(`workout_settings_${user.id}`)
-    if (!settings) {
-      window.location.href = '/onboarding'
-    } else {
-      window.location.href = '/dashboard'
+      const templates = await getTemplates()
+      if (templates.length === 0) {
+        window.location.href = '/workout/template/create'
+      } else {
+        window.location.href = '/dashboard'
+      }
     }
+    redirect()
   }, [])
 
   return (

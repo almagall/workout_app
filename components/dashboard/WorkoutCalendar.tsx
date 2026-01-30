@@ -77,33 +77,33 @@ export default function WorkoutCalendar() {
 
   if (loading) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-        <h2 className="text-xl font-semibold mb-4 text-white">Workout Calendar</h2>
+      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 text-white">Workout Calendar</h2>
         <div className="text-[#888888] text-sm">Loading…</div>
       </div>
     )
   }
 
   return (
-    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-      <h2 className="text-xl font-semibold mb-4 text-white">Workout Calendar</h2>
+    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
+      <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-white">Workout Calendar</h2>
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
         <button
           type="button"
           onClick={prevMonth}
-          className="p-2 rounded-md text-white hover:bg-[#2a2a2a] transition-colors"
+          className="p-1.5 sm:p-2 rounded-md text-white hover:bg-[#2a2a2a] transition-colors"
           aria-label="Previous month"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <select
             value={viewMonth}
             onChange={(e) => setViewMonth(Number(e.target.value))}
-            className="bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-white"
+            className="bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-white"
           >
             {MONTHS.map((m, i) => (
               <option key={m} value={i}>
@@ -114,7 +114,7 @@ export default function WorkoutCalendar() {
           <select
             value={viewYear}
             onChange={(e) => setViewYear(Number(e.target.value))}
-            className="bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-white"
+            className="bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-white"
           >
             {Array.from({ length: 10 }, (_, i) => now.getFullYear() - 5 + i).map((y) => (
               <option key={y} value={y}>
@@ -126,18 +126,18 @@ export default function WorkoutCalendar() {
         <button
           type="button"
           onClick={nextMonth}
-          className="p-2 rounded-md text-white hover:bg-[#2a2a2a] transition-colors"
+          className="p-1.5 sm:p-2 rounded-md text-white hover:bg-[#2a2a2a] transition-colors"
           aria-label="Next month"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 text-center">
+      <div className="mx-auto grid grid-cols-7 gap-0.5 text-center max-w-[240px] sm:max-w-none">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="py-1 text-xs font-medium text-[#888888]">
+          <div key={d} className="py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-[#888888]">
             {d}
           </div>
         ))}
@@ -152,7 +152,7 @@ export default function WorkoutCalendar() {
             return (
               <div
                 key={`${ri}-${di}-${day}`}
-                className={`aspect-square flex items-center justify-center rounded-md text-sm ${
+                className={`aspect-square flex items-center justify-center rounded-md text-[10px] sm:text-sm ${
                   hasWorkout
                     ? 'bg-green-600/60 text-white font-semibold'
                     : 'text-[#a1a1a1]'
@@ -166,7 +166,7 @@ export default function WorkoutCalendar() {
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-4 text-xs text-[#888888]">
+      <div className="mt-2 sm:mt-3 flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-[10px] sm:text-xs text-[#888888]">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-green-600/60" />
           Workout logged

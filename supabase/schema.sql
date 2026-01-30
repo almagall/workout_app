@@ -11,6 +11,7 @@ CREATE TABLE workout_templates (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   plan_type plan_type NOT NULL,
   name TEXT NOT NULL,
+  preset_id TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

@@ -15,6 +15,7 @@ export default function LogWorkoutDayPage() {
   const [dayData, setDayData] = useState<{
     dayLabel: string
     planType: PlanType
+    presetId: string | null
     exercises: string[]
   } | null>(null)
 
@@ -48,6 +49,7 @@ export default function LogWorkoutDayPage() {
       setDayData({
         dayLabel: day.day_label,
         planType: template.plan_type,
+        presetId: template.preset_id ?? null,
         exercises,
       })
       setLoading(false)
@@ -78,6 +80,7 @@ export default function LogWorkoutDayPage() {
       dayId={dayId}
       dayLabel={dayData.dayLabel}
       planType={dayData.planType}
+      presetId={dayData.presetId}
       exercises={dayData.exercises}
       userId={user.id}
     />

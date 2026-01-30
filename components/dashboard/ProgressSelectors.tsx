@@ -126,17 +126,17 @@ export default function ProgressSelectors({
   }
 
   return (
-    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-      <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-        <div className="flex flex-col gap-2 flex-1">
-          <label htmlFor="workout-day-select" className="text-sm font-medium text-white whitespace-nowrap">
+    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
+        <div className="flex flex-col gap-1 sm:gap-2 flex-1 min-w-0">
+          <label htmlFor="workout-day-select" className="text-xs sm:text-sm font-medium text-white whitespace-nowrap">
             Workout Day
           </label>
           <select
             id="workout-day-select"
             value={selectedTemplateDayId ?? ''}
             onChange={(e) => onTemplateDayChange(e.target.value || null)}
-            className="w-full max-w-md px-4 py-2 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white shadow-sm focus:border-white focus:ring-2 focus:ring-white focus:outline-none transition-colors sm:text-sm"
+            className="w-full max-w-md px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white shadow-sm focus:border-white focus:ring-2 focus:ring-white focus:outline-none transition-colors"
           >
             {dayOptions.map((opt) => (
               <option key={opt.dayId} value={opt.dayId} className="bg-[#1a1a1a]">
@@ -145,8 +145,8 @@ export default function ProgressSelectors({
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-2 flex-1">
-          <label htmlFor="exercise-select" className="text-sm font-medium text-white whitespace-nowrap">
+        <div className="flex flex-col gap-1 sm:gap-2 flex-1 min-w-0">
+          <label htmlFor="exercise-select" className="text-xs sm:text-sm font-medium text-white whitespace-nowrap">
             Exercise
           </label>
           <select
@@ -154,7 +154,7 @@ export default function ProgressSelectors({
             value={selectedExercise}
             onChange={(e) => onExerciseChange(e.target.value)}
             disabled={!selectedTemplateDayId || loadingExercises || exercises.length === 0}
-            className="w-full max-w-md px-4 py-2 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white shadow-sm focus:border-white focus:ring-2 focus:ring-white focus:outline-none transition-colors sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full max-w-md px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white shadow-sm focus:border-white focus:ring-2 focus:ring-white focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {!selectedTemplateDayId ? (
               <option value="" className="bg-[#1a1a1a]">

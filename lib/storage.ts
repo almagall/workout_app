@@ -9,6 +9,7 @@ import { createClient } from './supabase/client'
 export async function saveTemplate(template: {
   name: string
   planType: PlanType
+  presetId?: string | null
   days: Array<{
     dayLabel: string
     dayOrder: number
@@ -20,14 +21,19 @@ export async function saveTemplate(template: {
 
   const supabase = createClient()
 
+  const insertPayload: Record<string, unknown> = {
+    user_id: user.id,
+    plan_type: template.planType,
+    name: template.name,
+  }
+  if (template.presetId != null) {
+    insertPayload.preset_id = template.presetId
+  }
+
   // Insert template
   const { data: templateData, error: templateError } = await supabase
     .from('workout_templates')
-    .insert({
-      user_id: user.id,
-      plan_type: template.planType,
-      name: template.name,
-    })
+    .insert(insertPayload)
     .select()
     .single()
 
@@ -264,6 +270,7 @@ export async function getTemplates(): Promise<WorkoutTemplate[]> {
     user_id: t.user_id,
     plan_type: t.plan_type,
     name: t.name,
+    preset_id: t.preset_id ?? null,
     created_at: t.created_at,
     updated_at: t.updated_at,
   }))

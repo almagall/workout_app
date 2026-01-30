@@ -4,10 +4,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions } from '@/lib/storage'
-import { calculateSetTarget } from '@/lib/progressive-overload'
+import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
 import { getTodayLocalYYYYMMDD } from '@/lib/date-utils'
+import { getPresetTargetStrategy } from '@/lib/preset-templates'
+import { calculate531SetTarget, get531CycleWeek } from '@/lib/target-strategies'
+import { estimated1RM } from '@/lib/estimated-1rm'
 import type { PlanType, SetData, ExerciseData, PerformanceStatus, SetType } from '@/types/workout'
 
 interface WorkoutLoggerProps {
@@ -16,6 +19,7 @@ interface WorkoutLoggerProps {
   planType: PlanType
   exercises: string[]
   userId: string
+  presetId?: string | null
   sessionId?: string // Optional: if provided, we're editing an existing workout
   workoutDate?: string // Optional: if provided, use this date instead of today
 }
@@ -26,6 +30,7 @@ export default function WorkoutLogger({
   planType,
   exercises,
   userId,
+  presetId,
   sessionId,
   workoutDate: initialWorkoutDate,
 }: WorkoutLoggerProps) {
@@ -64,18 +69,20 @@ export default function WorkoutLogger({
           return
         }
 
-        // Get plan settings from localStorage
+        // Get plan settings from localStorage (legacy) or use defaults per template plan type
+        let resolvedPlanSettings = getDefaultPlanSettings(planType)
         const settingsStr = localStorage.getItem(`workout_settings_${user.id}`)
         if (settingsStr) {
           try {
             const settingsData = JSON.parse(settingsStr)
             if (settingsData.settings_json && settingsData.settings_json[planType]) {
-              setPlanSettings(settingsData.settings_json[planType])
+              resolvedPlanSettings = settingsData.settings_json[planType]
             }
           } catch (e) {
             console.error('Failed to parse settings', e)
           }
         }
+        setPlanSettings(resolvedPlanSettings)
 
         let initializedExercises: ExerciseData[] = []
 
@@ -197,72 +204,158 @@ export default function WorkoutLogger({
             exerciseUnderperformanceMap.set(exerciseName, consecutiveUnderperformance)
           }
 
+          // Preset-specific target strategy (e.g. 5/3/1). Custom templates use default planType logic.
+          const use531Strategy = getPresetTargetStrategy(presetId ?? undefined) === '531'
+
           // Initialize exercise data (only working sets from previous session get targets)
-          initializedExercises = exercises.map((exerciseName) => {
+          initializedExercises = exercises.map((exerciseName, exerciseIndex) => {
             const exerciseLogs = allPreviousLogs.filter(
               (log) => log.exercise_name === exerciseName
             )
             const workingLogs = exerciseLogs.filter((l) => (l.set_type ?? 'working') === 'working')
 
             const consecutiveUnderperformance = exerciseUnderperformanceMap.get(exerciseName) || 0
+            const is531MainLift = use531Strategy && exerciseIndex === 0
 
-          let sets: SetData[] = []
+            let sets: SetData[] = []
 
-          if (workingLogs.length > 0 && planSettings) {
-            // Calculate individual target for each WORKING set based on the corresponding previous working set
-            const sortedLogs = [...workingLogs].sort((a, b) => a.set_number - b.set_number)
-            
-            sets = sortedLogs.map((log, idx) => {
-              const previousSet = {
-                weight: parseFloat(log.weight.toString()),
-                reps: log.reps,
-                rpe: parseFloat(log.rpe.toString()),
-                targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
-                targetReps: log.target_reps,
-                targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+            if (workingLogs.length > 0) {
+              const sortedLogs = [...workingLogs].sort((a, b) => a.set_number - b.set_number)
+
+              if (is531MainLift) {
+                // 5/3/1: 3 working sets with percentage-based targets. TM = 90% of estimated 1RM from previous session.
+                const set1RMs = sortedLogs.map((log) =>
+                  estimated1RM(parseFloat(log.weight.toString()), log.reps)
+                )
+                const prevE1RM = set1RMs.length > 0 ? Math.max(...set1RMs) : 0
+                const trainingMax = prevE1RM * 0.9
+                const cycleWeek = get531CycleWeek(daySessions.length + 1)
+                const num531Sets = Math.min(3, sortedLogs.length)
+                sets = sortedLogs.map((log, idx) => {
+                  const setIndex = idx < 3 ? (idx as 0 | 1 | 2) : 2
+                  const t531 =
+                    idx < 3 && trainingMax > 0
+                      ? calculate531SetTarget(cycleWeek, setIndex, trainingMax)
+                      : { targetWeight: null, targetReps: null, targetRpe: null }
+                  return {
+                    setNumber: idx + 1,
+                    setType: 'working' as SetType,
+                    weight: parseFloat(log.weight.toString()),
+                    reps: log.reps,
+                    rpe: parseFloat(log.rpe.toString()),
+                    targetWeight: t531.targetWeight,
+                    targetReps: t531.targetReps,
+                    targetRpe: t531.targetRpe,
+                  }
+                })
+                // 5/3/1 main lift is exactly 3 sets; if previous had fewer, pad; if more, keep first 3 with 531
+                if (sets.length < 3) {
+                  while (sets.length < 3) {
+                    const setIndex = sets.length as 0 | 1 | 2
+                    const t531 =
+                      trainingMax > 0
+                        ? calculate531SetTarget(cycleWeek, setIndex, trainingMax)
+                        : { targetWeight: null, targetReps: null, targetRpe: null }
+                    sets.push({
+                      setNumber: sets.length + 1,
+                      setType: 'working' as SetType,
+                      weight: 0,
+                      reps: 0,
+                      rpe: 5,
+                      targetWeight: t531.targetWeight,
+                      targetReps: t531.targetReps,
+                      targetRpe: t531.targetRpe,
+                    })
+                  }
+                } else if (sets.length > 3) {
+                  // First 3 get 531; rest keep default progression for assistance-style extra sets
+                  for (let i = 3; i < sets.length; i++) {
+                    const prev = sortedLogs[i]
+                    const previousSet = {
+                      weight: parseFloat(prev.weight.toString()),
+                      reps: prev.reps,
+                      rpe: parseFloat(prev.rpe.toString()),
+                      targetWeight: prev.target_weight ? parseFloat(prev.target_weight.toString()) : null,
+                      targetReps: prev.target_reps,
+                      targetRpe: prev.target_rpe ? parseFloat(prev.target_rpe.toString()) : null,
+                    }
+                    const setTarget = calculateSetTarget(
+                      previousSet,
+                      planType,
+                      resolvedPlanSettings,
+                      consecutiveUnderperformance
+                    )
+                    sets[i] = {
+                      ...sets[i],
+                      targetWeight: setTarget.targetWeight,
+                      targetReps: setTarget.targetReps,
+                      targetRpe: setTarget.targetRpe,
+                    }
+                  }
+                }
+              } else {
+                // Default: planType-based progression
+                sets = sortedLogs.map((log, idx) => {
+                  const previousSet = {
+                    weight: parseFloat(log.weight.toString()),
+                    reps: log.reps,
+                    rpe: parseFloat(log.rpe.toString()),
+                    targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+                    targetReps: log.target_reps,
+                    targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+                  }
+                  const setTarget = calculateSetTarget(
+                    previousSet,
+                    planType,
+                    resolvedPlanSettings,
+                    consecutiveUnderperformance
+                  )
+                  return {
+                    setNumber: idx + 1,
+                    setType: 'working' as SetType,
+                    weight: parseFloat(log.weight.toString()),
+                    reps: log.reps,
+                    rpe: parseFloat(log.rpe.toString()),
+                    targetWeight: setTarget.targetWeight,
+                    targetReps: setTarget.targetReps,
+                    targetRpe: setTarget.targetRpe,
+                  }
+                })
               }
-
-              // Calculate target for this specific set number based on the same set number from previous workout
-              // Pass consecutive underperformance
-              const setTarget = calculateSetTarget(
-                previousSet, 
-                planType, 
-                planSettings,
-                consecutiveUnderperformance
-              )
-
-              return {
-                setNumber: idx + 1,
-                setType: 'working' as SetType,
-                weight: parseFloat(log.weight.toString()),
-                reps: log.reps,
-                rpe: parseFloat(log.rpe.toString()),
-                targetWeight: setTarget.targetWeight,
-                targetReps: setTarget.targetReps,
-                targetRpe: setTarget.targetRpe,
+            } else {
+              if (is531MainLift) {
+                // First time on 5/3/1 main lift: 3 sets, no targets yet (TM unknown)
+                sets = [1, 2, 3].map((n) => ({
+                  setNumber: n,
+                  setType: 'working' as SetType,
+                  weight: 0,
+                  reps: 0,
+                  rpe: 5,
+                  targetWeight: null,
+                  targetReps: null,
+                  targetRpe: null,
+                }))
+              } else {
+                sets = [
+                  {
+                    setNumber: 1,
+                    setType: 'working' as SetType,
+                    weight: 0,
+                    reps: 0,
+                    rpe: 5,
+                    targetWeight: null,
+                    targetReps: null,
+                    targetRpe: null,
+                  },
+                ]
               }
-            })
-          } else {
-            // First week - no targets, create one empty working set
-            sets = [
-              {
-                setNumber: 1,
-                setType: 'working' as SetType,
-                weight: 0,
-                reps: 0,
-                rpe: 5,
-                targetWeight: null,
-                targetReps: null,
-                targetRpe: null,
-              },
-            ]
-          }
+            }
 
-          return {
-            exerciseName,
-            sets,
-            exerciseFeedback: null,
-          }
+            return {
+              exerciseName,
+              sets,
+              exerciseFeedback: null,
+            }
           })
         }
 
@@ -290,7 +383,7 @@ export default function WorkoutLogger({
 
     initializeWorkout()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dayId, planType, exercises, userId, workoutDate])
+  }, [dayId, planType, exercises, userId, workoutDate, presetId])
 
   // Close exercise selector when clicking outside
   useEffect(() => {

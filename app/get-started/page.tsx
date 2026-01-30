@@ -1,27 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createUser, signIn, getCurrentUser } from '@/lib/auth-simple'
+import { getTemplates } from '@/lib/storage'
 
 export default function GetStartedPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
 
-  // Check if already logged in
-  if (typeof window !== 'undefined') {
+  // Check if already logged in and redirect based on whether they have templates
+  useEffect(() => {
+    if (typeof window === 'undefined') return
     const user = getCurrentUser()
-    if (user) {
-      // Check if user has selected a plan
-      const settings = localStorage.getItem(`workout_settings_${user.id}`)
-      if (!settings) {
-        window.location.href = '/onboarding'
+    if (!user) {
+      setCheckingAuth(false)
+      return
+    }
+    getTemplates().then((templates) => {
+      setCheckingAuth(false)
+      if (templates.length === 0) {
+        window.location.href = '/workout/template/create'
       } else {
         window.location.href = '/dashboard'
       }
-    }
-  }
+    })
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,14 +50,10 @@ export default function GetStartedPage() {
       }
 
       if (user) {
-        // Check if user has selected a plan
-        const settings = localStorage.getItem(`workout_settings_${user.id}`)
-        
-        // Small delay for UI
+        const templates = await getTemplates()
         await new Promise(resolve => setTimeout(resolve, 200))
-        
-        if (!settings) {
-          window.location.href = '/onboarding'
+        if (templates.length === 0) {
+          window.location.href = '/workout/template/create'
         } else {
           window.location.href = '/dashboard'
         }
@@ -60,6 +62,14 @@ export default function GetStartedPage() {
       setError(err.message || 'Something went wrong. Please try again.')
       setLoading(false)
     }
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <p className="text-[#888888]">Loading...</p>
+      </div>
+    )
   }
 
   return (
