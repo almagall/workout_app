@@ -60,3 +60,175 @@ export function get531CycleWeek(sessionCount: number): CycleWeek {
   const w = (sessionCount % 3) || 3
   return w as CycleWeek
 }
+
+// —— Linear Progression (Starting Strength, StrongLifts) ——
+
+const LOWER_BODY_EXERCISES = [
+  'squat', 'deadlift', 'leg press', 'leg curl', 'leg extension',
+  'romanian deadlift', 'front squat', 'lunge',
+]
+
+function isLowerBodyExercise(exerciseName: string): boolean {
+  const lower = exerciseName.toLowerCase()
+  return LOWER_BODY_EXERCISES.some((e) => lower.includes(e))
+}
+
+/**
+ * Linear progression: add 5 lb upper, 10 lb lower per session.
+ * On failure: repeat same weight. On 3+ consecutive failures: deload 10%.
+ */
+export function calculateLinearProgressionTarget(
+  previousSet: {
+    weight: number
+    reps: number
+    targetWeight: number | null
+    targetReps: number | null
+  },
+  exerciseName: string,
+  targetReps: number,
+  consecutiveUnderperformance: number
+): SetTargetResult {
+  const isLower = isLowerBodyExercise(exerciseName)
+  const increment = isLower ? 10 : 5
+
+  let targetWeight: number
+  if (consecutiveUnderperformance >= 3) {
+    targetWeight = previousSet.weight * 0.9
+  } else if (previousSet.targetWeight != null && previousSet.targetReps != null) {
+    const metTarget = previousSet.reps >= previousSet.targetReps && previousSet.weight >= (previousSet.targetWeight * 0.98)
+    targetWeight = metTarget
+      ? previousSet.weight + increment
+      : previousSet.weight
+  } else {
+    targetWeight = previousSet.weight + increment
+  }
+
+  return {
+    targetWeight: Math.round(targetWeight * 2) / 2,
+    targetReps,
+    targetRpe: 8,
+  }
+}
+
+// —— GZCLP ——
+
+/** GZCLP tier: T1 = 5x3+, T2 = 3x10, T3 = 3x10 */
+export function calculateGZCLPSetTarget(
+  tier: 1 | 2 | 3,
+  setIndex: number,
+  previousSet: {
+    weight: number
+    reps: number
+    targetWeight: number | null
+    targetReps: number | null
+  },
+  exerciseName: string,
+  consecutiveUnderperformance: number
+): SetTargetResult {
+  const isLower = isLowerBodyExercise(exerciseName)
+  if (tier === 1) {
+    const increment = isLower ? 10 : 5
+    let targetWeight: number
+    if (consecutiveUnderperformance >= 3) {
+      targetWeight = previousSet.weight * 0.9
+    } else if (previousSet.targetWeight != null) {
+      const metTarget = previousSet.reps >= 3 && previousSet.weight >= (previousSet.targetWeight * 0.98)
+      targetWeight = metTarget ? previousSet.weight + increment : previousSet.weight
+    } else {
+      targetWeight = previousSet.weight + increment
+    }
+    const isLastSet = setIndex >= 4
+    return {
+      targetWeight: Math.round(targetWeight * 2) / 2,
+      targetReps: 3,
+      targetRpe: isLastSet ? 9 : 8,
+    }
+  }
+  if (tier === 2 || tier === 3) {
+    const increment = isLower ? 5 : 2.5
+    let targetWeight: number
+    if (consecutiveUnderperformance >= 3) {
+      targetWeight = previousSet.weight * 0.9
+    } else if (previousSet.targetWeight != null) {
+      const metTarget = previousSet.reps >= 10 && previousSet.weight >= (previousSet.targetWeight * 0.98)
+      targetWeight = metTarget ? previousSet.weight + increment : previousSet.weight
+    } else {
+      targetWeight = previousSet.weight + increment
+    }
+    return {
+      targetWeight: Math.round(targetWeight * 2) / 2,
+      targetReps: 10,
+      targetRpe: 8,
+    }
+  }
+  return { targetWeight: null, targetReps: null, targetRpe: null }
+}
+
+// —— Texas Method ——
+
+/** Texas Method: Volume 5x5, Recovery 2x5 light, Intensity 1x5 heavy */
+export function getTexasMethodDayType(dayLabel: string): 'volume' | 'recovery' | 'intensity' | null {
+  const label = dayLabel.toLowerCase()
+  if (label.includes('volume')) return 'volume'
+  if (label.includes('recovery')) return 'recovery'
+  if (label.includes('intensity')) return 'intensity'
+  return null
+}
+
+export function calculateTexasMethodSetTarget(
+  dayType: 'volume' | 'recovery' | 'intensity',
+  setIndex: number,
+  previousSet: {
+    weight: number
+    reps: number
+    targetWeight: number | null
+    targetReps: number | null
+  },
+  exerciseName: string,
+  consecutiveUnderperformance: number
+): SetTargetResult {
+  const isLower = isLowerBodyExercise(exerciseName)
+  const increment = isLower ? 10 : 5
+
+  if (dayType === 'volume') {
+    let targetWeight: number
+    if (consecutiveUnderperformance >= 3) {
+      targetWeight = previousSet.weight * 0.9
+    } else if (previousSet.targetWeight != null) {
+      const metTarget = previousSet.reps >= 5 && previousSet.weight >= (previousSet.targetWeight * 0.98)
+      targetWeight = metTarget ? previousSet.weight + increment : previousSet.weight
+    } else {
+      targetWeight = previousSet.weight + increment
+    }
+    return {
+      targetWeight: Math.round(targetWeight * 2) / 2,
+      targetReps: 5,
+      targetRpe: 8,
+    }
+  }
+  if (dayType === 'recovery') {
+    const targetWeight = Math.round(previousSet.weight * 0.9 * 2) / 2
+    return {
+      targetWeight: targetWeight > 0 ? targetWeight : previousSet.weight,
+      targetReps: 5,
+      targetRpe: 7,
+    }
+  }
+  if (dayType === 'intensity') {
+    let targetWeight: number
+    if (consecutiveUnderperformance >= 2) {
+      targetWeight = previousSet.weight * 0.95
+    } else if (previousSet.targetWeight != null) {
+      const metTarget = previousSet.reps >= 5 && previousSet.weight >= (previousSet.targetWeight * 0.98)
+      targetWeight = metTarget ? previousSet.weight + increment : previousSet.weight
+    } else {
+      targetWeight = previousSet.weight + increment
+    }
+    return {
+      targetWeight: Math.round(targetWeight * 2) / 2,
+      targetReps: 5,
+      targetRpe: 9,
+    }
+  }
+  return { targetWeight: null, targetReps: null, targetRpe: null }
+}

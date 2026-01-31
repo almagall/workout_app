@@ -12,6 +12,7 @@ export default function LogWorkoutPage() {
     days: TemplateDay[]
   }>>([])
   const [loading, setLoading] = useState(true)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadTemplates() {
@@ -21,7 +22,6 @@ export default function LogWorkoutPage() {
         return
       }
 
-      // Get all templates for user
       const allTemplates = await getTemplates()
       const templatesWithDays = await Promise.all(
         allTemplates.map(async (template) => ({
@@ -45,7 +45,7 @@ export default function LogWorkoutPage() {
     )
   }
 
-  if (templates.length === 0 || templates.every(t => t.days.length === 0)) {
+  if (templates.length === 0 || templates.every((t) => t.days.length === 0)) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-white mb-8">Log Workout</h1>
@@ -64,68 +64,96 @@ export default function LogWorkoutPage() {
     )
   }
 
-  // Flatten template days with template info
-  const allDays: Array<{
-    templateId: string
-    templateName: string
-    dayId: string
-    dayLabel: string
-    dayOrder: number
-  }> = []
+  const selectedItem = templates.find((t) => t.template.id === selectedTemplateId)
+  const templatesWithDays = templates.filter((t) => t.days.length > 0)
 
-  templates.forEach(({ template, days }) => {
-    days.forEach((day) => {
-      allDays.push({
-        templateId: template.id,
-        templateName: template.name,
-        dayId: day.id,
-        dayLabel: day.day_label,
-        dayOrder: day.day_order,
-      })
-    })
-  })
+  // Step 1: Pick a template (or if selected template no longer exists, show templates)
+  if (!selectedTemplateId || !selectedItem) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Log Workout</h1>
+        <p className="text-[#888888] mb-6">Select a template to log a workout:</p>
 
-  // Group days by template for display
-  const templatesMap = new Map<string, Array<{
-    templateId: string
-    templateName: string
-    dayId: string
-    dayLabel: string
-    dayOrder: number
-  }>>()
+        <div className="space-y-4">
+          {templatesWithDays.map(({ template, days }) => (
+            <button
+              key={template.id}
+              type="button"
+              onClick={() => setSelectedTemplateId(template.id)}
+              className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 text-left hover:border-white transition-all hover:bg-[#1a1a1a]"
+            >
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <h2 className="text-lg font-semibold text-white">{template.name}</h2>
+                <span
+                  className={`text-xs font-medium px-2 py-0.5 rounded shrink-0 ${
+                    template.plan_type === 'hypertrophy'
+                      ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50'
+                      : 'bg-amber-900/40 text-amber-300 border border-amber-700/50'
+                  }`}
+                >
+                  {template.plan_type === 'hypertrophy' ? 'Hypertrophy' : 'Strength'}
+                </span>
+              </div>
+              <p className="text-sm text-[#888888]">
+                {days.length} workout day{days.length !== 1 ? 's' : ''}
+              </p>
+              {days.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {days.map((day) => (
+                    <span
+                      key={day.id}
+                      className="text-xs px-2 py-0.5 bg-[#1a1a1a] text-[#888888] rounded border border-[#2a2a2a]"
+                    >
+                      {day.day_label}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
-  allDays.forEach((day) => {
-    if (!templatesMap.has(day.templateId)) {
-      templatesMap.set(day.templateId, [])
-    }
-    templatesMap.get(day.templateId)!.push(day)
-  })
+  // Step 2: Pick a workout day from the selected template
+  const { template, days } = selectedItem
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-white mb-8">Log Workout</h1>
-      <p className="text-[#888888] mb-6">Select a workout day to log:</p>
+      <button
+        type="button"
+        onClick={() => setSelectedTemplateId(null)}
+        className="mb-4 text-sm text-[#888888] hover:text-white transition-colors flex items-center gap-1"
+      >
+        ← Change template
+      </button>
+      <h1 className="text-3xl font-bold text-white mb-2">Log Workout</h1>
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
+        <span className="text-lg font-semibold text-white">{template.name}</span>
+        <span
+          className={`text-xs font-medium px-2 py-0.5 rounded ${
+            template.plan_type === 'hypertrophy'
+              ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50'
+              : 'bg-amber-900/40 text-amber-300 border border-amber-700/50'
+          }`}
+        >
+          {template.plan_type === 'hypertrophy' ? 'Hypertrophy' : 'Strength'}
+        </span>
+      </div>
+      <p className="text-[#888888] mb-4">Select a workout day:</p>
 
-      {Array.from(templatesMap.entries()).map(([templateId, days]) => {
-        const template = templates.find(t => t.template.id === templateId)?.template
-        return (
-          <div key={templateId} className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">{template?.name || 'Template'}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {days.map((day) => (
-                <Link
-                  key={day.dayId}
-                  href={`/workout/log/${day.dayId}`}
-                  className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 hover:border-white transition-all"
-                >
-                  <h3 className="text-xl font-semibold text-white mb-2">{day.dayLabel}</h3>
-                  <p className="text-sm text-[#888888]">{day.templateName}</p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )
-      })}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {days.map((day) => (
+          <Link
+            key={day.id}
+            href={`/workout/log/${day.id}`}
+            className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 hover:border-white transition-all hover:bg-[#1a1a1a]"
+          >
+            <h3 className="text-xl font-semibold text-white">{day.day_label}</h3>
+          </Link>
+        ))}
+      </div>
     </div>
   )
 }

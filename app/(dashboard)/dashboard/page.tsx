@@ -7,6 +7,7 @@ import ProgressChart from '@/components/dashboard/ProgressChart'
 import ProgressSelectors from '@/components/dashboard/ProgressSelectors'
 import PerformanceMetrics from '@/components/dashboard/PerformanceMetrics'
 import WorkoutCalendar from '@/components/dashboard/WorkoutCalendar'
+import RecentPRs from '@/components/dashboard/RecentPRs'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
@@ -72,6 +73,7 @@ export default function DashboardPage() {
         </div>
         <div className="space-y-6">
           <WorkoutCalendar />
+          <RecentPRs />
           <PerformanceMetrics />
         </div>
       </div>

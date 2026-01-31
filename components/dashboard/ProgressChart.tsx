@@ -12,6 +12,8 @@ interface ChartData {
   date: string
   estimated1RM: number
   heaviestSet: number
+  isHeaviestPR?: boolean
+  isE1RMPR?: boolean
 }
 
 interface ProgressChartProps {
@@ -93,7 +95,18 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
         })
         .filter((row): row is ChartData => row !== null)
 
-      setData(chartData)
+      // Mark PR points (new high for each metric in time series)
+      let maxHeaviest = 0
+      let maxE1RM = 0
+      const dataWithPR = chartData.map((row) => {
+        const isHeaviestPR = row.heaviestSet > maxHeaviest
+        const isE1RMPR = row.estimated1RM > maxE1RM
+        if (row.heaviestSet > maxHeaviest) maxHeaviest = row.heaviestSet
+        if (row.estimated1RM > maxE1RM) maxE1RM = row.estimated1RM
+        return { ...row, isHeaviestPR, isE1RMPR }
+      })
+
+      setData(dataWithPR)
       setLoading(false)
     }
 
@@ -182,7 +195,13 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
               border: '1px solid #2a2a2a',
               color: '#ffffff',
               borderRadius: '8px'
-            }} 
+            }}
+            formatter={(value: number, name: string, props: { payload?: ChartData }) => {
+              const isPR = selectedMetric === 'heaviestSet'
+                ? props.payload?.isHeaviestPR
+                : props.payload?.isE1RMPR
+              return isPR ? [`${value} lbs (PR)`, name] : [value, name]
+            }}
           />
           {selectedMetric === 'estimated1RM' && (
             <Line
@@ -191,6 +210,12 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
               stroke="#ffffff"
               strokeWidth={2}
               name="Estimated 1RM (lbs)"
+              dot={(props: any) => {
+                const { cx, cy, payload } = props
+                const isPR = payload?.isE1RMPR
+                if (!isPR) return <circle cx={cx} cy={cy} r={4} fill="#ffffff" />
+                return <circle cx={cx} cy={cy} r={5} fill="#f59e0b" stroke="#ffffff" strokeWidth={1} />
+              }}
             />
           )}
           {selectedMetric === 'heaviestSet' && (
@@ -200,6 +225,12 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
               stroke="#ffffff"
               strokeWidth={2}
               name="Top Set (lbs)"
+              dot={(props: any) => {
+                const { cx, cy, payload } = props
+                const isPR = payload?.isHeaviestPR
+                if (!isPR) return <circle cx={cx} cy={cy} r={4} fill="#ffffff" />
+                return <circle cx={cx} cy={cy} r={5} fill="#f59e0b" stroke="#ffffff" strokeWidth={1} />
+              }}
             />
           )}
         </LineChart>

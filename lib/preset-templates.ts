@@ -5,8 +5,8 @@
 
 import type { PlanType } from '@/types/workout'
 
-/** When set, targets use preset-specific logic (e.g. 5/3/1 percentages) instead of default planType progression. */
-export type PresetTargetStrategy = 'default' | '531'
+/** When set, targets use preset-specific logic instead of default planType progression. */
+export type PresetTargetStrategy = 'default' | '531' | 'startingStrength' | 'stronglifts' | 'phul' | 'gzclp' | 'texasMethod'
 
 export interface PresetTemplate {
   id: string
@@ -167,6 +167,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     id: 'phul-4day',
     name: 'PHUL (Power Hypertrophy Upper Lower)',
     planType: 'hypertrophy',
+    targetStrategy: 'phul',
     description:
       '4-day program blending strength and hypertrophy. Two power days (heavy, lower reps) and two hypertrophy days (moderate weight, higher reps). Each muscle group trained twice per week. Great for intermediate lifters wanting size and strength.',
     days: [
@@ -389,6 +390,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     id: 'starting-strength-3day',
     name: 'Starting Strength (3-Day)',
     planType: 'strength',
+    targetStrategy: 'startingStrength',
     description:
       'Mark Rippetoe’s linear progression for beginners. Workout A: Squat, Bench, Deadlift. Workout B: Squat, Overhead Press, Barbell Row. 3 sets of 5 (1x5 deadlift). Add weight each session. Focus on form and consistent progression.',
     days: [
@@ -408,6 +410,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     id: 'stronglifts-3day',
     name: 'StrongLifts 5x5 (3-Day)',
     planType: 'strength',
+    targetStrategy: 'stronglifts',
     description:
       'Simple 5x5 program alternating two workouts. Workout A: Squat, Bench, Barbell Row. Workout B: Squat, Overhead Press, Deadlift. 5 sets of 5 (deadlift 1x5). Linear progression—add weight each session. Great for building a strength base.',
     days: [
@@ -427,6 +430,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     id: 'gzclp-4day',
     name: 'GZCLP (4-Day)',
     planType: 'strength',
+    targetStrategy: 'gzclp',
     description:
       'GZCL method for linear progression. Tier 1 main lift (5x3+), Tier 2 secondary (3x10), Tier 3 assistance. Four days rotating Squat/Bench and Deadlift/OHP. Good for intermediates who’ve run LP and want structure with variety.',
     days: [
@@ -480,6 +484,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     id: 'texas-method-style-3day',
     name: 'Texas Method Style (3-Day)',
     planType: 'strength',
+    targetStrategy: 'texasMethod',
     description:
       'Intermediate strength template. Volume day (5x5), light/recovery day (2x5), intensity day (1x5 heavy). Rotate Squat/Bench/Deadlift and OHP across the week. For lifters who’ve exhausted linear progression.',
     days: [
