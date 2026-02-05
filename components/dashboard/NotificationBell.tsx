@@ -1,0 +1,159 @@
+'use client'
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+import Link from 'next/link'
+import {
+  getUnreadNotificationCount,
+  getNotifications,
+  markNotificationRead,
+  acceptFriendRequest,
+  declineFriendRequest,
+  type NotificationWithFrom,
+} from '@/lib/friends'
+
+export default function NotificationBell() {
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [open, setOpen] = useState(false)
+  const [notifications, setNotifications] = useState<NotificationWithFrom[]>([])
+  const [loading, setLoading] = useState(false)
+  const [actingId, setActingId] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const refresh = useCallback(() => {
+    getUnreadNotificationCount().then(setUnreadCount)
+    if (open) getNotifications(30).then(setNotifications)
+  }, [open])
+
+  useEffect(() => {
+    refresh()
+    const t = setInterval(refresh, 15000)
+    return () => clearInterval(t)
+  }, [refresh])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleAccept = async (refId: string | null) => {
+    if (!refId || actingId) return
+    setActingId(refId)
+    setLoading(true)
+    const res = await acceptFriendRequest(refId)
+    if (res.ok) {
+      const n = notifications.find((x) => x.reference_id === refId && x.type === 'friend_request')
+      if (n) await markNotificationRead(n.id)
+      refresh()
+    }
+    setActingId(null)
+    setLoading(false)
+  }
+
+  const handleDecline = async (refId: string | null, notificationId: string) => {
+    if (!refId || actingId) return
+    setActingId(refId)
+    setLoading(true)
+    const res = await declineFriendRequest(refId)
+    if (res.ok) await markNotificationRead(notificationId)
+    refresh()
+    setActingId(null)
+    setLoading(false)
+  }
+
+  const formatTime = (createdAt: string) => {
+    const d = new Date(createdAt)
+    const now = new Date()
+    const diff = now.getTime() - d.getTime()
+    if (diff < 60000) return 'Just now'
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`
+    return d.toLocaleDateString()
+  }
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => { setOpen(!open); if (!open) getNotifications(30).then(setNotifications) }}
+        className="relative p-2 rounded-md text-[#888888] hover:text-white hover:bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-white"
+        aria-label="Notifications"
+      >
+        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+        {unreadCount > 0 && (
+          <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-bold text-black">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-1 w-80 max-h-96 overflow-auto rounded-md border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg z-50">
+          <div className="p-2 border-b border-[#2a2a2a] flex justify-between items-center">
+            <span className="font-semibold text-white text-sm">Notifications</span>
+            <Link href="/friends" onClick={() => setOpen(false)} className="text-xs text-white hover:underline">Friends</Link>
+          </div>
+          <div className="divide-y divide-[#2a2a2a]">
+            {notifications.length === 0 && (
+              <div className="p-4 text-sm text-[#888888]">No notifications</div>
+            )}
+            {notifications.map((n) => (
+              <div
+                key={n.id}
+                className={`p-3 text-sm ${!n.read ? 'bg-[#252525]' : ''}`}
+              >
+                {n.type === 'friend_request' && (
+                  <>
+                    <p className="text-white">
+                      <span className="font-medium">{n.from_username}</span> sent you a friend request.
+                    </p>
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                    {n.reference_id && (
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          type="button"
+                          disabled={loading && actingId === n.reference_id}
+                          onClick={() => handleAccept(n.reference_id)}
+                          className="px-2 py-1 rounded bg-white text-black text-xs font-medium hover:bg-[#e5e5e5] disabled:opacity-50"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading && actingId === n.reference_id}
+                          onClick={() => handleDecline(n.reference_id, n.id)}
+                          className="px-2 py-1 rounded border border-[#2a2a2a] text-[#e5e5e5] text-xs hover:bg-[#2a2a2a] disabled:opacity-50"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+                {n.type === 'friend_accepted' && (
+                  <>
+                    <p className="text-white">
+                      <span className="font-medium">{n.from_username}</span> accepted your friend request.
+                    </p>
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                    <Link
+                      href="/friends"
+                      onClick={() => { markNotificationRead(n.id); setOpen(false); }}
+                      className="inline-block mt-1 text-xs text-white underline"
+                    >
+                      View friends
+                    </Link>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

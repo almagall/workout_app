@@ -501,9 +501,9 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
         dayOrder: 2,
         dayLabel: 'Recovery Day',
         exercises: [
-          'Front Squat (light)',
+          'Front Squat',
           'Overhead Press',
-          'Deadlift (light)',
+          'Deadlift',
         ],
       },
       {

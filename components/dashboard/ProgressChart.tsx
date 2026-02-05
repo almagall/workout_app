@@ -179,7 +179,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
       <div className="h-[220px] sm:h-[300px] lg:h-[400px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
           <XAxis
             dataKey="date"
             stroke="#888888"
@@ -187,6 +187,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
             tickFormatter={(value) =>
               data.length > 4 ? formatAsMonthYear(value) : value
             }
+            padding={{ left: 28, right: 28 }}
           />
           <YAxis stroke="#888888" tick={{ fill: '#888888' }} />
           <Tooltip 

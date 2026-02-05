@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { saveTemplate, updateTemplate, getTemplates, getTemplateDays, getTemplateExercises } from '@/lib/storage'
 import type { PlanType } from '@/types/workout'
+import { searchExercises } from '@/lib/exercise-database'
 
 interface TemplateDay {
   id?: string
@@ -15,6 +16,78 @@ interface TemplateDay {
 
 interface TemplateFormProps {
   templateId?: string
+}
+
+function ExerciseAutocompleteInline({
+  value,
+  onChange,
+  placeholder,
+  className,
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+  className: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState(value)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setQuery(value)
+  }, [value])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const suggestions = searchExercises(query, 12)
+
+  return (
+    <div ref={containerRef} className={'relative flex-1 min-w-0 ' + className}>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => {
+          const v = e.target.value
+          setQuery(v)
+          onChange(v)
+          setOpen(v.trim().length > 0)
+        }}
+        onFocus={() => { if (query.trim().length > 0) setOpen(true) }}
+        placeholder={placeholder}
+        required
+        className="w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
+        autoComplete="off"
+      />
+      {open && query.trim().length > 0 && (
+        <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-md border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg">
+          {suggestions.length === 0 ? (
+            <li className="px-3 py-2 text-[#888888] text-sm">No matches. Use as custom exercise.</li>
+          ) : (
+            suggestions.map((entry) => (
+              <li
+                key={entry.id}
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm hover:bg-[#2a2a2a] text-[#e5e5e5]"
+                onClick={() => {
+                  onChange(entry.name)
+                  setQuery(entry.name)
+                  setOpen(false)
+                }}
+              >
+                <span className="flex-1">{entry.name}</span>
+                <span className="text-[#888888] text-xs">{entry.muscleGroup} · {entry.equipment}</span>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 export default function TemplateForm({ templateId }: TemplateFormProps) {
@@ -308,19 +381,17 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
               <div>
                 <label className="block text-sm font-medium text-white mb-2">Exercises</label>
                 {day.exercises.map((exercise, exerciseIndex) => (
-                  <div key={exerciseIndex} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
+                  <div key={exerciseIndex} className="flex gap-2 mb-2 items-start">
+                    <ExerciseAutocompleteInline
                       value={exercise}
-                      onChange={(e) => updateExercise(dayIndex, exerciseIndex, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                      placeholder="Exercise name"
-                      required
+                      onChange={(val) => updateExercise(dayIndex, exerciseIndex, val)}
+                      placeholder="Search or type exercise name"
+                      className="flex-1 min-w-0"
                     />
                     <button
                       type="button"
                       onClick={() => removeExercise(dayIndex, exerciseIndex)}
-                      className="px-3 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-900/50 transition-colors"
+                      className="px-3 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-900/50 transition-colors flex-shrink-0"
                     >
                       ×
                     </button>

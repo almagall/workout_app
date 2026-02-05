@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { getCurrentUser, signOut } from '@/lib/auth-simple'
+import NotificationBell from '@/components/dashboard/NotificationBell'
 
 export default function DashboardLayout({
   children,
@@ -95,10 +96,21 @@ export default function DashboardLayout({
                 >
                   History
                 </Link>
+                <Link
+                  href="/friends"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
+                    pathname === '/friends'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-[#888888] hover:border-[#2a2a2a] hover:text-white'
+                  }`}
+                >
+                  Friends
+                </Link>
               </div>
             </div>
             {/* Desktop User Info */}
-            <div className="hidden sm:flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2">
+              <NotificationBell />
               <span className="text-sm text-[#888888]">Hello, <span className="text-white font-medium">{user.username}</span></span>
               <button
                 onClick={handleSignOut}
@@ -177,9 +189,21 @@ export default function DashboardLayout({
               >
                 History
               </Link>
+              <Link
+                href="/friends"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  pathname === '/friends'
+                    ? 'bg-[#1a1a1a] text-white'
+                    : 'text-[#888888] hover:bg-[#1a1a1a] hover:text-white'
+                }`}
+              >
+                Friends
+              </Link>
               <div className="border-t border-[#2a2a2a] pt-3 mt-3">
-                <div className="px-3 py-2 text-sm text-[#888888]">
-                  Hello, <span className="text-white font-medium">{user.username}</span>
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <NotificationBell />
+                  <span className="text-sm text-[#888888]">Hello, <span className="text-white font-medium">{user.username}</span></span>
                 </div>
                 <button
                   onClick={() => {

@@ -224,3 +224,75 @@ export async function getRecentPRs(limit: number = 5): Promise<RecentPR[]> {
 
   return prs.slice(-limit).reverse()
 }
+
+/** Minimal session/log shape for computing PRs from raw data (e.g. for a friend). */
+export interface SessionForPR {
+  id: string
+  template_day_id: string
+  workout_date: string
+}
+
+export interface LogForPR {
+  session_id: string
+  exercise_name: string
+  weight: number
+  reps: number
+  set_type?: string | null
+}
+
+/**
+ * Compute recent PRs from session and log arrays (used server-side for friend PRs).
+ */
+export function computeRecentPRsFromData(
+  sessions: SessionForPR[],
+  logs: LogForPR[],
+  limit: number = 5
+): RecentPR[] {
+  const prs: RecentPR[] = []
+  const maxByExerciseDay = new Map<string, { heaviestSet: number; e1RM: number }>()
+
+  const sortedSessions = [...sessions].sort(
+    (a, b) => new Date(a.workout_date).getTime() - new Date(b.workout_date).getTime()
+  )
+
+  for (const session of sortedSessions) {
+    const sessionLogs = logs.filter(
+      (l) => l.session_id === session.id && (l.set_type === 'working' || l.set_type == null)
+    )
+
+    for (const log of sessionLogs) {
+      const w = parseFloat(log.weight.toString())
+      const r = log.reps
+      if (w <= 0 || r <= 0) continue
+
+      const key = `${session.template_day_id}:${log.exercise_name}`
+      const prev = maxByExerciseDay.get(key) ?? { heaviestSet: 0, e1RM: 0 }
+      const e1rm = estimated1RM(w, r)
+
+      if (w > prev.heaviestSet) {
+        prev.heaviestSet = w
+        maxByExerciseDay.set(key, prev)
+        prs.push({
+          exerciseName: log.exercise_name,
+          templateDayId: session.template_day_id,
+          prType: 'heaviestSet',
+          value: w,
+          workoutDate: session.workout_date,
+        })
+      }
+      if (e1rm > prev.e1RM) {
+        prev.e1RM = e1rm
+        maxByExerciseDay.set(key, prev)
+        prs.push({
+          exerciseName: log.exercise_name,
+          templateDayId: session.template_day_id,
+          prType: 'e1RM',
+          value: Math.round(e1rm * 10) / 10,
+          workoutDate: session.workout_date,
+        })
+      }
+    }
+  }
+
+  return prs.slice(-limit).reverse()
+}
