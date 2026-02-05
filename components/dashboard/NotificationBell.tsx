@@ -6,6 +6,7 @@ import {
   getUnreadNotificationCount,
   getNotifications,
   markNotificationRead,
+  markAllNotificationsRead,
   acceptFriendRequest,
   declineFriendRequest,
   type NotificationWithFrom,
@@ -93,9 +94,21 @@ export default function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 mt-1 w-80 max-h-96 overflow-auto rounded-md border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg z-50">
-          <div className="p-2 border-b border-[#2a2a2a] flex justify-between items-center">
+          <div className="p-2 border-b border-[#2a2a2a] flex justify-between items-center gap-2">
             <span className="font-semibold text-white text-sm">Notifications</span>
-            <Link href="/friends" onClick={() => setOpen(false)} className="text-xs text-white hover:underline">Friends</Link>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  await markAllNotificationsRead()
+                  refresh()
+                }}
+                className="text-xs text-[#888888] hover:text-white whitespace-nowrap"
+              >
+                Clear all
+              </button>
+              <Link href="/friends" onClick={() => setOpen(false)} className="text-xs text-white hover:underline">Friends</Link>
+            </div>
           </div>
           <div className="divide-y divide-[#2a2a2a]">
             {notifications.length === 0 && (
@@ -147,6 +160,20 @@ export default function NotificationBell() {
                     >
                       View friends
                     </Link>
+                  </>
+                )}
+                {n.type === 'pr_kudos' && (
+                  <>
+                    <p className="text-white">
+                      <span className="font-medium">{n.from_username}</span> gave you kudos for your{' '}
+                      <span className="text-amber-300 font-medium">{n.metadata?.exercise_name ?? 'exercise'}</span> PR!
+                    </p>
+                    {n.metadata && (
+                      <p className="text-xs text-[#888888] mt-0.5">
+                        {n.metadata.value} lbs ({n.metadata.pr_type === 'heaviestSet' ? 'Heaviest' : 'Est. 1RM'})
+                      </p>
+                    )}
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
                   </>
                 )}
               </div>

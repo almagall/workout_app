@@ -32,24 +32,35 @@ export interface FriendRow {
   username: string
 }
 
+export type NotificationType = 'friend_request' | 'friend_accepted' | 'pr_kudos'
+
 export interface NotificationRow {
   id: string
   user_id: string
-  type: 'friend_request' | 'friend_accepted'
+  type: NotificationType
   from_user_id: string
   reference_id: string | null
+  metadata?: string | null
   read: boolean
   created_at: string
 }
 
 export interface NotificationWithFrom {
   id: string
-  type: 'friend_request' | 'friend_accepted'
+  type: NotificationType
   from_user_id: string
   from_username: string
   reference_id: string | null
+  metadata?: PRKudosMetadata | null
   read: boolean
   created_at: string
+}
+
+export interface PRKudosMetadata {
+  exercise_name: string
+  pr_type: 'heaviestSet' | 'e1RM'
+  value: number
+  workout_date: string
 }
 
 /** Look up a user by username (public info only). Case-insensitive match. */
@@ -264,7 +275,7 @@ export async function getNotifications(limit = 50): Promise<NotificationWithFrom
   const supabase = createClient()
   const { data: list, error } = await supabase
     .from('notifications')
-    .select('id, type, from_user_id, reference_id, read, created_at')
+    .select('id, type, from_user_id, reference_id, metadata, read, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -280,15 +291,24 @@ export async function getNotifications(limit = 50): Promise<NotificationWithFrom
   const usernameMap = new Map<string, string>()
   users?.forEach((u) => usernameMap.set(u.user_id, u.username))
 
-  return list.map((n) => ({
-    id: n.id,
-    type: n.type as 'friend_request' | 'friend_accepted',
-    from_user_id: n.from_user_id,
-    from_username: usernameMap.get(n.from_user_id) ?? 'Unknown',
-    reference_id: n.reference_id,
-    read: n.read,
-    created_at: n.created_at,
-  }))
+  return list.map((n) => {
+    let metadata: PRKudosMetadata | null = null
+    if (n.type === 'pr_kudos' && n.metadata) {
+      try {
+        metadata = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata
+      } catch { /* ignore */ }
+    }
+    return {
+      id: n.id,
+      type: n.type as NotificationType,
+      from_user_id: n.from_user_id,
+      from_username: usernameMap.get(n.from_user_id) ?? 'Unknown',
+      reference_id: n.reference_id,
+      metadata,
+      read: n.read,
+      created_at: n.created_at,
+    }
+  })
 }
 
 /** Get unread notification count. */
@@ -352,4 +372,106 @@ export async function setAllowFriendsSeePRs(allow: boolean): Promise<void> {
     .from('simple_users')
     .update({ allow_friends_see_prs: allow, updated_at: new Date().toISOString() })
     .eq('user_id', user.id)
+}
+
+// ============ PR Kudos / Reactions ============
+
+export interface PRIdentifier {
+  to_user_id: string
+  exercise_name: string
+  template_day_id: string
+  workout_date: string
+  pr_type: 'heaviestSet' | 'e1RM'
+  value: number
+}
+
+/** Send kudos on a friend's PR. Creates a reaction record and notification. */
+export async function sendPRKudos(pr: PRIdentifier): Promise<{ ok: boolean; error?: string }> {
+  const user = getCurrentUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+  if (user.id === pr.to_user_id) return { ok: false, error: "Can't kudos your own PR" }
+
+  const supabase = createClient()
+
+  // Check if already reacted
+  const { data: existing } = await supabase
+    .from('pr_reactions')
+    .select('id')
+    .eq('from_user_id', user.id)
+    .eq('to_user_id', pr.to_user_id)
+    .eq('exercise_name', pr.exercise_name)
+    .eq('template_day_id', pr.template_day_id)
+    .eq('workout_date', pr.workout_date)
+    .eq('pr_type', pr.pr_type)
+    .single()
+
+  if (existing) return { ok: false, error: 'Already sent kudos' }
+
+  // Insert reaction
+  const { error: insertErr } = await supabase.from('pr_reactions').insert({
+    from_user_id: user.id,
+    to_user_id: pr.to_user_id,
+    exercise_name: pr.exercise_name,
+    template_day_id: pr.template_day_id,
+    workout_date: pr.workout_date,
+    pr_type: pr.pr_type,
+  })
+
+  if (insertErr) return { ok: false, error: insertErr.message }
+
+  // Create notification for the PR owner
+  const metadata: PRKudosMetadata = {
+    exercise_name: pr.exercise_name,
+    pr_type: pr.pr_type,
+    value: pr.value,
+    workout_date: pr.workout_date,
+  }
+
+  await supabase.from('notifications').insert({
+    user_id: pr.to_user_id,
+    type: 'pr_kudos',
+    from_user_id: user.id,
+    metadata,
+  })
+
+  return { ok: true }
+}
+
+/** Check if current user has already sent kudos on a specific PR. */
+export async function hasReactedToPR(pr: Omit<PRIdentifier, 'value'>): Promise<boolean> {
+  const user = getCurrentUser()
+  if (!user) return false
+
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('pr_reactions')
+    .select('id')
+    .eq('from_user_id', user.id)
+    .eq('to_user_id', pr.to_user_id)
+    .eq('exercise_name', pr.exercise_name)
+    .eq('template_day_id', pr.template_day_id)
+    .eq('workout_date', pr.workout_date)
+    .eq('pr_type', pr.pr_type)
+    .single()
+
+  return !error && !!data
+}
+
+/** Get all PRs the current user has reacted to for a specific friend. Returns set of keys. */
+export async function getReactedPRKeys(friendUserId: string): Promise<Set<string>> {
+  const user = getCurrentUser()
+  if (!user) return new Set()
+
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('pr_reactions')
+    .select('exercise_name, template_day_id, workout_date, pr_type')
+    .eq('from_user_id', user.id)
+    .eq('to_user_id', friendUserId)
+
+  if (error || !data) return new Set()
+
+  return new Set(
+    data.map((r) => `${r.exercise_name}|${r.template_day_id}|${r.workout_date}|${r.pr_type}`)
+  )
 }
