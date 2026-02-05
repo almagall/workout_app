@@ -106,6 +106,16 @@ export default function DashboardLayout({
                 >
                   Friends
                 </Link>
+                <Link
+                  href="/leaderboards"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
+                    pathname === '/leaderboards'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-[#888888] hover:border-[#2a2a2a] hover:text-white'
+                  }`}
+                >
+                  Leaderboards
+                </Link>
               </div>
             </div>
             {/* Desktop User Info */}
@@ -199,6 +209,17 @@ export default function DashboardLayout({
                 }`}
               >
                 Friends
+              </Link>
+              <Link
+                href="/leaderboards"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  pathname === '/leaderboards'
+                    ? 'bg-[#1a1a1a] text-white'
+                    : 'text-[#888888] hover:bg-[#1a1a1a] hover:text-white'
+                }`}
+              >
+                Leaderboards
               </Link>
               <div className="border-t border-[#2a2a2a] pt-3 mt-3">
                 <div className="flex items-center gap-2 px-3 py-2">

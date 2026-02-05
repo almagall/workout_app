@@ -32,7 +32,9 @@ export interface FriendRow {
   username: string
 }
 
-export type NotificationType = 'friend_request' | 'friend_accepted' | 'pr_kudos'
+export type NotificationType = 'friend_request' | 'friend_accepted' | 'pr_kudos' | 'pr_comment'
+
+export type ReactionType = 'kudos' | 'strong' | 'fire'
 
 export interface NotificationRow {
   id: string
@@ -51,7 +53,7 @@ export interface NotificationWithFrom {
   from_user_id: string
   from_username: string
   reference_id: string | null
-  metadata?: PRKudosMetadata | null
+  metadata?: PRKudosMetadata | PRCommentMetadata | null
   read: boolean
   created_at: string
 }
@@ -61,6 +63,15 @@ export interface PRKudosMetadata {
   pr_type: 'heaviestSet' | 'e1RM'
   value: number
   workout_date: string
+  reaction_type?: ReactionType
+}
+
+export interface PRCommentMetadata {
+  exercise_name: string
+  pr_type: 'heaviestSet' | 'e1RM'
+  value: number
+  workout_date: string
+  comment_preview: string
 }
 
 /** Look up a user by username (public info only). Case-insensitive match. */
@@ -292,8 +303,8 @@ export async function getNotifications(limit = 50): Promise<NotificationWithFrom
   users?.forEach((u) => usernameMap.set(u.user_id, u.username))
 
   return list.map((n) => {
-    let metadata: PRKudosMetadata | null = null
-    if (n.type === 'pr_kudos' && n.metadata) {
+    let metadata: PRKudosMetadata | PRCommentMetadata | null = null
+    if ((n.type === 'pr_kudos' || n.type === 'pr_comment') && n.metadata) {
       try {
         metadata = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata
       } catch { /* ignore */ }
@@ -385,11 +396,14 @@ export interface PRIdentifier {
   value: number
 }
 
-/** Send kudos on a friend's PR. Creates a reaction record and notification. */
-export async function sendPRKudos(pr: PRIdentifier): Promise<{ ok: boolean; error?: string }> {
+/** Send a reaction on a friend's PR. Creates a reaction record and notification. */
+export async function sendPRReaction(
+  pr: PRIdentifier,
+  reactionType: ReactionType = 'kudos'
+): Promise<{ ok: boolean; error?: string }> {
   const user = getCurrentUser()
   if (!user) return { ok: false, error: 'Not authenticated' }
-  if (user.id === pr.to_user_id) return { ok: false, error: "Can't kudos your own PR" }
+  if (user.id === pr.to_user_id) return { ok: false, error: "Can't react to your own PR" }
 
   const supabase = createClient()
 
@@ -405,7 +419,7 @@ export async function sendPRKudos(pr: PRIdentifier): Promise<{ ok: boolean; erro
     .eq('pr_type', pr.pr_type)
     .single()
 
-  if (existing) return { ok: false, error: 'Already sent kudos' }
+  if (existing) return { ok: false, error: 'Already reacted' }
 
   // Insert reaction
   const { error: insertErr } = await supabase.from('pr_reactions').insert({
@@ -415,6 +429,7 @@ export async function sendPRKudos(pr: PRIdentifier): Promise<{ ok: boolean; erro
     template_day_id: pr.template_day_id,
     workout_date: pr.workout_date,
     pr_type: pr.pr_type,
+    reaction_type: reactionType,
   })
 
   if (insertErr) return { ok: false, error: insertErr.message }
@@ -425,6 +440,7 @@ export async function sendPRKudos(pr: PRIdentifier): Promise<{ ok: boolean; erro
     pr_type: pr.pr_type,
     value: pr.value,
     workout_date: pr.workout_date,
+    reaction_type: reactionType,
   }
 
   await supabase.from('notifications').insert({
@@ -435,6 +451,11 @@ export async function sendPRKudos(pr: PRIdentifier): Promise<{ ok: boolean; erro
   })
 
   return { ok: true }
+}
+
+/** @deprecated Use sendPRReaction instead */
+export async function sendPRKudos(pr: PRIdentifier): Promise<{ ok: boolean; error?: string }> {
+  return sendPRReaction(pr, 'kudos')
 }
 
 /** Check if current user has already sent kudos on a specific PR. */
@@ -457,21 +478,143 @@ export async function hasReactedToPR(pr: Omit<PRIdentifier, 'value'>): Promise<b
   return !error && !!data
 }
 
-/** Get all PRs the current user has reacted to for a specific friend. Returns set of keys. */
-export async function getReactedPRKeys(friendUserId: string): Promise<Set<string>> {
+export interface ReactionInfo {
+  reaction_type: ReactionType
+}
+
+/** Get all PRs the current user has reacted to for a specific friend. Returns map of key -> reaction info. */
+export async function getReactedPRs(friendUserId: string): Promise<Map<string, ReactionInfo>> {
   const user = getCurrentUser()
-  if (!user) return new Set()
+  if (!user) return new Map()
 
   const supabase = createClient()
   const { data, error } = await supabase
     .from('pr_reactions')
-    .select('exercise_name, template_day_id, workout_date, pr_type')
+    .select('exercise_name, template_day_id, workout_date, pr_type, reaction_type')
     .eq('from_user_id', user.id)
     .eq('to_user_id', friendUserId)
 
-  if (error || !data) return new Set()
+  if (error || !data) return new Map()
 
-  return new Set(
-    data.map((r) => `${r.exercise_name}|${r.template_day_id}|${r.workout_date}|${r.pr_type}`)
-  )
+  const result = new Map<string, ReactionInfo>()
+  data.forEach((r) => {
+    const key = `${r.exercise_name}|${r.template_day_id}|${r.workout_date}|${r.pr_type}`
+    result.set(key, { reaction_type: r.reaction_type || 'kudos' })
+  })
+  return result
+}
+
+/** @deprecated Use getReactedPRs instead */
+export async function getReactedPRKeys(friendUserId: string): Promise<Set<string>> {
+  const reacted = await getReactedPRs(friendUserId)
+  return new Set(reacted.keys())
+}
+
+// ============ PR Comments ============
+
+export interface PRComment {
+  id: string
+  from_user_id: string
+  from_username: string
+  comment: string
+  created_at: string
+}
+
+export interface PRCommentIdentifier {
+  to_user_id: string
+  exercise_name: string
+  template_day_id: string
+  workout_date: string
+  pr_type: 'heaviestSet' | 'e1RM'
+  value: number
+}
+
+/** Add a comment on a friend's PR. Creates a comment record and notification. */
+export async function addPRComment(
+  pr: PRCommentIdentifier,
+  comment: string
+): Promise<{ ok: boolean; error?: string }> {
+  const user = getCurrentUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+  if (user.id === pr.to_user_id) return { ok: false, error: "Can't comment on your own PR" }
+  
+  const trimmedComment = comment.trim()
+  if (!trimmedComment) return { ok: false, error: 'Comment is empty' }
+  if (trimmedComment.length > 200) return { ok: false, error: 'Comment too long (max 200 chars)' }
+
+  const supabase = createClient()
+
+  // Insert comment
+  const { error: insertErr } = await supabase.from('pr_comments').insert({
+    from_user_id: user.id,
+    to_user_id: pr.to_user_id,
+    exercise_name: pr.exercise_name,
+    template_day_id: pr.template_day_id,
+    workout_date: pr.workout_date,
+    pr_type: pr.pr_type,
+    comment: trimmedComment,
+  })
+
+  if (insertErr) return { ok: false, error: insertErr.message }
+
+  // Create notification for the PR owner
+  const metadata: PRCommentMetadata = {
+    exercise_name: pr.exercise_name,
+    pr_type: pr.pr_type,
+    value: pr.value,
+    workout_date: pr.workout_date,
+    comment_preview: trimmedComment.slice(0, 50) + (trimmedComment.length > 50 ? '...' : ''),
+  }
+
+  await supabase.from('notifications').insert({
+    user_id: pr.to_user_id,
+    type: 'pr_comment',
+    from_user_id: user.id,
+    metadata,
+  })
+
+  return { ok: true }
+}
+
+/** Get comments on a specific PR. */
+export async function getPRComments(
+  toUserId: string,
+  exerciseName: string,
+  templateDayId: string,
+  workoutDate: string,
+  prType: 'heaviestSet' | 'e1RM',
+  limit = 10
+): Promise<PRComment[]> {
+  const supabase = createClient()
+  
+  const { data: comments, error } = await supabase
+    .from('pr_comments')
+    .select('id, from_user_id, comment, created_at')
+    .eq('to_user_id', toUserId)
+    .eq('exercise_name', exerciseName)
+    .eq('template_day_id', templateDayId)
+    .eq('workout_date', workoutDate)
+    .eq('pr_type', prType)
+    .order('created_at', { ascending: true })
+    .limit(limit)
+
+  if (error || !comments?.length) return []
+
+  // Get usernames for commenters
+  const fromIds = [...new Set(comments.map((c) => c.from_user_id))]
+  const { data: users } = await supabase
+    .from('simple_users')
+    .select('user_id, username')
+    .in('user_id', fromIds)
+
+  const usernameMap = new Map<string, string>()
+  users?.forEach((u) => usernameMap.set(u.user_id, u.username))
+
+  return comments.map((c) => ({
+    id: c.id,
+    from_user_id: c.from_user_id,
+    from_username: usernameMap.get(c.from_user_id) ?? 'Unknown',
+    comment: c.comment,
+    created_at: c.created_at,
+  }))
 }

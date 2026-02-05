@@ -11,10 +11,15 @@ import {
   getFriends,
   getAllowFriendsSeePRs,
   setAllowFriendsSeePRs,
-  sendPRKudos,
-  getReactedPRKeys,
+  sendPRReaction,
+  getReactedPRs,
+  addPRComment,
+  getPRComments,
   type FriendRequestWithFrom,
   type FriendRow,
+  type ReactionType,
+  type ReactionInfo,
+  type PRComment,
 } from '@/lib/friends'
 import type { RecentPR } from '@/lib/pr-helper'
 
@@ -39,8 +44,15 @@ export default function FriendsPage() {
   const [friendPRsLoading, setFriendPRsLoading] = useState(false)
   const [friendPRsError, setFriendPRsError] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
-  const [reactedKeys, setReactedKeys] = useState<Set<string>>(new Set())
-  const [sendingKudos, setSendingKudos] = useState<string | null>(null)
+  const [reactedPRs, setReactedPRs] = useState<Map<string, ReactionInfo>>(new Map())
+  const [sendingReaction, setSendingReaction] = useState<string | null>(null)
+  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null)
+  // Comments state
+  const [expandedComments, setExpandedComments] = useState<string | null>(null)
+  const [prComments, setPRComments] = useState<Map<string, PRComment[]>>(new Map())
+  const [loadingComments, setLoadingComments] = useState<string | null>(null)
+  const [newComment, setNewComment] = useState('')
+  const [postingComment, setPostingComment] = useState(false)
 
   const refresh = () => {
     getFriends().then(setFriends)
@@ -106,11 +118,12 @@ export default function FriendsPage() {
     setFriendPRsError('')
     setFriendPRs([])
     setFriendPRsLabels({})
-    setReactedKeys(new Set())
+    setReactedPRs(new Map())
+    setShowReactionPicker(null)
     try {
       const [res, reacted] = await Promise.all([
         fetch(`/api/friends/${encodeURIComponent(friend.user_id)}/prs?currentUserId=${encodeURIComponent(user.id)}&limit=10`),
-        getReactedPRKeys(friend.user_id),
+        getReactedPRs(friend.user_id),
       ])
       const data = await res.json()
       if (!res.ok) {
@@ -119,7 +132,7 @@ export default function FriendsPage() {
       }
       setFriendPRs(data.prs ?? [])
       setFriendPRsLabels(data.dayLabels ?? {})
-      setReactedKeys(reacted)
+      setReactedPRs(reacted)
     } catch {
       setFriendPRsError('Failed to load PRs')
     } finally {
@@ -127,23 +140,88 @@ export default function FriendsPage() {
     }
   }
 
-  const handleSendKudos = async (pr: RecentPR) => {
-    if (!viewingFriend || sendingKudos) return
+  const handleSendReaction = async (pr: RecentPR, reactionType: ReactionType) => {
+    if (!viewingFriend || sendingReaction) return
     const key = `${pr.exerciseName}|${pr.templateDayId}|${pr.workoutDate}|${pr.prType}`
-    if (reactedKeys.has(key)) return
-    setSendingKudos(key)
-    const result = await sendPRKudos({
+    if (reactedPRs.has(key)) return
+    setSendingReaction(key)
+    setShowReactionPicker(null)
+    const result = await sendPRReaction({
       to_user_id: viewingFriend.user_id,
       exercise_name: pr.exerciseName,
       template_day_id: pr.templateDayId,
       workout_date: pr.workoutDate,
       pr_type: pr.prType,
       value: pr.value,
-    })
+    }, reactionType)
     if (result.ok) {
-      setReactedKeys((prev) => new Set([...prev, key]))
+      setReactedPRs((prev) => new Map(prev).set(key, { reaction_type: reactionType }))
     }
-    setSendingKudos(null)
+    setSendingReaction(null)
+  }
+
+  const getReactionEmoji = (type: ReactionType) => {
+    switch (type) {
+      case 'kudos': return '👍'
+      case 'strong': return '💪'
+      case 'fire': return '🔥'
+    }
+  }
+
+  const toggleComments = async (pr: RecentPR) => {
+    if (!viewingFriend) return
+    const key = `${pr.exerciseName}|${pr.templateDayId}|${pr.workoutDate}|${pr.prType}`
+    
+    if (expandedComments === key) {
+      setExpandedComments(null)
+      return
+    }
+    
+    setExpandedComments(key)
+    setNewComment('')
+    
+    // Load comments if not already loaded
+    if (!prComments.has(key)) {
+      setLoadingComments(key)
+      const comments = await getPRComments(
+        viewingFriend.user_id,
+        pr.exerciseName,
+        pr.templateDayId,
+        pr.workoutDate,
+        pr.prType
+      )
+      setPRComments((prev) => new Map(prev).set(key, comments))
+      setLoadingComments(null)
+    }
+  }
+
+  const handlePostComment = async (pr: RecentPR) => {
+    if (!viewingFriend || postingComment || !newComment.trim()) return
+    const key = `${pr.exerciseName}|${pr.templateDayId}|${pr.workoutDate}|${pr.prType}`
+    
+    setPostingComment(true)
+    const result = await addPRComment({
+      to_user_id: viewingFriend.user_id,
+      exercise_name: pr.exerciseName,
+      template_day_id: pr.templateDayId,
+      workout_date: pr.workoutDate,
+      pr_type: pr.prType,
+      value: pr.value,
+    }, newComment)
+    
+    if (result.ok) {
+      // Reload comments
+      const comments = await getPRComments(
+        viewingFriend.user_id,
+        pr.exerciseName,
+        pr.templateDayId,
+        pr.workoutDate,
+        pr.prType
+      )
+      setPRComments((prev) => new Map(prev).set(key, comments))
+      setNewComment('')
+    }
+    setPostingComment(false)
   }
 
   const toggleAllowPRs = async () => {
@@ -325,43 +403,128 @@ export default function FriendsPage() {
                 <p className="text-[#888888] text-sm">No recent PRs</p>
               )}
               {!friendPRsLoading && friendPRs.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {friendPRs.map((pr, i) => {
                     const key = `${pr.exerciseName}|${pr.templateDayId}|${pr.workoutDate}|${pr.prType}`
-                    const hasReacted = reactedKeys.has(key)
-                    const isSending = sendingKudos === key
+                    const reaction = reactedPRs.get(key)
+                    const hasReacted = !!reaction
+                    const isSending = sendingReaction === key
+                    const isPickerOpen = showReactionPicker === key
+                    const isCommentsOpen = expandedComments === key
+                    const comments = prComments.get(key) ?? []
+                    const isLoadingComments = loadingComments === key
                     return (
                       <div
                         key={`${pr.exerciseName}-${pr.workoutDate}-${pr.prType}-${i}`}
-                        className="flex items-center justify-between py-2 border-b border-[#2a2a2a] last:border-0 gap-2"
+                        className="border-b border-[#2a2a2a] last:border-0 pb-3"
                       >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium">{pr.exerciseName}</p>
-                          <p className="text-xs text-[#888888]">
-                            {friendPRsLabels[pr.templateDayId] ?? 'Workout'} · {formatDate(pr.workoutDate)}
-                          </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-medium">{pr.exerciseName}</p>
+                            <p className="text-xs text-[#888888]">
+                              {friendPRsLabels[pr.templateDayId] ?? 'Workout'} · {formatDate(pr.workoutDate)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-amber-300 font-semibold">{pr.value} lbs</span>
+                            <p className="text-xs text-[#888888]">
+                              {pr.prType === 'heaviestSet' ? 'Heaviest set' : 'Est. 1RM'}
+                            </p>
+                          </div>
+                          <div className="relative ml-2 flex items-center gap-1">
+                            {/* Comment toggle button */}
+                            <button
+                              type="button"
+                              onClick={() => toggleComments(pr)}
+                              className={`p-1.5 rounded-full transition-colors ${
+                                isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-[#888888] hover:text-blue-400 hover:bg-[#2a2a2a]'
+                              }`}
+                              title="Comments"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                            </button>
+                            {/* Reaction button */}
+                            {hasReacted ? (
+                              <span
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 text-lg"
+                                title={`Reacted: ${reaction.reaction_type}`}
+                              >
+                                {getReactionEmoji(reaction.reaction_type)}
+                              </span>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={isSending}
+                                  onClick={() => setShowReactionPicker(isPickerOpen ? null : key)}
+                                  className="p-1.5 rounded-full text-[#888888] hover:text-amber-400 hover:bg-[#2a2a2a] transition-colors disabled:opacity-60"
+                                  title="React"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                  </svg>
+                                </button>
+                                {isPickerOpen && (
+                                  <div className="absolute right-0 top-full mt-1 flex gap-1 bg-[#2a2a2a] rounded-full p-1 shadow-lg z-10">
+                                    {(['kudos', 'strong', 'fire'] as ReactionType[]).map((type) => (
+                                      <button
+                                        key={type}
+                                        type="button"
+                                        onClick={() => handleSendReaction(pr, type)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#3a3a3a] text-lg transition-colors"
+                                        title={type}
+                                      >
+                                        {getReactionEmoji(type)}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-amber-300 font-semibold">{pr.value} lbs</span>
-                          <p className="text-xs text-[#888888]">
-                            {pr.prType === 'heaviestSet' ? 'Heaviest set' : 'Est. 1RM'}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          disabled={hasReacted || isSending}
-                          onClick={() => handleSendKudos(pr)}
-                          className={`ml-2 p-1.5 rounded-full transition-colors ${
-                            hasReacted
-                              ? 'bg-amber-500/20 text-amber-400 cursor-default'
-                              : 'text-[#888888] hover:text-amber-400 hover:bg-[#2a2a2a]'
-                          } disabled:opacity-60`}
-                          title={hasReacted ? 'Kudos sent!' : 'Give kudos'}
-                        >
-                          <svg className="w-5 h-5" fill={hasReacted ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                          </svg>
-                        </button>
+                        {/* Comments section */}
+                        {isCommentsOpen && (
+                          <div className="mt-2 pl-2 border-l-2 border-[#2a2a2a]">
+                            {isLoadingComments && (
+                              <p className="text-xs text-[#888888]">Loading comments...</p>
+                            )}
+                            {!isLoadingComments && comments.length === 0 && (
+                              <p className="text-xs text-[#888888] mb-2">No comments yet</p>
+                            )}
+                            {!isLoadingComments && comments.length > 0 && (
+                              <div className="space-y-2 mb-2">
+                                {comments.map((c) => (
+                                  <div key={c.id} className="text-sm">
+                                    <span className="font-medium text-white">{c.from_username}</span>
+                                    <span className="text-[#e5e5e5] ml-1">{c.comment}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex gap-2 mt-2">
+                              <input
+                                type="text"
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handlePostComment(pr)}
+                                placeholder="Add a comment..."
+                                maxLength={200}
+                                className="flex-1 text-sm px-2 py-1 rounded bg-[#2a2a2a] border border-[#3a3a3a] text-white placeholder-[#888888] focus:outline-none focus:border-blue-500"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handlePostComment(pr)}
+                                disabled={postingComment || !newComment.trim()}
+                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Post
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )
                   })}

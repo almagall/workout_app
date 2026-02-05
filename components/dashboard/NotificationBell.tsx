@@ -10,7 +10,27 @@ import {
   acceptFriendRequest,
   declineFriendRequest,
   type NotificationWithFrom,
+  type PRKudosMetadata,
+  type PRCommentMetadata,
+  type ReactionType,
 } from '@/lib/friends'
+
+function getReactionEmoji(type?: ReactionType): string {
+  switch (type) {
+    case 'kudos': return '👍'
+    case 'strong': return '💪'
+    case 'fire': return '🔥'
+    default: return '👍'
+  }
+}
+
+function isPRKudosMetadata(m: PRKudosMetadata | PRCommentMetadata | null | undefined): m is PRKudosMetadata {
+  return !!m && 'reaction_type' in m || (!!m && !('comment_preview' in m))
+}
+
+function isPRCommentMetadata(m: PRKudosMetadata | PRCommentMetadata | null | undefined): m is PRCommentMetadata {
+  return !!m && 'comment_preview' in m
+}
 
 export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0)
@@ -162,16 +182,28 @@ export default function NotificationBell() {
                     </Link>
                   </>
                 )}
-                {n.type === 'pr_kudos' && (
+                {n.type === 'pr_kudos' && isPRKudosMetadata(n.metadata) && (
                   <>
                     <p className="text-white">
-                      <span className="font-medium">{n.from_username}</span> gave you kudos for your{' '}
+                      <span className="font-medium">{n.from_username}</span> reacted {getReactionEmoji(n.metadata?.reaction_type)} to your{' '}
                       <span className="text-amber-300 font-medium">{n.metadata?.exercise_name ?? 'exercise'}</span> PR!
                     </p>
                     {n.metadata && (
                       <p className="text-xs text-[#888888] mt-0.5">
                         {n.metadata.value} lbs ({n.metadata.pr_type === 'heaviestSet' ? 'Heaviest' : 'Est. 1RM'})
                       </p>
+                    )}
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                  </>
+                )}
+                {n.type === 'pr_comment' && isPRCommentMetadata(n.metadata) && (
+                  <>
+                    <p className="text-white">
+                      <span className="font-medium">{n.from_username}</span> commented on your{' '}
+                      <span className="text-amber-300 font-medium">{n.metadata?.exercise_name ?? 'exercise'}</span> PR
+                    </p>
+                    {n.metadata?.comment_preview && (
+                      <p className="text-xs text-[#e5e5e5] mt-1 italic">&quot;{n.metadata.comment_preview}&quot;</p>
                     )}
                     <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
                   </>

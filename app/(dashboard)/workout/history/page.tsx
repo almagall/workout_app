@@ -148,15 +148,24 @@ export default function WorkoutHistoryPage() {
                                 )}
                               </div>
                             </Link>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               {session.overall_performance_rating != null && (
-                                <p className="text-white font-semibold">
+                                <p className="text-white font-semibold mr-2">
                                   Rating: {session.overall_performance_rating}/10
                                 </p>
                               )}
                               <Link
+                                href={`/share/workout/${session.id}`}
+                                className="p-2 text-[#888888] hover:text-amber-400 hover:bg-[#2a2a2a] rounded-md transition-colors"
+                                title="Share"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                </svg>
+                              </Link>
+                              <Link
                                 href={`/workout/edit/${session.id}`}
-                                className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors text-sm font-medium"
+                                className="px-3 py-1.5 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors text-sm font-medium"
                               >
                                 Edit
                               </Link>
