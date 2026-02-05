@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getWorkoutSessions } from '@/lib/storage'
+import Link from 'next/link'
+import { getWorkoutSessions, getExerciseLogsForSession, getTemplateDay } from '@/lib/storage'
+import { getPRsForSession, type SessionPR } from '@/lib/pr-helper'
 import { toYYYYMMDD, getTodayLocalYYYYMMDD } from '@/lib/date-utils'
+import type { WorkoutSession } from '@/types/workout'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -33,7 +36,9 @@ function getDaysForMonthView(year: number, month: number): (number | null)[][] {
 
 export default function WorkoutCalendar() {
   const [workoutDates, setWorkoutDates] = useState<Set<string>>(new Set())
+  const [sessionsByDate, setSessionsByDate] = useState<Map<string, WorkoutSession[]>>(new Map())
   const [loading, setLoading] = useState(true)
+  const [modalDate, setModalDate] = useState<string | null>(null)
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
@@ -42,11 +47,18 @@ export default function WorkoutCalendar() {
     async function load() {
       const sessions = await getWorkoutSessions()
       const dates = new Set<string>()
+      const byDate = new Map<string, WorkoutSession[]>()
       sessions.forEach((s) => {
-        const d = s.workout_date
-        if (d) dates.add(typeof d === 'string' ? d : toYYYYMMDD(new Date(d)))
+        const d = s.workout_date ? (typeof s.workout_date === 'string' ? s.workout_date : toYYYYMMDD(new Date(s.workout_date))) : null
+        if (d) {
+          dates.add(d)
+          const list = byDate.get(d) ?? []
+          list.push(s)
+          byDate.set(d, list)
+        }
       })
       setWorkoutDates(dates)
+      setSessionsByDate(byDate)
       setLoading(false)
     }
     load()
@@ -54,6 +66,66 @@ export default function WorkoutCalendar() {
 
   const todayStr = getTodayLocalYYYYMMDD()
   const grid = getDaysForMonthView(viewYear, viewMonth)
+
+  type CompletionRow = {
+    session: WorkoutSession
+    dayLabel: string
+    prs: SessionPR[]
+    rating: number | null
+    feedback: string | null
+  }
+  const [completionData, setCompletionData] = useState<CompletionRow[] | null>(null)
+  const [loadingCompletion, setLoadingCompletion] = useState(false)
+
+  useEffect(() => {
+    if (!modalDate) {
+      setCompletionData(null)
+      return
+    }
+    const sessions = sessionsByDate.get(modalDate) ?? []
+    if (sessions.length === 0) {
+      setCompletionData([])
+      return
+    }
+    let cancelled = false
+    setLoadingCompletion(true)
+    ;(async () => {
+      const rows: CompletionRow[] = []
+      for (const session of sessions) {
+        const [logs, day] = await Promise.all([
+          getExerciseLogsForSession(session.id),
+          getTemplateDay(session.template_day_id),
+        ])
+        if (cancelled) return
+        const dayLabel = day?.day_label ?? 'Workout'
+        const exercises = (() => {
+          const byName = new Map<string, { exerciseName: string; sets: Array<{ setType: string; weight: number; reps: number }> }>()
+          for (const log of logs) {
+            const name = log.exercise_name
+            if (!byName.has(name)) byName.set(name, { exerciseName: name, sets: [] })
+            byName.get(name)!.sets.push({
+              setType: log.set_type ?? 'working',
+              weight: typeof log.weight === 'number' ? log.weight : parseFloat(String(log.weight)),
+              reps: log.reps,
+            })
+          }
+          return Array.from(byName.values())
+        })()
+        const prs = await getPRsForSession(session.template_day_id, exercises, session.id)
+        if (cancelled) return
+        rows.push({
+          session,
+          dayLabel,
+          prs,
+          rating: session.overall_performance_rating ?? null,
+          feedback: session.overall_feedback ?? null,
+        })
+      }
+      if (!cancelled) setCompletionData(rows)
+      setLoadingCompletion(false)
+    })()
+    return () => { cancelled = true }
+  }, [modalDate, sessionsByDate])
 
   const prevMonth = () => {
     if (viewMonth === 0) {
@@ -149,18 +221,21 @@ export default function WorkoutCalendar() {
             const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
             const hasWorkout = workoutDates.has(dateStr)
             const isToday = dateStr === todayStr
+            const DayWrapper = hasWorkout ? 'button' : 'div'
             return (
-              <div
+              <DayWrapper
                 key={`${ri}-${di}-${day}`}
+                type={hasWorkout ? 'button' : undefined}
+                onClick={hasWorkout ? () => setModalDate(dateStr) : undefined}
                 className={`aspect-square flex items-center justify-center rounded-md text-[10px] sm:text-sm ${
                   hasWorkout
-                    ? 'bg-green-600/60 text-white font-semibold'
+                    ? 'bg-green-600/60 text-white font-semibold cursor-pointer hover:bg-green-600/80 transition-colors'
                     : 'text-[#a1a1a1]'
                 } ${isToday ? 'ring-2 ring-white ring-offset-2 ring-offset-[#111111]' : ''}`}
-                title={hasWorkout ? `Workout on ${dateStr}` : undefined}
+                title={hasWorkout ? `Workout on ${dateStr} – click for details` : undefined}
               >
                 {day}
-              </div>
+              </DayWrapper>
             )
           })
         )}
@@ -178,6 +253,94 @@ export default function WorkoutCalendar() {
           </span>
         )}
       </div>
+
+      {/* Completion notes modal */}
+      {modalDate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+          onClick={() => setModalDate(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Workout Completion Log"
+        >
+          <div
+            className="bg-[#111111] rounded-lg border border-[#2a2a2a] shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-[#2a2a2a] flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">
+                Workout Completion Log
+                {modalDate && (
+                  <span className="block text-sm font-normal text-[#888888] mt-0.5">
+                    {(() => {
+                      const [y, m, d] = modalDate.split('-').map(Number)
+                      return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+                    })()}
+                  </span>
+                )}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setModalDate(null)}
+                className="p-1.5 rounded text-[#888888] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 overflow-auto flex-1">
+              {loadingCompletion && (
+                <p className="text-[#888888] text-sm text-center py-6">Loading…</p>
+              )}
+              {!loadingCompletion && completionData && completionData.length === 0 && (
+                <p className="text-[#888888] text-sm text-center py-6">No sessions found for this date.</p>
+              )}
+              {!loadingCompletion && completionData && completionData.length > 0 && (
+                <div className="space-y-6">
+                  {completionData.map((row) => (
+                    <div key={row.session.id} className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-base font-semibold text-white">{row.dayLabel}</h4>
+                        <Link
+                          href={`/workout/edit/${row.session.id}`}
+                          onClick={() => setModalDate(null)}
+                          className="text-sm font-medium text-white bg-[#2a2a2a] hover:bg-[#3a3a3a] px-3 py-1.5 rounded-md transition-colors"
+                        >
+                          Edit workout
+                        </Link>
+                      </div>
+                      {row.rating !== null && (
+                        <p className="text-white text-sm mb-2">
+                          Overall rating: <span className="font-bold">{row.rating}/10</span>
+                        </p>
+                      )}
+                      {row.feedback && (
+                        <p className="text-[#a1a1a1] text-sm whitespace-pre-line mb-3">{row.feedback}</p>
+                      )}
+                      {row.prs.length > 0 && (
+                        <div className="text-amber-300 text-sm font-medium">
+                          <p className="mb-1.5">You hit {row.prs.length} PR(s):</p>
+                          <ul className="list-disc list-inside space-y-0.5">
+                            {row.prs.map((p, i) => (
+                              <li key={i}>
+                                {p.prType === 'heaviestSet'
+                                  ? `${p.exerciseName} (heaviest set: ${p.value} lbs)`
+                                  : `${p.exerciseName} (estimated 1RM: ${p.value} lbs)`}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

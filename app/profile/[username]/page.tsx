@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { sendFriendRequest, sendPRReaction, getReactedPRs, type ReactionType, type ReactionInfo } from '@/lib/friends'
@@ -23,8 +23,8 @@ function getReactionEmoji(type: ReactionType): string {
   }
 }
 
-export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
-  const { username } = use(params)
+export default function ProfilePage({ params }: { params: { username: string } }) {
+  const { username } = params
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)

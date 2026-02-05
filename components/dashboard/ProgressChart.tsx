@@ -211,12 +211,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
               stroke="#ffffff"
               strokeWidth={2}
               name="Estimated 1RM (lbs)"
-              dot={(props: any) => {
-                const { cx, cy, payload } = props
-                const isPR = payload?.isE1RMPR
-                if (!isPR) return <circle cx={cx} cy={cy} r={4} fill="#ffffff" />
-                return <circle cx={cx} cy={cy} r={5} fill="#f59e0b" stroke="#ffffff" strokeWidth={1} />
-              }}
+              dot={{ fill: '#ffffff', r: 4 }}
             />
           )}
           {selectedMetric === 'heaviestSet' && (
@@ -226,12 +221,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
               stroke="#ffffff"
               strokeWidth={2}
               name="Top Set (lbs)"
-              dot={(props: any) => {
-                const { cx, cy, payload } = props
-                const isPR = payload?.isHeaviestPR
-                if (!isPR) return <circle cx={cx} cy={cy} r={4} fill="#ffffff" />
-                return <circle cx={cx} cy={cy} r={5} fill="#f59e0b" stroke="#ffffff" strokeWidth={1} />
-              }}
+              dot={{ fill: '#ffffff', r: 4 }}
             />
           )}
         </LineChart>

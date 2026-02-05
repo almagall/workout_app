@@ -18,7 +18,8 @@ import {
   calculateTexasMethodSetTarget,
 } from '@/lib/target-strategies'
 import { estimated1RM } from '@/lib/estimated-1rm'
-import { checkSetPR, getPRsForSession } from '@/lib/pr-helper'
+import { checkSetPR, getPRsForSession, type SessionPR } from '@/lib/pr-helper'
+import RestTimer from '@/components/workout/RestTimer'
 import type { PlanType, SetData, ExerciseData, PerformanceStatus, SetType } from '@/types/workout'
 
 interface WorkoutLoggerProps {
@@ -51,6 +52,7 @@ export default function WorkoutLogger({
   const [workoutComplete, setWorkoutComplete] = useState(false)
   const [overallFeedback, setOverallFeedback] = useState<string | null>(null)
   const [overallRating, setOverallRating] = useState<number | null>(null)
+  const [workoutCompletePRs, setWorkoutCompletePRs] = useState<SessionPR[] | null>(null)
   // Track pre-populated values for styling
   const [prePopulatedValues, setPrePopulatedValues] = useState<Map<string, { weight: number; reps: number; rpe: number }>>(new Map())
   // Track confirmed sets
@@ -76,6 +78,22 @@ export default function WorkoutLogger({
   })
   const [isEditMode, setIsEditMode] = useState(!!sessionId)
   const [isBaselineWorkout, setIsBaselineWorkout] = useState(false)
+  // Rest timer state
+  const [showRestTimer, setShowRestTimer] = useState(false)
+  const [restTimerEnabled, setRestTimerEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('workout_rest_timer_enabled')
+      return saved !== 'false' // Default to true
+    }
+    return true
+  })
+  const [defaultRestSeconds, setDefaultRestSeconds] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('workout_rest_timer_seconds')
+      return saved ? parseInt(saved, 10) : 90
+    }
+    return 90
+  })
   const router = useRouter()
   const exerciseSelectorRef = useRef<HTMLDivElement>(null)
 
@@ -758,28 +776,75 @@ export default function WorkoutLogger({
     const exercise = exerciseData[exerciseIndex]
     const set = exercise.sets[setIndex]
     if (set.setType === 'working' && set.weight > 0 && set.reps > 0) {
-      const otherSets = exercise.sets
-        .filter((s) => s.setType === 'working' && s !== set)
-        .map((s) => ({ weight: s.weight, reps: s.reps }))
       try {
-        const status = await checkSetPR(
-          dayId,
-          exercise.exerciseName,
-          set.weight,
-          set.reps,
-          otherSets
-        )
+        // Collect all confirmed working sets for this exercise
+        const confirmedEntries: { key: string; weight: number; reps: number; e1rm: number }[] = []
+        exercise.sets.forEach((s, i) => {
+          if (s.setType !== 'working' || s.weight <= 0 || s.reps <= 0) return
+          const setKey = `${exerciseIndex}-${i}`
+          if (!newConfirmed.has(setKey)) return
+          confirmedEntries.push({
+            key: setKey,
+            weight: s.weight,
+            reps: s.reps,
+            e1rm: estimated1RM(s.weight, s.reps),
+          })
+        })
+
+        if (confirmedEntries.length === 0) {
+          if (restTimerEnabled) setShowRestTimer(true)
+          return
+        }
+
+        // Single set with max weight and single set with max e1RM (may be same set)
+        const maxWeightEntry = confirmedEntries.reduce((a, b) => (b.weight > a.weight ? b : a))
+        const maxE1RMEntry = confirmedEntries.reduce((a, b) => (b.e1rm > a.e1rm ? b : a))
+
+        const otherSetsFor = (excludeKey: string) =>
+          confirmedEntries.filter((e) => e.key !== excludeKey).map((e) => ({ weight: e.weight, reps: e.reps }))
+
+        const [heaviestStatus, e1rmStatus] = await Promise.all([
+          checkSetPR(
+            dayId,
+            exercise.exerciseName,
+            maxWeightEntry.weight,
+            maxWeightEntry.reps,
+            otherSetsFor(maxWeightEntry.key)
+          ),
+          checkSetPR(
+            dayId,
+            exercise.exerciseName,
+            maxE1RMEntry.weight,
+            maxE1RMEntry.reps,
+            otherSetsFor(maxE1RMEntry.key)
+          ),
+        ])
+
         setPrBadges((prev) => {
           const next = new Map(prev)
-          next.set(key, {
-            heaviestSetPR: status.isHeaviestSetPR,
-            e1RMPR: status.isE1RMPR,
+          for (const k of next.keys()) {
+            if (k.startsWith(`${exerciseIndex}-`)) next.delete(k)
+          }
+          next.set(maxWeightEntry.key, {
+            heaviestSetPR: heaviestStatus.isHeaviestSetPR,
+            e1RMPR: maxWeightEntry.key === maxE1RMEntry.key ? e1rmStatus.isE1RMPR : false,
           })
+          if (maxE1RMEntry.key !== maxWeightEntry.key) {
+            next.set(maxE1RMEntry.key, {
+              heaviestSetPR: false,
+              e1RMPR: e1rmStatus.isE1RMPR,
+            })
+          }
           return next
         })
       } catch {
         // Ignore PR check errors
       }
+    }
+
+    // Show rest timer after confirming a set (if enabled)
+    if (restTimerEnabled) {
+      setShowRestTimer(true)
     }
   }
 
@@ -928,12 +993,7 @@ export default function WorkoutLogger({
           sessionId
         )
         if (editPrs.length > 0) {
-          const prList = editPrs.map((p) =>
-            p.prType === 'heaviestSet'
-              ? `${p.exerciseName} (heaviest set: ${p.value} lbs)`
-              : `${p.exerciseName} (estimated 1RM: ${p.value} lbs)`
-          ).join(', ')
-          feedback += `\n\nYou hit ${editPrs.length} PR(s): ${prList}.`
+          setWorkoutCompletePRs(editPrs)
         }
 
         // Update workout session (all sets saved; performanceStatus only for working sets)
@@ -941,7 +1001,7 @@ export default function WorkoutLogger({
           templateDayId: dayId,
           workoutDate,
           overallRating: rating,
-          overallFeedback: feedback,
+          overallFeedback: feedback + (editPrs.length > 0 ? `\n\nYou hit ${editPrs.length} PR(s).` : ''),
           exercises: exerciseData.map((exercise) => ({
             exerciseName: exercise.exerciseName,
             sets: exercise.sets.map((set) => {
@@ -1020,15 +1080,8 @@ export default function WorkoutLogger({
         })
 
         setOverallRating(null)
-        setOverallFeedback(
-          baselinePrs.length > 0
-            ? `You hit ${baselinePrs.length} PR(s) today: ${baselinePrs.map((p) =>
-                p.prType === 'heaviestSet'
-                  ? `${p.exerciseName} (heaviest set: ${p.value} lbs)`
-                  : `${p.exerciseName} (estimated 1RM: ${p.value} lbs)`
-              ).join(', ')}.`
-            : null
-        )
+        setOverallFeedback(null) // PRs shown as bullet list when present
+        setWorkoutCompletePRs(baselinePrs.length > 0 ? baselinePrs : null)
         setWorkoutComplete(true)
         return
       }
@@ -1089,21 +1142,17 @@ export default function WorkoutLogger({
         exerciseName: e.exerciseName,
         sets: e.sets.map((s) => ({ setType: s.setType, weight: s.weight, reps: s.reps })),
       })))
-      if (prs.length > 0) {
-        const prList = prs.map((p) =>
-          p.prType === 'heaviestSet'
-            ? `${p.exerciseName} (heaviest set: ${p.value} lbs)`
-            : `${p.exerciseName} (estimated 1RM: ${p.value} lbs)`
-        ).join(', ')
-        feedback += `\n\nYou hit ${prs.length} PR(s) today: ${prList}.`
-      }
+      const feedbackForSave = prs.length > 0
+        ? feedback + `\n\nYou hit ${prs.length} PR(s) today.`
+        : feedback
+      if (prs.length > 0) setWorkoutCompletePRs(prs)
 
       // Save workout session (all sets; performanceStatus only for working sets)
       await saveWorkoutSession({
         templateDayId: dayId,
         workoutDate,
         overallRating: rating,
-        overallFeedback: feedback,
+        overallFeedback: feedbackForSave,
         exercises: exerciseData.map((exercise) => ({
           exerciseName: exercise.exerciseName,
           sets: exercise.sets.map((set) => {
@@ -1136,7 +1185,7 @@ export default function WorkoutLogger({
       })
 
       setOverallRating(rating)
-      setOverallFeedback(feedback)
+      setOverallFeedback(feedback) // PRs shown as bullet list below, not in paragraph
       setWorkoutComplete(true)
     } catch (err: any) {
       setError(err.message || 'Failed to save workout')
@@ -1162,8 +1211,19 @@ export default function WorkoutLogger({
             <div className="mb-6">
               <p className="text-lg font-semibold text-white mb-2">Baseline Recorded</p>
               <p className="text-[#a1a1a1] mb-4">This was your first workout for this day. Targets and a rating will appear from your next workout for this day.</p>
-              {overallFeedback && (
-                <p className="text-amber-300 text-sm font-medium">{overallFeedback}</p>
+              {workoutCompletePRs && workoutCompletePRs.length > 0 && (
+                <div className="text-amber-300 text-sm font-medium">
+                  <p className="mb-2">You hit {workoutCompletePRs.length} PR(s) today:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {workoutCompletePRs.map((p, i) => (
+                      <li key={i}>
+                        {p.prType === 'heaviestSet'
+                          ? `${p.exerciseName} (heaviest set: ${p.value} lbs)`
+                          : `${p.exerciseName} (estimated 1RM: ${p.value} lbs)`}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           ) : (
@@ -1173,7 +1233,21 @@ export default function WorkoutLogger({
               </div>
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-2 text-white">Overall Feedback:</h3>
-                <p className="text-[#a1a1a1]">{overallFeedback}</p>
+                <p className="text-[#a1a1a1] whitespace-pre-line">{overallFeedback}</p>
+                {workoutCompletePRs && workoutCompletePRs.length > 0 && (
+                  <div className="mt-4 text-amber-300 text-sm font-medium">
+                    <p className="mb-2">You hit {workoutCompletePRs.length} PR(s) today:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {workoutCompletePRs.map((p, i) => (
+                        <li key={i}>
+                          {p.prType === 'heaviestSet'
+                            ? `${p.exerciseName} (heaviest set: ${p.value} lbs)`
+                            : `${p.exerciseName} (estimated 1RM: ${p.value} lbs)`}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -1298,11 +1372,33 @@ export default function WorkoutLogger({
       <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
-          {isEditMode && (
-            <span className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-md text-sm">
-              Editing Workout
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {isEditMode && (
+              <span className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-md text-sm">
+                Editing Workout
+              </span>
+            )}
+            {/* Rest Timer Toggle */}
+            <button
+              onClick={() => {
+                const newValue = !restTimerEnabled
+                setRestTimerEnabled(newValue)
+                localStorage.setItem('workout_rest_timer_enabled', String(newValue))
+                if (!newValue) setShowRestTimer(false)
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                restTimerEnabled
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                  : 'bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]'
+              }`}
+              title={restTimerEnabled ? 'Rest timer enabled' : 'Rest timer disabled'}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="hidden sm:inline">Timer {restTimerEnabled ? 'On' : 'Off'}</span>
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -1446,12 +1542,17 @@ export default function WorkoutLogger({
                       ✓ Set Confirmed
                     </span>
                     {prBadges.get(setKey) && (prBadges.get(setKey)!.heaviestSetPR || prBadges.get(setKey)!.e1RMPR) && (
-                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
-                        {prBadges.get(setKey)!.heaviestSetPR && prBadges.get(setKey)!.e1RMPR
-                          ? 'PR'
-                          : prBadges.get(setKey)!.heaviestSetPR
-                          ? 'PR (heaviest)'
-                          : 'PR (e1RM)'}
+                      <span className="flex items-center gap-1.5 flex-wrap">
+                        {prBadges.get(setKey)!.heaviestSetPR && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
+                            Heaviest PR
+                          </span>
+                        )}
+                        {prBadges.get(setKey)!.e1RMPR && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
+                            Est. 1RM PR
+                          </span>
+                        )}
                       </span>
                     )}
                   </div>
@@ -1460,6 +1561,17 @@ export default function WorkoutLogger({
             </div>
           )})}
         </div>
+
+        {/* Rest Timer */}
+        {showRestTimer && (
+          <div className="mt-4">
+            <RestTimer
+              initialSeconds={defaultRestSeconds}
+              onDismiss={() => setShowRestTimer(false)}
+              autoStart={true}
+            />
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap gap-2">
           <button

@@ -98,7 +98,19 @@ export default function NotificationBell() {
     <div className="relative" ref={containerRef}>
       <button
         type="button"
-        onClick={() => { setOpen(!open); if (!open) getNotifications(30).then(setNotifications) }}
+        onClick={async () => {
+          const willOpen = !open
+          setOpen(willOpen)
+          if (willOpen) {
+            const list = await getNotifications(30)
+            setNotifications(list)
+            // Mark all as read when user opens dropdown (they have viewed them)
+            if (unreadCount > 0) {
+              await markAllNotificationsRead()
+              setUnreadCount(0)
+            }
+          }
+        }}
         className="relative p-2 rounded-md text-[#888888] hover:text-white hover:bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-white"
         aria-label="Notifications"
       >
@@ -116,19 +128,17 @@ export default function NotificationBell() {
         <div className="absolute right-0 mt-1 w-80 max-h-96 overflow-auto rounded-md border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg z-50">
           <div className="p-2 border-b border-[#2a2a2a] flex justify-between items-center gap-2">
             <span className="font-semibold text-white text-sm">Notifications</span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={async () => {
-                  await markAllNotificationsRead()
-                  refresh()
-                }}
-                className="text-xs text-[#888888] hover:text-white whitespace-nowrap"
-              >
-                Clear all
-              </button>
-              <Link href="/friends" onClick={() => setOpen(false)} className="text-xs text-white hover:underline">Friends</Link>
-            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await markAllNotificationsRead()
+                setUnreadCount(0)
+                refresh()
+              }}
+              className="text-xs text-[#888888] hover:text-white whitespace-nowrap"
+            >
+              Clear all
+            </button>
           </div>
           <div className="divide-y divide-[#2a2a2a]">
             {notifications.length === 0 && (

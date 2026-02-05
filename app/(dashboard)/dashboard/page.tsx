@@ -57,26 +57,30 @@ export default function DashboardPage() {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <div className="lg:col-span-2">
-          <ProgressSelectors
-            selectedTemplateDayId={selectedTemplateDayId}
-            onTemplateDayChange={setSelectedTemplateDayId}
-            selectedExercise={selectedExercise}
-            onExerciseChange={setSelectedExercise}
-          />
-          <div className="mt-4 sm:mt-6 bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
-            <h2 className="text-xl font-semibold mb-4 text-white">Progress Over Time</h2>
-            <ProgressChart
+        <div className="lg:col-span-2 space-y-6">
+          <div>
+            <ProgressSelectors
               selectedTemplateDayId={selectedTemplateDayId}
+              onTemplateDayChange={setSelectedTemplateDayId}
               selectedExercise={selectedExercise}
+              onExerciseChange={setSelectedExercise}
             />
+            <div className="mt-4 sm:mt-6 bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
+              <h2 className="text-xl font-semibold mb-4 text-white">Progress Over Time</h2>
+              <ProgressChart
+                selectedTemplateDayId={selectedTemplateDayId}
+                selectedExercise={selectedExercise}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <PerformanceMetrics />
+            <RecentPRs />
           </div>
         </div>
         <div className="space-y-6">
           <WorkoutCalendar />
-          <RecentPRs />
           <FriendActivityFeed />
-          <PerformanceMetrics />
         </div>
       </div>
     </div>

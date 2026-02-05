@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { WorkoutSummary } from '@/app/api/share/workout/[sessionId]/route'
 
@@ -21,8 +21,8 @@ function formatVolume(volume: number): string {
   return volume.toLocaleString()
 }
 
-export default function ShareWorkoutPage({ params }: { params: Promise<{ sessionId: string }> }) {
-  const { sessionId } = use(params)
+export default function ShareWorkoutPage({ params }: { params: { sessionId: string } }) {
+  const { sessionId } = params
   const [summary, setSummary] = useState<WorkoutSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -64,9 +64,22 @@ export default function ShareWorkoutPage({ params }: { params: Promise<{ session
     }
   }
 
+  const exitToHistory = (
+    <Link
+      href="/workout/history"
+      className="fixed top-4 right-4 z-10 p-2 rounded-full text-red-500 hover:text-red-400 hover:bg-[#2a2a2a] transition-colors"
+      aria-label="Back to workout history"
+    >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </Link>
+  )
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
+        {exitToHistory}
         <p className="text-[#888888]">Loading workout...</p>
       </div>
     )
@@ -75,6 +88,7 @@ export default function ShareWorkoutPage({ params }: { params: Promise<{ session
   if (error || !summary) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-black px-4">
+        {exitToHistory}
         <p className="text-red-400 text-lg mb-4">{error || 'Workout not found'}</p>
         <Link href="/" className="text-amber-400 hover:text-amber-300">
           Go to Home
@@ -85,6 +99,7 @@ export default function ShareWorkoutPage({ params }: { params: Promise<{ session
 
   return (
     <div className="min-h-screen bg-black">
+      {exitToHistory}
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
