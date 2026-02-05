@@ -50,7 +50,7 @@ export function FriendActivityFeed() {
       setFeed(data.feed ?? [])
 
       // Load reactions for all friends in the feed
-      const friendIds: string[] = [...new Set((data.feed ?? []).map((p: FeedPR) => p.user_id))]
+      const friendIds = [...new Set((data.feed ?? []).map((p: FeedPR) => p.user_id))] as string[]
       const allReacted = new Map<string, ReactionInfo>()
       for (const friendId of friendIds) {
         const reacted = await getReactedPRs(friendId)
