@@ -13,6 +13,7 @@ import {
   type NotificationWithFrom,
   type PRKudosMetadata,
   type PRCommentMetadata,
+  type AchievementUnlockedMetadata,
   type ReactionType,
 } from '@/lib/friends'
 
@@ -25,12 +26,14 @@ function getReactionEmoji(type?: ReactionType): string {
   }
 }
 
-function isPRKudosMetadata(m: PRKudosMetadata | PRCommentMetadata | null | undefined): m is PRKudosMetadata {
-  return !!m && 'reaction_type' in m || (!!m && !('comment_preview' in m))
+type NotificationMetadata = PRKudosMetadata | PRCommentMetadata | AchievementUnlockedMetadata | null | undefined
+
+function isPRKudosMetadata(m: NotificationMetadata): m is PRKudosMetadata {
+  return !!m && typeof m === 'object' && 'reaction_type' in m
 }
 
-function isPRCommentMetadata(m: PRKudosMetadata | PRCommentMetadata | null | undefined): m is PRCommentMetadata {
-  return !!m && 'comment_preview' in m
+function isPRCommentMetadata(m: NotificationMetadata): m is PRCommentMetadata {
+  return !!m && typeof m === 'object' && 'comment_preview' in m
 }
 
 export default function NotificationBell() {
