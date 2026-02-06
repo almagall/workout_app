@@ -159,6 +159,13 @@ export interface RecentPR {
   workoutDate: string
 }
 
+export interface WorkoutDayPRs {
+  workoutDate: string
+  templateDayId: string
+  dayLabel: string
+  prs: RecentPR[]
+}
+
 /**
  * Get recent PRs across all exercises and template days for dashboard display.
  */
@@ -223,6 +230,105 @@ export async function getRecentPRs(limit: number = 5): Promise<RecentPR[]> {
   }
 
   return prs.slice(-limit).reverse()
+}
+
+/**
+ * Get recent PRs grouped by workout day for dashboard display.
+ * Returns the last N workout days that have PRs, with all PRs from each day.
+ */
+export async function getRecentPRsByDay(numDays: number = 5): Promise<WorkoutDayPRs[]> {
+  const [sessions, allLogs] = await Promise.all([
+    getWorkoutSessions(),
+    getExerciseLogs(),
+  ])
+
+  const prs: RecentPR[] = []
+  const maxByExerciseDay = new Map<string, { heaviestSet: number; e1RM: number }>()
+
+  const sortedSessions = [...sessions].sort(
+    (a, b) => new Date(a.workout_date).getTime() - new Date(b.workout_date).getTime()
+  )
+
+  // Process sessions chronologically to detect PRs
+  for (const session of sortedSessions) {
+    const logs = allLogs.filter(
+      (l) => l.session_id === session.id && (l.set_type === 'working' || l.set_type == null)
+    )
+
+    for (const log of logs) {
+      const w = parseFloat(log.weight.toString())
+      const r = log.reps
+      if (w <= 0 || r <= 0) continue
+
+      const key = `${session.template_day_id}:${log.exercise_name}`
+      const prev = maxByExerciseDay.get(key) ?? { heaviestSet: 0, e1RM: 0 }
+      const e1rm = estimated1RM(w, r)
+
+      if (w > prev.heaviestSet) {
+        prev.heaviestSet = w
+        maxByExerciseDay.set(key, prev)
+        prs.push({
+          exerciseName: log.exercise_name,
+          templateDayId: session.template_day_id,
+          prType: 'heaviestSet',
+          value: w,
+          workoutDate: session.workout_date,
+        })
+      }
+      if (e1rm > prev.e1RM) {
+        prev.e1RM = e1rm
+        maxByExerciseDay.set(key, prev)
+        prs.push({
+          exerciseName: log.exercise_name,
+          templateDayId: session.template_day_id,
+          prType: 'e1RM',
+          value: Math.round(e1rm * 10) / 10,
+          workoutDate: session.workout_date,
+        })
+      }
+    }
+  }
+
+  // Group PRs by workoutDate + templateDayId
+  const grouped = new Map<string, RecentPR[]>()
+  for (const pr of prs) {
+    const key = `${pr.workoutDate}|${pr.templateDayId}`
+    if (!grouped.has(key)) {
+      grouped.set(key, [])
+    }
+    grouped.get(key)!.push(pr)
+  }
+
+  // Sort groups by date (descending) and take last N days
+  const sortedGroups = [...grouped.entries()]
+    .sort((a, b) => {
+      const dateA = a[1][0].workoutDate
+      const dateB = b[1][0].workoutDate
+      return dateB.localeCompare(dateA) // descending
+    })
+    .slice(0, numDays)
+
+  // Fetch day labels
+  const { getTemplateDay } = await import('./storage')
+  const uniqueDayIds = [...new Set(sortedGroups.map(([_, prs]) => prs[0].templateDayId))]
+  const dayLabelMap = new Map<string, string>()
+  
+  await Promise.all(
+    uniqueDayIds.map(async (dayId) => {
+      const day = await getTemplateDay(dayId)
+      if (day) dayLabelMap.set(dayId, day.day_label)
+    })
+  )
+
+  // Build final result
+  const result: WorkoutDayPRs[] = sortedGroups.map(([_, prs]) => ({
+    workoutDate: prs[0].workoutDate,
+    templateDayId: prs[0].templateDayId,
+    dayLabel: dayLabelMap.get(prs[0].templateDayId) ?? 'Workout',
+    prs,
+  }))
+
+  return result
 }
 
 /** Minimal session/log shape for computing PRs from raw data (e.g. for a friend). */

@@ -153,20 +153,18 @@ export default function ShareWorkoutPage({ params }: { params: { sessionId: stri
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium text-white">{exercise.exercise_name}</h4>
-                    <span className="text-amber-400 font-semibold">{exercise.top_set_weight} lbs</span>
+                    <div className="text-right">
+                      <p className="text-xs text-[#888888]">Heaviest Weight</p>
+                      <span className="text-amber-400 font-semibold">{exercise.top_set_weight} lbs</span>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {exercise.sets.map((set, j) => (
                       <span
                         key={j}
-                        className={`text-sm px-2 py-1 rounded ${
-                          set.set_type === 'warmup'
-                            ? 'bg-[#2a2a2a] text-[#888888]'
-                            : 'bg-amber-500/20 text-amber-300'
-                        }`}
+                        className="text-sm px-2 py-1 rounded bg-amber-500/20 text-amber-300"
                       >
                         {set.weight} x {set.reps}
-                        {set.set_type === 'warmup' && ' (W)'}
                       </span>
                     ))}
                   </div>

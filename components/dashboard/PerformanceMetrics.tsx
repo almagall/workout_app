@@ -73,25 +73,38 @@ export default function PerformanceMetrics() {
 
   if (loading) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-        <div className="text-[#888888]">Loading metrics...</div>
+      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
+        <div className="p-4 border-b border-[#2a2a2a]">
+          <h2 className="text-lg font-semibold text-white">Performance Metrics</h2>
+        </div>
+        <div className="p-4">
+          <div className="text-[#888888]">Loading metrics...</div>
+        </div>
       </div>
     )
   }
 
   if (!metrics) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-        <p className="text-[#a1a1a1]">No metrics available yet.</p>
+      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
+        <div className="p-4 border-b border-[#2a2a2a]">
+          <h2 className="text-lg font-semibold text-white">Performance Metrics</h2>
+        </div>
+        <div className="p-4">
+          <p className="text-[#a1a1a1]">No metrics available yet.</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-        <h3 className="text-lg font-semibold mb-4 text-white">Performance Metrics</h3>
-        <div className="space-y-4">
+      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
+        <div className="p-4 border-b border-[#2a2a2a]">
+          <h2 className="text-lg font-semibold text-white">Performance Metrics</h2>
+        </div>
+        <div className="p-4 h-[400px]">
+          <div className="space-y-4">
           <div>
             <p className="text-sm text-[#888888]">Total Workouts</p>
             <p className="text-2xl font-bold text-white">{metrics.totalWorkouts}</p>
@@ -113,6 +126,7 @@ export default function PerformanceMetrics() {
             <p className="text-2xl font-bold text-white">{metrics.averageRating}/10</p>
             <p className="text-xs text-[#666666] mt-1">Average overall workout performance rating across all logged workouts</p>
           </div>
+        </div>
         </div>
       </div>
     </div>

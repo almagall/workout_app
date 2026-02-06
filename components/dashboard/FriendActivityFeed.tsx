@@ -169,7 +169,7 @@ export function FriendActivityFeed() {
           View all
         </Link>
       </div>
-      <div className="p-4">
+      <div className="p-4 h-[400px] overflow-y-auto">
         {loading && (
           <p className="text-[#888888] text-sm text-center py-4">Loading...</p>
         )}

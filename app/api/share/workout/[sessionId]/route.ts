@@ -84,12 +84,19 @@ export async function GET(
       .eq('session_id', sessionId)
       .order('created_at', { ascending: true })
 
-    // Group by exercise
+    // Group by exercise (only include working sets)
     const exerciseMap = new Map<string, ExerciseSummary>()
+    let workingSetsCount = 0
     
     logs?.forEach((log) => {
+      // Skip warmup and cooldown sets
+      if (log.set_type === 'warmup' || log.set_type === 'cooldown') {
+        return
+      }
+
+      workingSetsCount++
       const existing = exerciseMap.get(log.exercise_name)
-      const setData = { weight: log.weight, reps: log.reps, set_type: log.set_type }
+      const setData = { weight: log.weight, reps: log.reps, set_type: log.set_type || 'working' }
       const volume = log.weight * log.reps
 
       if (existing) {
@@ -107,7 +114,7 @@ export async function GET(
     })
 
     const exercises = Array.from(exerciseMap.values())
-    const totalSets = logs?.length ?? 0
+    const totalSets = workingSetsCount
     const totalVolume = exercises.reduce((sum, e) => sum + e.total_volume, 0)
 
     const summary: WorkoutSummary = {
