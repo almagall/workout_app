@@ -19,6 +19,8 @@ export interface PresetTemplate {
     dayLabel: string
     dayOrder: number
     exercises: string[]
+    /** Optional notes per exercise (same order as exercises). Shown in workout logger for program guidance. */
+    exerciseNotes?: string[]
   }>
 }
 
@@ -26,6 +28,22 @@ export function getPresetTargetStrategy(presetId: string | null | undefined): Pr
   if (!presetId) return null
   const preset = PRESET_TEMPLATES.find((p) => p.id === presetId)
   return preset?.targetStrategy ?? null
+}
+
+export function getPresetExerciseNotes(
+  presetId: string | null | undefined,
+  dayLabel: string,
+  exerciseName: string
+): string | null {
+  if (!presetId) return null
+  const preset = PRESET_TEMPLATES.find((p) => p.id === presetId)
+  if (!preset) return null
+  const day = preset.days.find((d) => d.dayLabel.trim().toLowerCase() === dayLabel.trim().toLowerCase())
+  if (!day) return null
+  const index = day.exercises.findIndex((e) => e.trim().toLowerCase() === exerciseName.trim().toLowerCase())
+  if (index === -1 || !day.exerciseNotes || index >= day.exerciseNotes.length) return null
+  const note = day.exerciseNotes[index]
+  return note && note.trim() ? note : null
 }
 
 export const PRESET_TEMPLATES: PresetTemplate[] = [
@@ -49,6 +67,15 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Tricep Pushdown',
           'Overhead Tricep Extension',
         ],
+        exerciseNotes: [
+          'Primary horizontal push. 3–4 sets of 8–12. Control the eccentric; touch chest and press.',
+          'Primary vertical push. 3–4 sets of 8–12. Strict form; lock out overhead.',
+          'Upper-chest emphasis. 3–4 sets of 8–12. Full stretch at bottom.',
+          'Chest isolation. 3–4 sets of 10–15. Squeeze at the center.',
+          'Side delts. 3–4 sets of 10–15. Raise to shoulder height; control the negative.',
+          'Tricep isolation. 3–4 sets of 10–15. Elbows tucked; full extension.',
+          'Tricep stretch. 3–4 sets of 10–15. Lower with control behind head.',
+        ],
       },
       {
         dayOrder: 2,
@@ -60,6 +87,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Barbell Curl',
           'Hammer Curl',
         ],
+        exerciseNotes: [
+          'Primary horizontal pull. 3–4 sets of 8–12. Pull to hip; keep torso stable.',
+          'Vertical pull. 3–4 sets of 8–12. Pull to upper chest; full stretch at top.',
+          'Rear delts/upper back. 3–4 sets of 12–15. External rotation at end range.',
+          'Bicep focus. 3–4 sets of 8–12. Full range; no swing.',
+          'Brachialis and bicep. 3–4 sets of 8–12. Neutral grip; control the negative.',
+        ],
       },
       {
         dayOrder: 3,
@@ -70,6 +104,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Press',
           'Leg Curl',
           'Calf Raise',
+        ],
+        exerciseNotes: [
+          'Primary quad/hip. 3–4 sets of 8–12. Depth to at least parallel; brace core.',
+          'Hamstring emphasis. 3–4 sets of 8–12. Slight knee bend; feel the stretch.',
+          'Quad volume. 3–4 sets of 10–15. Full range; do not lock knees at top.',
+          'Hamstring isolation. 3–4 sets of 10–15. Squeeze at top; control descent.',
+          'Calves. 3–4 sets of 10–15. Full stretch and pause at top.',
         ],
       },
       {
@@ -83,6 +124,14 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Close-Grip Bench',
           'Skull Crusher',
         ],
+        exerciseNotes: [
+          'Primary vertical push. 3–4 sets of 8–12. Strict press; no leg drive.',
+          'Upper chest. 3–4 sets of 8–12. Touch upper chest; control the bar.',
+          'Chest stretch. 3–4 sets of 10–15. Arc the weights; feel the stretch.',
+          'Side delts. 3–4 sets of 10–15. Raise to shoulder level.',
+          'Tricep compound. 3–4 sets of 8–12. Elbows in; touch lower chest.',
+          'Tricep isolation. 3–4 sets of 8–12. Lower to forehead or nose; extend fully.',
+        ],
       },
       {
         dayOrder: 5,
@@ -94,6 +143,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Preacher Curl',
           'Incline Dumbbell Curl',
         ],
+        exerciseNotes: [
+          'Full posterior chain. 3–4 sets of 6–10. Set back flat; brace and pull.',
+          'Horizontal pull. 3–4 sets of 8–12. Squeeze shoulder blades.',
+          'Vertical pull. 3–4 sets of 8–12. Pull to chest; full hang at bottom.',
+          'Bicep isolation. 3–4 sets of 8–12. Controlled; no swing.',
+          'Bicep stretch. 3–4 sets of 8–12. Incline angle emphasizes long head.',
+        ],
       },
       {
         dayOrder: 6,
@@ -104,6 +160,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Curl',
           'Leg Extension',
           'Calf Raise',
+        ],
+        exerciseNotes: [
+          'Quad emphasis. 3–4 sets of 8–12. Elbows high; upright torso.',
+          'Quad volume. 3–4 sets of 10–15. Full range; controlled tempo.',
+          'Hamstring isolation. 3–4 sets of 10–15. Squeeze at top.',
+          'Quad isolation. 3–4 sets of 10–15. Extend fully; control the negative.',
+          'Calves. 3–4 sets of 10–15. Full stretch and hold at top.',
         ],
       },
     ],
@@ -126,6 +189,14 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Barbell Curl',
           'Tricep Pushdown',
         ],
+        exerciseNotes: [
+          'Primary horizontal push. 3–4 sets of 8–12. Touch chest; control eccentric.',
+          'Primary horizontal pull. 3–4 sets of 8–12. Pull to hip; stable torso.',
+          'Primary vertical push. 3–4 sets of 8–12. Strict press; lock out overhead.',
+          'Vertical pull. 3–4 sets of 8–12. Pull to upper chest.',
+          'Bicep. 3–4 sets of 8–12. Full range; no swing.',
+          'Tricep. 3–4 sets of 8–12. Elbows in; full extension.',
+        ],
       },
       {
         dayOrder: 2,
@@ -136,6 +207,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Press',
           'Leg Curl',
           'Calf Raise',
+        ],
+        exerciseNotes: [
+          'Primary lower. 3–4 sets of 8–12. At least parallel; brace core.',
+          'Hamstring focus. 3–4 sets of 8–12. Slight knee bend; feel stretch.',
+          'Quad volume. 3–4 sets of 10–15. Full range; no lock at top.',
+          'Hamstring isolation. 3–4 sets of 10–15. Squeeze at top.',
+          'Calves. 3–4 sets of 10–15. Full stretch and pause.',
         ],
       },
       {
@@ -149,6 +227,14 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Hammer Curl',
           'Overhead Tricep Extension',
         ],
+        exerciseNotes: [
+          'Upper chest. 3–4 sets of 8–12. Full stretch; press to lockout.',
+          'Horizontal pull. 3–4 sets of 8–12. Squeeze shoulder blades.',
+          'Side delts. 3–4 sets of 10–15. Raise to shoulder height.',
+          'Vertical pull. 3–4 sets of 8–12. Pull chest to bar if possible.',
+          'Brachialis/bicep. 3–4 sets of 8–12. Neutral grip; control negative.',
+          'Tricep stretch. 3–4 sets of 10–15. Lower behind head with control.',
+        ],
       },
       {
         dayOrder: 4,
@@ -159,6 +245,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Curl',
           'Leg Extension',
           'Calf Raise',
+        ],
+        exerciseNotes: [
+          'Quad emphasis. 3–4 sets of 8–12. Elbows up; upright torso.',
+          'Quad volume. 3–4 sets of 10–15. Full range; controlled.',
+          'Hamstring isolation. 3–4 sets of 10–15. Squeeze at top.',
+          'Quad isolation. 3–4 sets of 10–15. Full extension; control descent.',
+          'Calves. 3–4 sets of 10–15. Full stretch and hold.',
         ],
       },
     ],
@@ -182,6 +275,14 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Barbell Curl',
           'Tricep Pushdown',
         ],
+        exerciseNotes: [
+          'Power: heavy, 3–5 sets of 3–5 reps. Touch chest; explosive press.',
+          'Power: heavy, 3–5 sets of 3–5 reps. Pull to hip; keep back flat.',
+          'Power: heavy, 3–5 sets of 3–5 reps. Strict press; no leg drive.',
+          'Power: 3–4 sets of 6–8. Pull to upper chest; control negative.',
+          'Power: 3–4 sets of 6–8. Full range; controlled.',
+          'Power: 3–4 sets of 6–8. Elbows in; full extension.',
+        ],
       },
       {
         dayOrder: 2,
@@ -192,6 +293,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Press',
           'Leg Curl',
           'Calf Raise',
+        ],
+        exerciseNotes: [
+          'Power: heavy, 3–5 sets of 3–5 reps. Depth to parallel; brace and drive.',
+          'Power: heavy, 3–5 sets of 3–5 reps. Set back flat; feel hamstring stretch.',
+          'Power: 3–4 sets of 6–8. Full range; controlled tempo.',
+          'Hypertrophy: 3–4 sets of 8–12. Squeeze at top.',
+          '3–4 sets of 10–15. Full stretch and pause at top.',
         ],
       },
       {
@@ -206,6 +314,15 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Preacher Curl',
           'Skull Crusher',
         ],
+        exerciseNotes: [
+          'Hypertrophy: 3–4 sets of 8–12. Upper chest; full stretch.',
+          'Hypertrophy: 3–4 sets of 8–12. Squeeze shoulder blades.',
+          'Side delts: 3–4 sets of 10–15. Raise to shoulder height.',
+          'Chest isolation: 3–4 sets of 10–15. Squeeze at center.',
+          'Upper back/rear delt: 3–4 sets of 10–15. Pull to face level.',
+          'Bicep: 3–4 sets of 8–12. No swing; full range.',
+          'Tricep: 3–4 sets of 8–12. Lower to forehead; extend fully.',
+        ],
       },
       {
         dayOrder: 4,
@@ -217,6 +334,14 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Extension',
           'Romanian Deadlift',
           'Calf Raise',
+        ],
+        exerciseNotes: [
+          'Hypertrophy: 3–4 sets of 8–12. Elbows up; upright torso.',
+          'Quad volume: 3–4 sets of 10–15. Full range; no lock.',
+          'Hamstring: 3–4 sets of 10–15. Squeeze at top.',
+          'Quad isolation: 3–4 sets of 10–15. Control the negative.',
+          'Hamstring: 3–4 sets of 8–12. Stretch at bottom; hinge at hip.',
+          'Calves: 3–4 sets of 10–15. Full stretch and hold.',
         ],
       },
     ],
@@ -238,6 +363,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Dumbbell Fly',
           'Push-Up',
         ],
+        exerciseNotes: [
+          'Primary chest. 4–5 sets of 8–12. Touch chest; control eccentric.',
+          'Upper chest. 4–5 sets of 8–12. Full stretch at bottom.',
+          'Chest isolation. 4–5 sets of 10–15. Squeeze at center.',
+          'Chest stretch. 4–5 sets of 10–15. Arc the weights; feel stretch.',
+          'Finisher or pump. 3–4 sets to near failure. Full range; controlled.',
+        ],
       },
       {
         dayOrder: 2,
@@ -249,6 +381,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Cable Row',
           'Face Pull',
         ],
+        exerciseNotes: [
+          'Primary horizontal pull. 4–5 sets of 8–12. Pull to hip; stable torso.',
+          'Vertical pull. 4–5 sets of 8–12. Pull to upper chest.',
+          'Posterior chain. 3–4 sets of 6–10. Set back flat; brace and pull.',
+          'Horizontal pull. 4–5 sets of 8–12. Squeeze shoulder blades.',
+          'Rear delts/upper back. 4–5 sets of 12–15. External rotation at end.',
+        ],
       },
       {
         dayOrder: 3,
@@ -259,6 +398,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Front Raise',
           'Reverse Fly',
           'Shrug',
+        ],
+        exerciseNotes: [
+          'Primary vertical push. 4–5 sets of 8–12. Strict; lock out overhead.',
+          'Side delts. 4–5 sets of 10–15. Raise to shoulder height.',
+          'Front delts. 3–4 sets of 10–15. Raise to eye level; control.',
+          'Rear delts. 4–5 sets of 12–15. Slight bend; squeeze at top.',
+          'Traps. 4–5 sets of 8–12. Elevate and squeeze at top.',
         ],
       },
       {
@@ -272,6 +418,14 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Preacher Curl',
           'Close-Grip Bench',
         ],
+        exerciseNotes: [
+          'Bicep. 4–5 sets of 8–12. Full range; no swing.',
+          'Tricep. 4–5 sets of 8–12. Elbows in; full extension.',
+          'Brachialis/bicep. 4–5 sets of 8–12. Neutral grip; control negative.',
+          'Tricep stretch. 4–5 sets of 10–15. Lower behind head with control.',
+          'Bicep isolation. 3–4 sets of 8–12. No swing; full range.',
+          'Tricep compound. 3–4 sets of 8–12. Elbows in; touch lower chest.',
+        ],
       },
       {
         dayOrder: 5,
@@ -283,6 +437,14 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Curl',
           'Leg Extension',
           'Calf Raise',
+        ],
+        exerciseNotes: [
+          'Primary lower. 4–5 sets of 8–12. At least parallel; brace core.',
+          'Hamstring. 4–5 sets of 8–12. Hinge at hip; feel stretch.',
+          'Quad volume. 4–5 sets of 10–15. Full range; no lock.',
+          'Hamstring isolation. 4–5 sets of 10–15. Squeeze at top.',
+          'Quad isolation. 4–5 sets of 10–15. Control the negative.',
+          'Calves. 4–5 sets of 10–15. Full stretch and pause.',
         ],
       },
     ],
@@ -305,6 +467,14 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Tricep Pushdown',
           'Overhead Tricep Extension',
         ],
+        exerciseNotes: [
+          'Primary horizontal push. 4–5 sets of 8–15. Touch chest; control eccentric.',
+          'Primary vertical push. 4–5 sets of 8–15. Strict; lock out overhead.',
+          'Upper chest. 4–5 sets of 8–15. Full stretch at bottom.',
+          'Side delts. 4–5 sets of 10–15. Raise to shoulder height.',
+          'Tricep. 4–5 sets of 10–15. Elbows in; full extension.',
+          'Tricep stretch. 4–5 sets of 10–15. Lower behind head with control.',
+        ],
       },
       {
         dayOrder: 2,
@@ -315,6 +485,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Face Pull',
           'Barbell Curl',
           'Hammer Curl',
+        ],
+        exerciseNotes: [
+          'Primary horizontal pull. 4–5 sets of 8–15. Pull to hip; stable torso.',
+          'Vertical pull. 4–5 sets of 8–15. Pull to upper chest.',
+          'Rear delts/upper back. 4–5 sets of 12–15. External rotation at end.',
+          'Bicep. 4–5 sets of 8–15. Full range; no swing.',
+          'Brachialis/bicep. 4–5 sets of 8–15. Neutral grip; control negative.',
         ],
       },
       {
@@ -327,6 +504,14 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Curl',
           'Leg Extension',
           'Calf Raise',
+        ],
+        exerciseNotes: [
+          'Primary lower. 4–5 sets of 8–15. At least parallel; brace core.',
+          'Hamstring. 4–5 sets of 8–15. Hinge at hip; feel stretch.',
+          'Quad volume. 4–5 sets of 10–15. Full range; controlled.',
+          'Hamstring isolation. 4–5 sets of 10–15. Squeeze at top.',
+          'Quad isolation. 4–5 sets of 10–15. Control the negative.',
+          'Calves. 4–5 sets of 10–15. Full stretch and pause.',
         ],
       },
     ],
@@ -350,6 +535,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Tricep Pushdown',
           'Face Pull',
         ],
+        exerciseNotes: [
+          'Main lift of the day. Use the 5/3/1 set/rep scheme (e.g. 5@65%, 5@75%, 5+@85% of training max). Aim for quality reps on the top set; control the eccentric.',
+          'Assistance pull. Typically 3–5 sets of 8–12. Focus on full range and a controlled tempo.',
+          'Assistance pressing. 3–5 sets of 8–12. Complements the main bench with a different angle.',
+          'Assistance for triceps. 3–5 sets of 8–12. Keep elbows tucked and extend fully.',
+          'Assistance for rear delts/upper back. 3–5 sets of 12–15. Great for shoulder health and posture.',
+        ],
       },
       {
         dayOrder: 2,
@@ -360,6 +552,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Curl',
           'Calf Raise',
           'Ab work',
+        ],
+        exerciseNotes: [
+          'Main lift of the day. Use the 5/3/1 scheme (e.g. 5@65%, 5@75%, 5+@85% of training max). Add 10 lb to training max each cycle for lower body.',
+          'Assistance for quads. 3–5 sets of 8–12. Use a full range of motion; do not lock out at the top.',
+          'Assistance for hamstrings. 3–5 sets of 8–12. Control the negative and squeeze at the top.',
+          'Assistance for calves. 3–5 sets of 10–15. Full stretch at the bottom, pause at the top.',
+          'Core work. 3–5 sets. Planks, ab wheel, or cable crunches; focus on bracing and control.',
         ],
       },
       {
@@ -372,6 +571,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Barbell Curl',
           'Tricep Pushdown',
         ],
+        exerciseNotes: [
+          'Main lift of the day. Use the 5/3/1 scheme. Strict press: no leg drive; lock out overhead.',
+          'Assistance for lats. 3–5 sets of 8–12. Pull to upper chest; control the negative.',
+          'Assistance for side delts. 3–5 sets of 10–15. Slight forward lean, raise to shoulder height.',
+          'Assistance for biceps. 3–5 sets of 8–12. Full range; avoid swinging.',
+          'Assistance for triceps. 3–5 sets of 8–12. Elbows tucked, full extension.',
+        ],
       },
       {
         dayOrder: 4,
@@ -382,6 +588,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Curl',
           'Barbell Row',
           'Ab work',
+        ],
+        exerciseNotes: [
+          'Main lift of the day. Use the 5/3/1 scheme. Add 10 lb per cycle. Set your back flat and brace before the pull.',
+          'Assistance for quads. 3–5 sets of 8–12. Full range; control the descent.',
+          'Assistance for hamstrings. 3–5 sets of 8–12. Good complement after deadlifts.',
+          'Assistance for back. 3–5 sets of 8–12. Pull to the hip; keep the torso stable.',
+          'Core work. 3–5 sets. Planks or ab wheel; brace and control throughout.',
         ],
       },
     ],
@@ -398,11 +611,21 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
         dayOrder: 1,
         dayLabel: 'Workout A',
         exercises: ['Barbell Squat', 'Barbell Bench Press', 'Deadlift'],
+        exerciseNotes: [
+          '3 sets of 5. Add weight each session. Depth to at least parallel; brace and drive up.',
+          '3 sets of 5. Add weight each session. Touch chest; control the bar.',
+          '1 set of 5. Add weight each session. Set back flat; one work set only.',
+        ],
       },
       {
         dayOrder: 2,
         dayLabel: 'Workout B',
         exercises: ['Barbell Squat', 'Overhead Press', 'Barbell Row'],
+        exerciseNotes: [
+          '3 sets of 5. Same as Workout A; squat every session. Focus on form.',
+          '3 sets of 5. Add weight each session. Strict press; no leg drive.',
+          '3 sets of 5. Add weight each session. Pull to hip; keep torso stable.',
+        ],
       },
     ],
   },
@@ -418,11 +641,21 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
         dayOrder: 1,
         dayLabel: 'Workout A',
         exercises: ['Barbell Squat', 'Barbell Bench Press', 'Barbell Row'],
+        exerciseNotes: [
+          '5 sets of 5. Add weight each session. At least parallel; brace core.',
+          '5 sets of 5. Add weight each session. Touch chest; control eccentric.',
+          '5 sets of 5. Add weight each session. Pull to hip; keep back flat.',
+        ],
       },
       {
         dayOrder: 2,
         dayLabel: 'Workout B',
         exercises: ['Barbell Squat', 'Overhead Press', 'Deadlift'],
+        exerciseNotes: [
+          '5 sets of 5. Same progression as Workout A. Squat every session.',
+          '5 sets of 5. Add weight each session. Strict press; lock out overhead.',
+          '1 set of 5. Add weight each session. Set back flat; one work set only.',
+        ],
       },
     ],
   },
@@ -444,6 +677,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Lat Pulldown',
           'Tricep Pushdown',
         ],
+        exerciseNotes: [
+          'Tier 1: 5x3+. Main lift; last set AMRAP. Add weight when you hit 15+ total reps.',
+          'Tier 2: 3x10. Secondary. Control the bar; touch chest.',
+          'Tier 3: 3x15+. Assistance. Full range; do not lock at top.',
+          'Tier 3: 3x15+. Pull to upper chest; control negative.',
+          'Tier 3: 3x15+. Elbows in; full extension.',
+        ],
       },
       {
         dayOrder: 2,
@@ -454,6 +694,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Leg Curl',
           'Barbell Row',
           'Barbell Curl',
+        ],
+        exerciseNotes: [
+          'Tier 1: 5x3+. Main lift; last set AMRAP. Set back flat; brace and pull.',
+          'Tier 2: 3x10. Secondary. Strict press; lock out overhead.',
+          'Tier 3: 3x15+. Squeeze at top; control descent.',
+          'Tier 3: 3x15+. Pull to hip; stable torso.',
+          'Tier 3: 3x15+. Full range; no swing.',
         ],
       },
       {
@@ -466,6 +713,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Cable Row',
           'Lateral Raise',
         ],
+        exerciseNotes: [
+          'Tier 1: 5x3+. Main lift; last set AMRAP. Touch chest; control eccentric.',
+          'Tier 2: 3x10. Secondary. At least parallel; brace core.',
+          'Tier 3: 3x15+. Chest isolation. Squeeze at center.',
+          'Tier 3: 3x15+. Horizontal pull. Squeeze shoulder blades.',
+          'Tier 3: 3x15+. Side delts. Raise to shoulder height.',
+        ],
       },
       {
         dayOrder: 4,
@@ -476,6 +730,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Face Pull',
           'Leg Curl',
           'Ab work',
+        ],
+        exerciseNotes: [
+          'Tier 1: 5x3+. Main lift; last set AMRAP. No leg drive; lock out.',
+          'Tier 2: 3x10. Secondary. Set back flat; brace before pull.',
+          'Tier 3: 3x15+. Rear delts/upper back. External rotation at end.',
+          'Tier 3: 3x15+. Hamstring. Squeeze at top.',
+          'Tier 3: 3x15+. Core. Planks or ab wheel; brace and control.',
         ],
       },
     ],
@@ -496,6 +757,11 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Barbell Bench Press',
           'Barbell Row',
         ],
+        exerciseNotes: [
+          'Volume: 5 sets of 5. Moderate weight; focus on quality and bar speed.',
+          'Volume: 5 sets of 5. Touch chest; control the bar.',
+          'Volume: 5 sets of 5. Pull to hip; keep torso stable.',
+        ],
       },
       {
         dayOrder: 2,
@@ -505,6 +771,11 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Overhead Press',
           'Deadlift',
         ],
+        exerciseNotes: [
+          'Light/recovery: 2 sets of 5. Lighter than volume day; focus on form. Elbows up.',
+          'Light/recovery: 2 sets of 5. Strict press; no leg drive.',
+          'Light/recovery: 2 sets of 5. Lighter pull; set back flat and brace.',
+        ],
       },
       {
         dayOrder: 3,
@@ -513,6 +784,11 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           'Barbell Squat',
           'Barbell Bench Press',
           'Deadlift',
+        ],
+        exerciseNotes: [
+          'Intensity: 1 set of 5 heavy. Work up to a top set of 5. Depth to parallel; brace.',
+          'Intensity: 1 set of 5 heavy. Work up to a top set of 5. Touch chest; control.',
+          'Intensity: 1 set of 5 heavy. Work up to a top set of 5. Set back flat; brace and pull.',
         ],
       },
     ],

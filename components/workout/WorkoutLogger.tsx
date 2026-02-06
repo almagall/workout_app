@@ -8,7 +8,7 @@ import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-ov
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
 import { getTodayLocalYYYYMMDD } from '@/lib/date-utils'
-import { getPresetTargetStrategy } from '@/lib/preset-templates'
+import { getPresetTargetStrategy, getPresetExerciseNotes } from '@/lib/preset-templates'
 import {
   calculate531SetTarget,
   get531CycleWeek,
@@ -1400,6 +1400,16 @@ export default function WorkoutLogger({
             </button>
           </div>
         </div>
+
+        {presetId && (() => {
+          const note = getPresetExerciseNotes(presetId, dayLabel, currentExercise.exerciseName)
+          return note ? (
+            <div className="mb-4 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-3">
+              <p className="text-xs font-medium text-[#888888] uppercase tracking-wide mb-1.5">Program notes</p>
+              <p className="text-sm text-[#a1a1a1]">{note}</p>
+            </div>
+          ) : null
+        })()}
 
         <div className="space-y-4">
           {currentExercise.sets
