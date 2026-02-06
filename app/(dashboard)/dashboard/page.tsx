@@ -56,30 +56,32 @@ export default function DashboardPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Workout Dashboard</h1>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <div className="lg:col-span-2 space-y-6">
-          <div>
-            <ProgressSelectors
+      <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-[auto_auto] gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="order-1 lg:col-span-2 lg:col-start-1 lg:row-start-1">
+          <ProgressSelectors
+            selectedTemplateDayId={selectedTemplateDayId}
+            onTemplateDayChange={setSelectedTemplateDayId}
+            selectedExercise={selectedExercise}
+            onExerciseChange={setSelectedExercise}
+          />
+          <div className="mt-4 sm:mt-6 bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
+            <h2 className="text-xl font-semibold mb-4 text-white">Progress Over Time</h2>
+            <ProgressChart
               selectedTemplateDayId={selectedTemplateDayId}
-              onTemplateDayChange={setSelectedTemplateDayId}
               selectedExercise={selectedExercise}
-              onExerciseChange={setSelectedExercise}
             />
-            <div className="mt-4 sm:mt-6 bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
-              <h2 className="text-xl font-semibold mb-4 text-white">Progress Over Time</h2>
-              <ProgressChart
-                selectedTemplateDayId={selectedTemplateDayId}
-                selectedExercise={selectedExercise}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <PerformanceMetrics />
-            <RecentPRs />
           </div>
         </div>
-        <div className="space-y-6">
+        <div className="order-2 lg:order-none lg:col-start-3 lg:row-start-1">
           <WorkoutCalendar />
+        </div>
+        <div className="order-3 lg:col-start-1 lg:row-start-2">
+          <PerformanceMetrics />
+        </div>
+        <div className="order-4 lg:col-start-2 lg:row-start-2">
+          <RecentPRs />
+        </div>
+        <div className="order-5 lg:col-start-3 lg:row-start-2">
           <FriendActivityFeed />
         </div>
       </div>
