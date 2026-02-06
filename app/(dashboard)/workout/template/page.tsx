@@ -20,6 +20,7 @@ export default function TemplatePage() {
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [usingPresetId, setUsingPresetId] = useState<string | null>(null)
+  const [expandedPresetId, setExpandedPresetId] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadTemplates() {
@@ -289,9 +290,45 @@ export default function TemplatePage() {
                     {preset.planType === 'hypertrophy' ? 'Hypertrophy' : 'Strength'}
                   </span>
                 </div>
-                <p className="text-sm text-[#a1a1a1] mb-3 line-clamp-3 flex-1">
-                  {preset.description}
-                </p>
+                <div className="mb-3 flex-1">
+                  {expandedPresetId === preset.id ? (
+                    <>
+                      <p className="text-sm text-[#a1a1a1] mb-1">
+                        {preset.description}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedPresetId(null)}
+                        className="inline-flex items-center gap-1 text-xs text-[#888888] hover:text-white transition-colors"
+                        aria-expanded="true"
+                      >
+                        <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                        See less
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-[#a1a1a1] line-clamp-3">
+                        {preset.description}
+                      </p>
+                      {preset.description.length > 100 && (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedPresetId(preset.id)}
+                          className="inline-flex items-center gap-1 mt-1 text-xs text-[#888888] hover:text-white transition-colors"
+                          aria-expanded="false"
+                        >
+                          <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                          See more
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
                 <p className="text-xs text-[#888888] mb-2">
                   {preset.days.length} workout day{preset.days.length !== 1 ? 's' : ''}
                 </p>

@@ -83,9 +83,9 @@ export default function WorkoutLogger({
   const [restTimerEnabled, setRestTimerEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('workout_rest_timer_enabled')
-      return saved !== 'false' // Default to true
+      return saved === 'true' // Default to off
     }
-    return true
+    return false
   })
   const [defaultRestSeconds, setDefaultRestSeconds] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1396,7 +1396,7 @@ export default function WorkoutLogger({
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="hidden sm:inline">Timer {restTimerEnabled ? 'On' : 'Off'}</span>
+              <span className="inline">Timer {restTimerEnabled ? 'On' : 'Off'}</span>
             </button>
           </div>
         </div>
