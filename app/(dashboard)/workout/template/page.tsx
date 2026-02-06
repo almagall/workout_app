@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getTemplates, getTemplateDays, deleteTemplate, saveTemplate } from '@/lib/storage'
 import { PRESET_TEMPLATES } from '@/lib/preset-templates'
+import { checkAndUnlockAchievements } from '@/lib/achievements'
 import type { TemplateDay, WorkoutTemplate, PlanType } from '@/types/workout'
 
 type Tab = 'my' | 'precreated'
@@ -110,6 +111,7 @@ export default function TemplatePage() {
       )
       setTemplates(templatesWithDays)
       setTab('my')
+      checkAndUnlockAchievements().catch(() => {})
     } catch (err: any) {
       alert(`Failed to add template: ${err.message}`)
     } finally {

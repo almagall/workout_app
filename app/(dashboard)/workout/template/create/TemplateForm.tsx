@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth-simple'
 import { saveTemplate, updateTemplate, getTemplates, getTemplateDays, getTemplateExercises } from '@/lib/storage'
 import type { PlanType } from '@/types/workout'
 import { searchExercises } from '@/lib/exercise-database'
+import { checkAndUnlockAchievements } from '@/lib/achievements'
 
 interface TemplateDay {
   id?: string
@@ -270,6 +271,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
         })
       }
 
+      if (!isEditMode) checkAndUnlockAchievements().catch(() => {})
       router.push('/workout/template')
     } catch (err: any) {
       setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} template`)

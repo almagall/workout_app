@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { computeRecentPRsFromData } from '@/lib/pr-helper'
+import { getAchievementDefinition } from '@/lib/achievements'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ function getSupabase() {
 }
 
 export interface FeedPR {
+  type: 'pr'
   user_id: string
   username: string
   exerciseName: string
@@ -22,8 +24,19 @@ export interface FeedPR {
   dayLabel?: string
 }
 
+export interface FeedAchievement {
+  type: 'achievement'
+  user_id: string
+  username: string
+  achievement_id: string
+  achievement_name: string
+  unlocked_at: string
+}
+
+export type FeedItem = FeedPR | FeedAchievement
+
 /** GET /api/friends/feed?currentUserId=...&limit=20
- * Returns aggregated recent PRs from all friends (who allow PR sharing).
+ * Returns aggregated recent PRs and achievement unlocks from all friends.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -44,95 +57,123 @@ export async function GET(request: NextRequest) {
       .or(`from_user_id.eq.${currentUserId},to_user_id.eq.${currentUserId}`)
 
     if (!friendships?.length) {
-      return NextResponse.json({ feed: [] as FeedPR[] })
+      return NextResponse.json({ feed: [] as FeedItem[] })
     }
 
-    // Get friend user IDs
-    const friendIds = friendships.map((f) =>
+    const friendIds = [...new Set(friendships.map((f) =>
       f.from_user_id === currentUserId ? f.to_user_id : f.from_user_id
-    )
+    ))]
 
-    // Get friends who allow PR sharing
+    // Username map for all friends (for PRs and achievements)
     const { data: friendUsers } = await supabase
       .from('simple_users')
       .select('user_id, username, allow_friends_see_prs')
       .in('user_id', friendIds)
-
-    const sharingFriends = (friendUsers ?? []).filter((f) => f.allow_friends_see_prs !== false)
-    if (!sharingFriends.length) {
-      return NextResponse.json({ feed: [] as FeedPR[] })
-    }
-
+    const allFriendUsers = friendUsers ?? []
+    const usernameMap = new Map(allFriendUsers.map((f) => [f.user_id, f.username]))
+    const sharingFriends = allFriendUsers.filter((f) => f.allow_friends_see_prs !== false)
     const sharingFriendIds = sharingFriends.map((f) => f.user_id)
-    const usernameMap = new Map(sharingFriends.map((f) => [f.user_id, f.username]))
 
-    // Get sessions for all sharing friends (last 30 days for efficiency)
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    const cutoffDate = thirtyDaysAgo.toISOString().split('T')[0]
+    const prFeed: FeedPR[] = []
+    if (sharingFriendIds.length > 0) {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      const cutoffDate = thirtyDaysAgo.toISOString().split('T')[0]
 
-    const { data: sessions } = await supabase
-      .from('workout_sessions')
-      .select('id, user_id, template_day_id, workout_date')
-      .in('user_id', sharingFriendIds)
-      .gte('workout_date', cutoffDate)
-      .order('workout_date', { ascending: true })
+      const { data: sessions } = await supabase
+        .from('workout_sessions')
+        .select('id, user_id, template_day_id, workout_date')
+        .in('user_id', sharingFriendIds)
+        .gte('workout_date', cutoffDate)
+        .order('workout_date', { ascending: true })
 
-    if (!sessions?.length) {
-      return NextResponse.json({ feed: [] as FeedPR[] })
+      if (sessions?.length) {
+        const sessionIds = sessions.map((s) => s.id)
+        const { data: logs } = await supabase
+          .from('exercise_logs')
+          .select('session_id, exercise_name, weight, reps, set_type')
+          .in('session_id', sessionIds)
+
+        const sessionByUser = new Map<string, typeof sessions>()
+        sessions.forEach((s) => {
+          const arr = sessionByUser.get(s.user_id) ?? []
+          arr.push(s)
+          sessionByUser.set(s.user_id, arr)
+        })
+
+        for (const [userId, userSessions] of sessionByUser) {
+          const userSessionIds = new Set(userSessions.map((s) => s.id))
+          const userLogs = (logs ?? []).filter((l) => userSessionIds.has(l.session_id))
+          const prs = computeRecentPRsFromData(userSessions, userLogs, 10)
+          for (const pr of prs) {
+            prFeed.push({
+              type: 'pr',
+              user_id: userId,
+              username: usernameMap.get(userId) ?? 'Unknown',
+              exerciseName: pr.exerciseName,
+              templateDayId: pr.templateDayId,
+              workoutDate: pr.workoutDate,
+              prType: pr.prType,
+              value: pr.value,
+            })
+          }
+        }
+      }
     }
 
-    const sessionIds = sessions.map((s) => s.id)
-    const { data: logs } = await supabase
-      .from('exercise_logs')
-      .select('session_id, exercise_name, weight, reps, set_type')
-      .in('session_id', sessionIds)
+    // Fetch achievement unlocks from all friends
+    const achievementFeed: FeedAchievement[] = []
+    if (friendIds.length > 0) {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      const cutoffIso = thirtyDaysAgo.toISOString()
 
-    // Compute PRs per friend
-    const feed: FeedPR[] = []
-    const sessionByUser = new Map<string, typeof sessions>()
-    sessions.forEach((s) => {
-      const arr = sessionByUser.get(s.user_id) ?? []
-      arr.push(s)
-      sessionByUser.set(s.user_id, arr)
-    })
+      const { data: achievements } = await supabase
+        .from('user_achievements')
+        .select('user_id, achievement_id, unlocked_at')
+        .in('user_id', friendIds)
+        .gte('unlocked_at', cutoffIso)
+        .order('unlocked_at', { ascending: false })
+        .limit(50)
 
-    const sessionIdToUserId = new Map(sessions.map((s) => [s.id, s.user_id]))
-
-    for (const [userId, userSessions] of sessionByUser) {
-      const userSessionIds = new Set(userSessions.map((s) => s.id))
-      const userLogs = (logs ?? []).filter((l) => userSessionIds.has(l.session_id))
-      const prs = computeRecentPRsFromData(userSessions, userLogs, 10) // Top 10 per friend
-      for (const pr of prs) {
-        feed.push({
-          user_id: userId,
-          username: usernameMap.get(userId) ?? 'Unknown',
-          exerciseName: pr.exerciseName,
-          templateDayId: pr.templateDayId,
-          workoutDate: pr.workoutDate,
-          prType: pr.prType,
-          value: pr.value,
+      for (const row of achievements ?? []) {
+        const def = getAchievementDefinition(row.achievement_id as import('@/lib/achievements').AchievementId)
+        achievementFeed.push({
+          type: 'achievement',
+          user_id: row.user_id,
+          username: usernameMap.get(row.user_id) ?? 'Unknown',
+          achievement_id: row.achievement_id,
+          achievement_name: def?.name ?? row.achievement_id,
+          unlocked_at: row.unlocked_at,
         })
       }
     }
 
-    // Sort by date (most recent first) and limit
-    feed.sort((a, b) => b.workoutDate.localeCompare(a.workoutDate))
-    const limitedFeed = feed.slice(0, limit)
+    // Combined feed with date for sorting (date-only for consistent compare)
+    const withDate: { item: FeedItem; date: string }[] = [
+      ...prFeed.map((p) => ({ item: p, date: p.workoutDate })),
+      ...achievementFeed.map((a) => ({ item: a, date: a.unlocked_at.slice(0, 10) })),
+    ]
+    withDate.sort((a, b) => b.date.localeCompare(a.date))
+    const limited = withDate.slice(0, limit).map((x) => x.item)
 
-    // Get day labels
-    const dayIds = [...new Set(limitedFeed.map((p) => p.templateDayId))]
-    const { data: days } = await supabase
-      .from('template_days')
-      .select('id, day_label')
-      .in('id', dayIds)
-    const dayLabels: Record<string, string> = {}
-    days?.forEach((d) => { dayLabels[d.id] = d.day_label })
-
-    const feedWithLabels = limitedFeed.map((p) => ({
-      ...p,
-      dayLabel: dayLabels[p.templateDayId],
-    }))
+    // Add day labels for PRs in the limited set
+    const prsInLimited = limited.filter((x): x is FeedPR => x.type === 'pr')
+    const dayIds = [...new Set(prsInLimited.map((p) => p.templateDayId))]
+    let dayLabels: Record<string, string> = {}
+    if (dayIds.length > 0) {
+      const { data: days } = await supabase
+        .from('template_days')
+        .select('id, day_label')
+        .in('id', dayIds)
+      days?.forEach((d) => { dayLabels[d.id] = d.day_label })
+    }
+    const feedWithLabels: FeedItem[] = limited.map((item) => {
+      if (item.type === 'pr') {
+        return { ...item, dayLabel: dayLabels[item.templateDayId] }
+      }
+      return item
+    })
 
     return NextResponse.json({ feed: feedWithLabels })
   } catch (e) {

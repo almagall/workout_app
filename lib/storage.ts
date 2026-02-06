@@ -147,6 +147,23 @@ export async function updateTemplate(
     }
   }
 
+  // Fetch old template exercises (ordered by exercise_order) for each existing day
+  const oldExercisesMap = new Map<string, string[]>()
+  if (existingDayIds.length > 0) {
+    const { data: oldExercises, error: oldExError } = await supabase
+      .from('template_exercises')
+      .select('template_day_id, exercise_name, exercise_order')
+      .in('template_day_id', existingDayIds)
+      .order('exercise_order', { ascending: true })
+    if (!oldExError && oldExercises?.length) {
+      for (const row of oldExercises) {
+        const dayId = row.template_day_id
+        if (!oldExercisesMap.has(dayId)) oldExercisesMap.set(dayId, [])
+        oldExercisesMap.get(dayId)!.push(row.exercise_name)
+      }
+    }
+  }
+
   // Insert new template days BEFORE deleting old ones to preserve foreign key references
   const daysToInsert = template.days.map((day) => ({
     template_id: templateId,
@@ -182,6 +199,28 @@ export async function updateTemplate(
       daysToDelete.push(oldDay.id) // Safe to delete after migrating sessions
     }
     // If no match found, keep the old day to preserve its workout sessions
+  }
+
+  // Rename exercise_logs when an exercise name changed at the same position (preserve history)
+  for (const [oldDayId, newDayId] of oldDayToNewDayMap.entries()) {
+    const sessionIds = dayIdToSessionsMap.get(oldDayId) ?? []
+    if (sessionIds.length === 0) continue
+    const oldDay = existingDays?.find((d) => d.id === oldDayId)
+    if (!oldDay) continue
+    const newNames = template.days.find((d) => d.day_order === oldDay.day_order)?.exercises ?? []
+    const oldNames = oldExercisesMap.get(oldDayId) ?? []
+    const len = Math.min(oldNames.length, newNames.length)
+    for (let i = 0; i < len; i++) {
+      if (oldNames[i] === newNames[i]) continue
+      const { error: renameError } = await supabase
+        .from('exercise_logs')
+        .update({ exercise_name: newNames[i] })
+        .in('session_id', sessionIds)
+        .eq('exercise_name', oldNames[i])
+      if (renameError) {
+        throw new Error(`Failed to rename exercise logs for ${oldNames[i]} -> ${newNames[i]}: ${renameError.message}`)
+      }
+    }
   }
 
   // Update workout sessions to point to new template_day_ids BEFORE deleting old days

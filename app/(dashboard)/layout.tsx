@@ -97,6 +97,16 @@ export default function DashboardLayout({
                   History
                 </Link>
                 <Link
+                  href="/achievements"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
+                    pathname === '/achievements'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-[#888888] hover:border-[#2a2a2a] hover:text-white'
+                  }`}
+                >
+                  Achievements
+                </Link>
+                <Link
                   href="/friends"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                     pathname === '/friends'
@@ -198,6 +208,17 @@ export default function DashboardLayout({
                 }`}
               >
                 History
+              </Link>
+              <Link
+                href="/achievements"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  pathname === '/achievements'
+                    ? 'bg-[#1a1a1a] text-white'
+                    : 'text-[#888888] hover:bg-[#1a1a1a] hover:text-white'
+                }`}
+              >
+                Achievements
               </Link>
               <Link
                 href="/friends"

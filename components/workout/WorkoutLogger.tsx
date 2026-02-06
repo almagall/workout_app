@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions } from '@/lib/storage'
@@ -19,6 +19,7 @@ import {
 } from '@/lib/target-strategies'
 import { estimated1RM } from '@/lib/estimated-1rm'
 import { checkSetPR, getPRsForSession, type SessionPR } from '@/lib/pr-helper'
+import { checkAndUnlockAchievements } from '@/lib/achievements'
 import RestTimer from '@/components/workout/RestTimer'
 import type { PlanType, SetData, ExerciseData, PerformanceStatus, SetType } from '@/types/workout'
 
@@ -94,6 +95,7 @@ export default function WorkoutLogger({
     }
     return 90
   })
+  const [restTimerAfterSetKey, setRestTimerAfterSetKey] = useState<string | null>(null)
   const router = useRouter()
   const exerciseSelectorRef = useRef<HTMLDivElement>(null)
 
@@ -792,7 +794,10 @@ export default function WorkoutLogger({
         })
 
         if (confirmedEntries.length === 0) {
-          if (restTimerEnabled) setShowRestTimer(true)
+          if (restTimerEnabled) {
+            setShowRestTimer(true)
+            setRestTimerAfterSetKey(key)
+          }
           return
         }
 
@@ -845,6 +850,7 @@ export default function WorkoutLogger({
     // Show rest timer after confirming a set (if enabled)
     if (restTimerEnabled) {
       setShowRestTimer(true)
+      setRestTimerAfterSetKey(key)
     }
   }
 
@@ -1083,6 +1089,7 @@ export default function WorkoutLogger({
         setOverallFeedback(null) // PRs shown as bullet list when present
         setWorkoutCompletePRs(baselinePrs.length > 0 ? baselinePrs : null)
         setWorkoutComplete(true)
+        checkAndUnlockAchievements().catch(() => {})
         return
       }
 
@@ -1184,6 +1191,7 @@ export default function WorkoutLogger({
         })),
       })
 
+      checkAndUnlockAchievements().catch(() => {})
       setOverallRating(rating)
       setOverallFeedback(feedback) // PRs shown as bullet list below, not in paragraph
       setWorkoutComplete(true)
@@ -1384,7 +1392,10 @@ export default function WorkoutLogger({
                 const newValue = !restTimerEnabled
                 setRestTimerEnabled(newValue)
                 localStorage.setItem('workout_rest_timer_enabled', String(newValue))
-                if (!newValue) setShowRestTimer(false)
+                if (!newValue) {
+                  setShowRestTimer(false)
+                  setRestTimerAfterSetKey(null)
+                }
               }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 restTimerEnabled
@@ -1425,15 +1436,30 @@ export default function WorkoutLogger({
             const setKey = `${currentExerciseIndex}-${originalIndex}`
             const isConfirmed = confirmedSets.has(setKey)
             return (
+            <Fragment key={setKey}>
             <div 
-              key={originalIndex} 
-              className={`bg-[#1a1a1a] rounded-lg p-4 ${
+              className={`relative bg-[#1a1a1a] rounded-lg p-4 ${
                 isConfirmed 
                   ? 'border-2 border-green-500' 
                   : 'border border-[#2a2a2a]'
               }`}
             >
-              <div className="flex justify-between items-start mb-2 flex-wrap gap-2">
+              {currentExercise.sets.length > 1 && (
+                <div className="absolute top-4 right-4">
+                  <button
+                    type="button"
+                    onClick={() => removeSet(currentExerciseIndex, originalIndex)}
+                    className="p-1.5 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-colors"
+                    title="Remove set"
+                    aria-label="Remove set"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              <div className="flex justify-between items-start mb-2 flex-wrap gap-2 pr-10">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-white">Set {set.setNumber}</span>
                   <span
@@ -1453,19 +1479,6 @@ export default function WorkoutLogger({
                     <span className="text-sm text-[#888888]">
                       Target: {set.targetWeight} lbs × {set.targetReps} reps @ RPE {set.targetRpe}
                     </span>
-                  )}
-                  {currentExercise.sets.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeSet(currentExerciseIndex, originalIndex)}
-                      className="p-1.5 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-colors"
-                      title="Remove set"
-                      aria-label="Remove set"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
                   )}
                 </div>
               </div>
@@ -1569,19 +1582,21 @@ export default function WorkoutLogger({
                 )}
               </div>
             </div>
+            {showRestTimer && restTimerAfterSetKey === setKey && (
+              <div className="mt-2">
+                <RestTimer
+                  initialSeconds={defaultRestSeconds}
+                  onDismiss={() => {
+                    setShowRestTimer(false)
+                    setRestTimerAfterSetKey(null)
+                  }}
+                  autoStart={true}
+                />
+              </div>
+            )}
+            </Fragment>
           )})}
         </div>
-
-        {/* Rest Timer */}
-        {showRestTimer && (
-          <div className="mt-4">
-            <RestTimer
-              initialSeconds={defaultRestSeconds}
-              onDismiss={() => setShowRestTimer(false)}
-              autoStart={true}
-            />
-          </div>
-        )}
 
         <div className="mt-4 flex flex-wrap gap-2">
           <button

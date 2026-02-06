@@ -7,6 +7,7 @@ import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  clearAllNotifications,
   acceptFriendRequest,
   declineFriendRequest,
   type NotificationWithFrom,
@@ -132,7 +133,8 @@ export default function NotificationBell() {
               <button
                 type="button"
                 onClick={async () => {
-                  await markAllNotificationsRead()
+                  await clearAllNotifications()
+                  setNotifications([])
                   setUnreadCount(0)
                   refresh()
                 }}
@@ -228,6 +230,22 @@ export default function NotificationBell() {
                       <p className="text-xs text-[#e5e5e5] mt-1 italic">&quot;{n.metadata.comment_preview}&quot;</p>
                     )}
                     <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                  </>
+                )}
+                {n.type === 'achievement_unlocked' && n.metadata && 'achievement_name' in n.metadata && (
+                  <>
+                    <p className="text-white">
+                      <span className="font-medium text-amber-400">Achievement unlocked:</span>{' '}
+                      {n.metadata.achievement_name}
+                    </p>
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                    <Link
+                      href="/achievements"
+                      onClick={() => { markNotificationRead(n.id); setOpen(false); }}
+                      className="inline-block mt-1 text-xs text-white underline"
+                    >
+                      View achievements
+                    </Link>
                   </>
                 )}
               </div>

@@ -58,15 +58,21 @@ export function playBeep(
   oscillator.stop(now + duration / 1000)
 }
 
-/**
- * Play a sequence of beeps for timer completion
- * Creates a more noticeable alert pattern
- */
-export function playTimerCompleteSound(): void {
-  // Play three ascending beeps
+/** One cycle of the timer completion chime (3 ascending beeps). */
+function playTimerCompleteChime(): void {
   playBeep(600, 150, 0.4)
   setTimeout(() => playBeep(800, 150, 0.5), 200)
   setTimeout(() => playBeep(1000, 200, 0.6), 400)
+}
+
+/**
+ * Play the timer completion sound 3 times consecutively
+ * Creates a very noticeable alert pattern
+ */
+export function playTimerCompleteSound(): void {
+  playTimerCompleteChime()
+  setTimeout(() => playTimerCompleteChime(), 800)
+  setTimeout(() => playTimerCompleteChime(), 1600)
 }
 
 /**

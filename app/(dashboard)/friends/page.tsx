@@ -21,6 +21,7 @@ import {
   type ReactionInfo,
   type PRComment,
 } from '@/lib/friends'
+import { checkAndUnlockAchievements } from '@/lib/achievements'
 import type { RecentPR } from '@/lib/pr-helper'
 
 function formatDate(dateStr: string): string {
@@ -83,6 +84,7 @@ export default function FriendsPage() {
       setAddUsername('')
       setShowAddModal(false)
       refresh()
+      checkAndUnlockAchievements().catch(() => {})
     } else {
       setAddError(res.error ?? 'Failed to send request')
     }
@@ -99,7 +101,10 @@ export default function FriendsPage() {
     if (actingId) return
     setActingId(requestId)
     const res = await acceptFriendRequest(requestId)
-    if (res.ok) refresh()
+    if (res.ok) {
+      refresh()
+      checkAndUnlockAchievements().catch(() => {})
+    }
     setActingId(null)
   }
 

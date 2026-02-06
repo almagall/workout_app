@@ -32,7 +32,7 @@ export interface FriendRow {
   username: string
 }
 
-export type NotificationType = 'friend_request' | 'friend_accepted' | 'pr_kudos' | 'pr_comment'
+export type NotificationType = 'friend_request' | 'friend_accepted' | 'pr_kudos' | 'pr_comment' | 'achievement_unlocked'
 
 export type ReactionType = 'kudos' | 'strong' | 'fire'
 
@@ -47,13 +47,18 @@ export interface NotificationRow {
   created_at: string
 }
 
+export interface AchievementUnlockedMetadata {
+  achievement_id: string
+  achievement_name: string
+}
+
 export interface NotificationWithFrom {
   id: string
   type: NotificationType
   from_user_id: string
   from_username: string
   reference_id: string | null
-  metadata?: PRKudosMetadata | PRCommentMetadata | null
+  metadata?: PRKudosMetadata | PRCommentMetadata | AchievementUnlockedMetadata | null
   read: boolean
   created_at: string
 }
@@ -303,8 +308,8 @@ export async function getNotifications(limit = 50): Promise<NotificationWithFrom
   users?.forEach((u) => usernameMap.set(u.user_id, u.username))
 
   return list.map((n) => {
-    let metadata: PRKudosMetadata | PRCommentMetadata | null = null
-    if ((n.type === 'pr_kudos' || n.type === 'pr_comment') && n.metadata) {
+    let metadata: PRKudosMetadata | PRCommentMetadata | AchievementUnlockedMetadata | null = null
+    if ((n.type === 'pr_kudos' || n.type === 'pr_comment' || n.type === 'achievement_unlocked') && n.metadata) {
       try {
         metadata = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata
       } catch { /* ignore */ }
@@ -358,6 +363,15 @@ export async function markAllNotificationsRead(): Promise<void> {
 
   const supabase = createClient()
   await supabase.from('notifications').update({ read: true }).eq('user_id', user.id)
+}
+
+/** Delete all notifications for the current user. */
+export async function clearAllNotifications(): Promise<void> {
+  const user = getCurrentUser()
+  if (!user) return
+
+  const supabase = createClient()
+  await supabase.from('notifications').delete().eq('user_id', user.id)
 }
 
 /** Get whether the given user allows friends to see their PRs. */
