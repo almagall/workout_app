@@ -125,20 +125,32 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="fixed left-4 right-4 top-[4.5rem] z-50 max-h-[min(24rem,70vh)] overflow-auto rounded-md border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg md:absolute md:left-auto md:right-0 md:top-auto md:mt-1 md:w-80">
+        <div className="fixed right-4 top-[4.5rem] z-50 w-[min(20rem,calc(100vw-2rem))] max-h-[min(24rem,70vh)] overflow-auto rounded-md border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg md:absolute md:right-0 md:top-auto md:mt-1 md:w-80">
           <div className="p-2 border-b border-[#2a2a2a] flex justify-between items-center gap-2">
             <span className="font-semibold text-white text-sm">Notifications</span>
-            <button
-              type="button"
-              onClick={async () => {
-                await markAllNotificationsRead()
-                setUnreadCount(0)
-                refresh()
-              }}
-              className="text-xs text-[#888888] hover:text-white whitespace-nowrap"
-            >
-              Clear all
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={async () => {
+                  await markAllNotificationsRead()
+                  setUnreadCount(0)
+                  refresh()
+                }}
+                className="text-xs text-[#888888] hover:text-white whitespace-nowrap"
+              >
+                Clear all
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-md text-[#888888] hover:text-white hover:bg-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label="Close notifications"
+              >
+                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
           <div className="divide-y divide-[#2a2a2a]">
             {notifications.length === 0 && (
