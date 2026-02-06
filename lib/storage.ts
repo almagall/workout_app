@@ -207,7 +207,7 @@ export async function updateTemplate(
     if (sessionIds.length === 0) continue
     const oldDay = existingDays?.find((d) => d.id === oldDayId)
     if (!oldDay) continue
-    const newNames = template.days.find((d) => d.day_order === oldDay.day_order)?.exercises ?? []
+    const newNames = template.days.find((d) => d.dayOrder === oldDay.day_order)?.exercises ?? []
     const oldNames = oldExercisesMap.get(oldDayId) ?? []
     const len = Math.min(oldNames.length, newNames.length)
     for (let i = 0; i < len; i++) {
