@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getTemplates, getTemplateDays } from '@/lib/storage'
+import { PRESET_TEMPLATES } from '@/lib/preset-templates'
 import type { TemplateDay, WorkoutTemplate } from '@/types/workout'
 
 export default function LogWorkoutPage() {
@@ -118,6 +119,7 @@ export default function LogWorkoutPage() {
 
   // Step 2: Pick a workout day from the selected template
   const { template, days } = selectedItem
+  const preset = template.preset_id ? PRESET_TEMPLATES.find((p) => p.id === template.preset_id) : null
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -141,6 +143,9 @@ export default function LogWorkoutPage() {
           {template.plan_type === 'hypertrophy' ? 'Hypertrophy' : 'Strength'}
         </span>
       </div>
+      {preset?.description && (
+        <p className="text-sm text-[#a1a1a1] mb-4">{preset.description}</p>
+      )}
       <p className="text-[#888888] mb-4">Select a workout day:</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

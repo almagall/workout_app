@@ -1370,15 +1370,15 @@ export default function WorkoutLogger({
       )}
 
       <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             {isEditMode && (
               <span className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-md text-sm">
                 Editing Workout
               </span>
             )}
-            {/* Rest Timer Toggle */}
+            {/* Rest Timer Toggle - below exercise name on mobile portrait */}
             <button
               onClick={() => {
                 const newValue = !restTimerEnabled
