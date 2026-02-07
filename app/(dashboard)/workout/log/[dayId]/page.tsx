@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
-import { getTemplateDay, getTemplateExercises, getTemplates } from '@/lib/storage'
+import { getTemplateDay, getTemplateExercises, getTemplates, getDraftWorkoutSession, deleteWorkoutSession } from '@/lib/storage'
 import WorkoutLogger from '@/components/workout/WorkoutLogger'
+import DraftConflictModal from '@/components/workout/DraftConflictModal'
 import type { PlanType } from '@/types/workout'
 
 export default function LogWorkoutDayPage() {
@@ -18,13 +19,54 @@ export default function LogWorkoutDayPage() {
     presetId: string | null
     exercises: string[]
   } | null>(null)
+  const [draftSessionId, setDraftSessionId] = useState<string | null>(null)
+  const [showDraftConflict, setShowDraftConflict] = useState(false)
+  const [conflictDraftDayLabel, setConflictDraftDayLabel] = useState<string>('')
+  const [conflictDraftDayId, setConflictDraftDayId] = useState<string>('')
 
   useEffect(() => {
     async function loadDayData() {
+      console.log('🔵 Log workout page loading', { dayId })
+      
       const user = getCurrentUser()
       if (!user) {
+        console.log('🔴 No user, redirecting to get-started')
         router.push('/get-started')
         return
+      }
+
+      console.log('✅ User authenticated:', user.id)
+
+      // Check for existing draft workout
+      console.log('🔍 Checking for existing draft workout...')
+      const draft = await getDraftWorkoutSession()
+      console.log('🔍 Draft check result:', draft)
+      
+      if (draft) {
+        console.log('📝 Draft found:', { 
+          id: draft.id, 
+          template_day_id: draft.template_day_id, 
+          workout_date: draft.workout_date,
+          currentDayId: dayId,
+          isMatchingDay: draft.template_day_id === dayId
+        })
+        
+        if (draft.template_day_id === dayId) {
+          // Draft is for the same day - can resume
+          console.log('✅ Draft matches current day - will resume')
+          setDraftSessionId(draft.id)
+        } else {
+          // Draft is for a different day - show conflict modal
+          console.log('⚠️ Draft is for different day - showing conflict modal')
+          const draftDay = await getTemplateDay(draft.template_day_id)
+          setConflictDraftDayLabel(draftDay?.day_label || 'Unknown Day')
+          setConflictDraftDayId(draft.template_day_id)
+          setShowDraftConflict(true)
+          setLoading(false)
+          return
+        }
+      } else {
+        console.log('ℹ️ No draft workout found - starting fresh')
       }
 
       // Get template day
@@ -52,17 +94,51 @@ export default function LogWorkoutDayPage() {
         presetId: template.preset_id ?? null,
         exercises,
       })
+      
+      console.log('✅ Day data loaded successfully', { 
+        dayLabel: day.day_label, 
+        exerciseCount: exercises.length,
+        hasDraft: !!draftSessionId 
+      })
+      
       setLoading(false)
     }
 
     loadDayData()
   }, [dayId, router])
 
+  const handleDiscardDraft = async () => {
+    const draft = await getDraftWorkoutSession()
+    if (draft) {
+      await deleteWorkoutSession(draft.id)
+      setShowDraftConflict(false)
+      setDraftSessionId(null)
+      // Reload the page data
+      window.location.reload()
+    }
+  }
+
+  const handleCloseDraftConflict = () => {
+    router.push('/workout/log')
+  }
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-[#888888]">Loading...</div>
       </div>
+    )
+  }
+
+  // Show conflict modal if there's a draft for a different day
+  if (showDraftConflict) {
+    return (
+      <DraftConflictModal
+        draftDayLabel={conflictDraftDayLabel}
+        draftDayId={conflictDraftDayId}
+        onDiscard={handleDiscardDraft}
+        onClose={handleCloseDraftConflict}
+      />
     )
   }
 
@@ -75,6 +151,13 @@ export default function LogWorkoutDayPage() {
     return null
   }
 
+  console.log('🎯 Rendering WorkoutLogger with props:', { 
+    dayId, 
+    dayLabel: dayData.dayLabel, 
+    draftSessionId,
+    hasDraft: !!draftSessionId 
+  })
+
   return (
     <WorkoutLogger
       dayId={dayId}
@@ -83,6 +166,7 @@ export default function LogWorkoutDayPage() {
       presetId={dayData.presetId}
       exercises={dayData.exercises}
       userId={user.id}
+      draftSessionId={draftSessionId || undefined}
     />
   )
 }

@@ -20,14 +20,11 @@ export default function RecentPRs() {
       const user = getCurrentUser()
       if (!user) return
 
-      const days = await getRecentPRsByDay(5)
+      const days = await getRecentPRsByDay(6)
       setWorkoutDays(days)
       
-      // Expand the most recent day by default
-      if (days.length > 0) {
-        const mostRecentKey = `${days[0].workoutDate}|${days[0].templateDayId}`
-        setExpandedDays(new Set([mostRecentKey]))
-      }
+      // Keep all days collapsed by default
+      setExpandedDays(new Set())
       
       setLoading(false)
     }

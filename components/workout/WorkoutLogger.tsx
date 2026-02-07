@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
-import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions } from '@/lib/storage'
+import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions, saveDraftWorkoutSession, completeWorkoutSession, deleteWorkoutSession } from '@/lib/storage'
 import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
@@ -32,6 +32,7 @@ interface WorkoutLoggerProps {
   presetId?: string | null
   sessionId?: string // Optional: if provided, we're editing an existing workout
   workoutDate?: string // Optional: if provided, use this date instead of today
+  draftSessionId?: string // Optional: if provided, we're resuming a draft workout
 }
 
 export default function WorkoutLogger({
@@ -43,6 +44,7 @@ export default function WorkoutLogger({
   presetId,
   sessionId,
   workoutDate: initialWorkoutDate,
+  draftSessionId: initialDraftSessionId,
 }: WorkoutLoggerProps) {
   const [exerciseData, setExerciseData] = useState<ExerciseData[]>([])
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
@@ -96,6 +98,10 @@ export default function WorkoutLogger({
     return 90
   })
   const [restTimerAfterSetKey, setRestTimerAfterSetKey] = useState<string | null>(null)
+  // Draft workout state
+  const [draftSessionId, setDraftSessionId] = useState<string | null>(initialDraftSessionId || null)
+  const [isResumedDraft, setIsResumedDraft] = useState(!!initialDraftSessionId)
+  const [autoSaving, setAutoSaving] = useState(false)
   const router = useRouter()
   const exerciseSelectorRef = useRef<HTMLDivElement>(null)
 
@@ -124,6 +130,69 @@ export default function WorkoutLogger({
         setPlanSettings(resolvedPlanSettings)
 
         let initializedExercises: ExerciseData[] = []
+
+        // Draft mode: Load draft session data
+        if (draftSessionId && !isEditMode) {
+          const allLogs = await getExerciseLogs()
+          const draftLogs = allLogs.filter(log => log.session_id === draftSessionId)
+
+          // Group logs by exercise
+          const exerciseMap = new Map<string, typeof draftLogs>()
+          exercises.forEach(exerciseName => {
+            exerciseMap.set(exerciseName, draftLogs.filter(log => log.exercise_name === exerciseName))
+          })
+
+          // Track which sets are confirmed (all sets in draft are considered confirmed)
+          const confirmedSetKeys = new Set<string>()
+
+          initializedExercises = exercises.map((exerciseName, exerciseIndex) => {
+            const exerciseLogs = exerciseMap.get(exerciseName) || []
+            const sets: SetData[] = exerciseLogs
+              .sort((a, b) => a.set_number - b.set_number)
+              .map((log, setIndex) => {
+                const weight = parseFloat(log.weight.toString())
+                const reps = log.reps
+                
+                // Only mark set as confirmed if it has actual data (weight > 0 and reps > 0)
+                if (weight > 0 && reps > 0) {
+                  confirmedSetKeys.add(`${exerciseIndex}-${setIndex}`)
+                }
+                
+                return {
+                  setNumber: log.set_number,
+                  setType: (log.set_type ?? 'working') as SetType,
+                  weight,
+                  reps,
+                  rpe: parseFloat(log.rpe.toString()),
+                  targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+                  targetReps: log.target_reps,
+                  targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+                }
+              })
+
+            return {
+              exerciseName,
+              sets: sets.length > 0 ? sets : [{
+                setNumber: 1,
+                setType: 'working' as SetType,
+                weight: 0,
+                reps: 0,
+                rpe: 5,
+                targetWeight: null,
+                targetReps: null,
+                targetRpe: null,
+              }],
+              exerciseFeedback: null,
+              exerciseRating: null,
+            }
+          })
+
+          // Set confirmed sets
+          setConfirmedSets(confirmedSetKeys)
+          setExerciseData(initializedExercises)
+          setLoading(false)
+          return
+        }
 
         if (isEditMode && sessionId) {
           // Edit mode: Load existing session data
@@ -694,17 +763,20 @@ export default function WorkoutLogger({
     const exercise = newData[exerciseIndex]
     const lastSet = exercise.sets[exercise.sets.length - 1]
     const lastWorking = [...exercise.sets].reverse().find((s) => s.setType === 'working')
-    const template = setType === 'working' ? (lastWorking ?? lastSet) : lastSet
+    
+    // Only copy data from previous sets when adding working sets
+    // For warmup/cooldown, start with blank values
+    const template = setType === 'working' ? (lastWorking ?? lastSet) : null
     
     const newSet: SetData = {
       setNumber: exercise.sets.length + 1,
       setType,
-      weight: template?.weight ?? 0,
-      reps: template?.reps ?? 0,
-      rpe: template?.rpe ?? 5,
+      weight: setType === 'working' ? (template?.weight ?? 0) : 0,
+      reps: setType === 'working' ? (template?.reps ?? 0) : 0,
+      rpe: 0,
       targetWeight: setType === 'working' ? (template?.targetWeight ?? null) : null,
       targetReps: setType === 'working' ? (template?.targetReps ?? null) : null,
-      targetRpe: setType === 'working' ? (template?.targetRpe ?? null) : null,
+      targetRpe: null,
     }
 
     // Insert set in the correct position based on type
@@ -712,8 +784,15 @@ export default function WorkoutLogger({
     let insertIndex = exercise.sets.length
     
     if (setType === 'warmup') {
-      // Insert at the beginning (before all working sets)
-      insertIndex = 0
+      // Insert after the last warmup set, or at the beginning if no warmup sets exist
+      let lastWarmupIndex = -1
+      for (let i = exercise.sets.length - 1; i >= 0; i--) {
+        if (exercise.sets[i].setType === 'warmup') {
+          lastWarmupIndex = i
+          break
+        }
+      }
+      insertIndex = lastWarmupIndex === -1 ? 0 : lastWarmupIndex + 1
     } else if (setType === 'working') {
       // Insert after warm-up sets, before cool-down sets
       insertIndex = exercise.sets.findIndex((s) => getSetTypeOrder(s.setType) > setTypeOrder)
@@ -743,6 +822,15 @@ export default function WorkoutLogger({
     const set = newData[exerciseIndex].sets[setIndex]
     ;(set as any)[field] = value
     setExerciseData(newData)
+    
+    // Unconfirm the set if it was previously confirmed
+    const key = `${exerciseIndex}-${setIndex}`
+    if (confirmedSets.has(key)) {
+      const newConfirmed = new Set(confirmedSets)
+      newConfirmed.delete(key)
+      setConfirmedSets(newConfirmed)
+      console.log('🔄 Set unconfirmed due to edit:', { exerciseIndex, setIndex, field, value })
+    }
   }
 
   const removeSet = (exerciseIndex: number, setIndex: number) => {
@@ -769,8 +857,94 @@ export default function WorkoutLogger({
     setConfirmedSets(newConfirmed)
   }
 
+  // Discard draft workout
+  const discardDraft = async () => {
+    if (!draftSessionId) return
+
+    try {
+      await deleteWorkoutSession(draftSessionId)
+      setDraftSessionId(null)
+      setIsResumedDraft(false)
+      // Redirect to workout selection instead of reloading
+      router.push('/workout/log')
+    } catch (err) {
+      console.error('Failed to discard draft:', err)
+      setError('Failed to discard draft workout')
+    }
+  }
+
+  // Auto-save workout as draft
+  const autoSaveWorkout = async () => {
+    console.log('🔵 Auto-save triggered', { 
+      isEditMode, 
+      workoutComplete, 
+      autoSaving, 
+      confirmedSetsCount: confirmedSets.size,
+      draftSessionId 
+    })
+
+    // Skip auto-save in edit mode or if workout is complete
+    if (isEditMode || workoutComplete || autoSaving) {
+      console.log('🔴 Auto-save skipped - early return', { isEditMode, workoutComplete, autoSaving })
+      return
+    }
+
+    // Only auto-save if at least one set has been confirmed
+    if (confirmedSets.size === 0) {
+      console.log('🔴 Auto-save skipped - no confirmed sets')
+      return
+    }
+
+    try {
+      setAutoSaving(true)
+      console.log('🟢 Saving draft...', { 
+        draftSessionId, 
+        dayId, 
+        workoutDate,
+        exerciseCount: exerciseData.length 
+      })
+
+      const savedSessionId = await saveDraftWorkoutSession(
+        {
+          templateDayId: dayId,
+          workoutDate,
+          exercises: exerciseData.map((exercise) => ({
+            exerciseName: exercise.exerciseName,
+            sets: exercise.sets.map((set) => ({
+              setNumber: set.setNumber,
+              setType: set.setType,
+              weight: set.weight,
+              reps: set.reps,
+              rpe: set.rpe,
+              targetWeight: set.targetWeight ?? null,
+              targetReps: set.targetReps ?? null,
+              targetRpe: set.targetRpe ?? null,
+              performanceStatus: null, // Draft workouts don't have performance status
+              exerciseFeedback: null,
+            })),
+          })),
+        },
+        draftSessionId || undefined
+      )
+
+      console.log('✅ Draft saved successfully', { savedSessionId })
+
+      // Set draft session ID if this is the first save
+      if (!draftSessionId) {
+        setDraftSessionId(savedSessionId)
+        console.log('✅ Draft session ID set for first time', { savedSessionId })
+      }
+    } catch (err) {
+      console.error('❌ Auto-save failed:', err)
+      // Don't show error to user for auto-save failures
+    } finally {
+      setAutoSaving(false)
+    }
+  }
+
   const confirmSet = async (exerciseIndex: number, setIndex: number) => {
     const key = `${exerciseIndex}-${setIndex}`
+    console.log('🔵 Confirming set', { exerciseIndex, setIndex, key })
     const newConfirmed = new Set(confirmedSets)
     newConfirmed.add(key)
     setConfirmedSets(newConfirmed)
@@ -852,9 +1026,26 @@ export default function WorkoutLogger({
       setShowRestTimer(true)
       setRestTimerAfterSetKey(key)
     }
+
+    // Auto-save after confirming a set
+    autoSaveWorkout().catch(err => {
+      console.error('❌ Auto-save error in confirmSet:', err)
+      setError('Failed to auto-save workout. Your progress may not be saved.')
+    })
+
+    // If exercise was already completed, recalculate rating and feedback with updated data
+    if (exercise.exerciseFeedback) {
+      console.log('🔄 Recalculating exercise rating after set re-confirmation', { exerciseIndex })
+      const { feedback, exerciseRating } = calculateExerciseRatingAndFeedback(exerciseIndex)
+      
+      const newData = [...exerciseData]
+      newData[exerciseIndex].exerciseFeedback = feedback
+      newData[exerciseIndex].exerciseRating = exerciseRating
+      setExerciseData(newData)
+    }
   }
 
-  const completeExercise = (exerciseIndex: number) => {
+  const calculateExerciseRatingAndFeedback = (exerciseIndex: number) => {
     const exercise = exerciseData[exerciseIndex]
     const workingSets = exercise.sets.filter((s) => s.setType === 'working')
     
@@ -922,6 +1113,12 @@ export default function WorkoutLogger({
       }
     )
 
+    return { feedback, exerciseRating }
+  }
+
+  const completeExercise = (exerciseIndex: number) => {
+    const { feedback, exerciseRating } = calculateExerciseRatingAndFeedback(exerciseIndex)
+    
     // Update exercise data with feedback and rating
     const newData = [...exerciseData]
     newData[exerciseIndex].exerciseFeedback = feedback
@@ -937,6 +1134,117 @@ export default function WorkoutLogger({
     setError(null)
 
     try {
+      // If completing a draft workout, handle it separately
+      if (draftSessionId && !isEditMode) {
+        // Calculate overall rating and feedback from working sets only
+        const workoutPerformance = {
+          exercises: exerciseData.map((exercise) => {
+            const workingSets = exercise.sets.filter((s) => s.setType === 'working')
+            const statuses = workingSets.map((set) =>
+              evaluateSetPerformance(
+                set.weight,
+                set.reps,
+                set.rpe,
+                set.targetWeight ?? null,
+                set.targetReps ?? null,
+                set.targetRpe ?? null
+              )
+            )
+            const overperformedCount = statuses.filter((s) => s === 'overperformed').length
+            const metTargetCount = statuses.filter((s) => s === 'met_target').length
+            const underperformedCount = statuses.filter((s) => s === 'underperformed').length
+
+            let status: PerformanceStatus = 'met_target'
+            if (overperformedCount > underperformedCount) {
+              status = 'overperformed'
+            } else if (underperformedCount > metTargetCount) {
+              status = 'underperformed'
+            }
+
+            return {
+              exerciseName: exercise.exerciseName,
+              status,
+              overperformedCount,
+              metTargetCount,
+              underperformedCount,
+              sets: workingSets.map((set) => ({
+                weight: set.weight,
+                reps: set.reps,
+                rpe: set.rpe,
+                targetWeight: set.targetWeight ?? null,
+                targetReps: set.targetReps ?? null,
+                targetRpe: set.targetRpe ?? null,
+              })),
+            }
+          }),
+          overallRating: 0,
+        }
+
+        const rating = calculateWorkoutRating(workoutPerformance)
+        workoutPerformance.overallRating = rating
+        let feedback = generateWorkoutFeedback(workoutPerformance, planType, {
+          underperformanceMap: feedbackContext.underperformanceMap,
+          lastSessionRpeMap: feedbackContext.lastSessionRpeMap,
+          targetStrategy: feedbackContext.targetStrategy ?? getPresetTargetStrategy(presetId ?? undefined),
+        })
+
+        const draftPrs = await getPRsForSession(
+          dayId,
+          exerciseData.map((e) => ({
+            exerciseName: e.exerciseName,
+            sets: e.sets.map((s) => ({ setType: s.setType, weight: s.weight, reps: s.reps })),
+          })),
+          draftSessionId
+        )
+        if (draftPrs.length > 0) {
+          setWorkoutCompletePRs(draftPrs)
+        }
+
+        // Update the draft session with performance data and mark as complete
+        await updateWorkoutSession(draftSessionId, {
+          templateDayId: dayId,
+          workoutDate,
+          overallRating: rating,
+          overallFeedback: feedback,
+          isComplete: true,
+          exercises: exerciseData.map((exercise) => ({
+            exerciseName: exercise.exerciseName,
+            sets: exercise.sets.map((set) => {
+              const performanceStatus =
+                set.setType === 'working'
+                  ? evaluateSetPerformance(
+                      set.weight,
+                      set.reps,
+                      set.rpe,
+                      set.targetWeight ?? null,
+                      set.targetReps ?? null,
+                      set.targetRpe ?? null
+                    )
+                  : null
+
+              return {
+                setNumber: set.setNumber,
+                setType: set.setType,
+                weight: set.weight,
+                reps: set.reps,
+                rpe: set.rpe,
+                targetWeight: set.targetWeight ?? null,
+                targetReps: set.targetReps ?? null,
+                targetRpe: set.targetRpe ?? null,
+                performanceStatus,
+                exerciseFeedback: exercise.exerciseFeedback || null,
+              }
+            }),
+          })),
+        })
+
+        setOverallRating(rating)
+        setOverallFeedback(feedback)
+        setWorkoutComplete(true)
+        checkAndUnlockAchievements().catch(() => {})
+        return
+      }
+
       if (isEditMode && sessionId) {
         // Edit mode: Update existing session (only working sets count for rating/feedback)
         const workoutPerformance = {
@@ -1007,7 +1315,7 @@ export default function WorkoutLogger({
           templateDayId: dayId,
           workoutDate,
           overallRating: rating,
-          overallFeedback: feedback + (editPrs.length > 0 ? `\n\nYou hit ${editPrs.length} PR(s).` : ''),
+          overallFeedback: feedback,
           exercises: exerciseData.map((exercise) => ({
             exerciseName: exercise.exerciseName,
             sets: exercise.sets.map((set) => {
@@ -1149,9 +1457,6 @@ export default function WorkoutLogger({
         exerciseName: e.exerciseName,
         sets: e.sets.map((s) => ({ setType: s.setType, weight: s.weight, reps: s.reps })),
       })))
-      const feedbackForSave = prs.length > 0
-        ? feedback + `\n\nYou hit ${prs.length} PR(s) today.`
-        : feedback
       if (prs.length > 0) setWorkoutCompletePRs(prs)
 
       // Save workout session (all sets; performanceStatus only for working sets)
@@ -1159,7 +1464,7 @@ export default function WorkoutLogger({
         templateDayId: dayId,
         workoutDate,
         overallRating: rating,
-        overallFeedback: feedbackForSave,
+        overallFeedback: feedback,
         exercises: exerciseData.map((exercise) => ({
           exerciseName: exercise.exerciseName,
           sets: exercise.sets.map((set) => {
@@ -1377,6 +1682,25 @@ export default function WorkoutLogger({
         </div>
       )}
 
+      {isResumedDraft && !workoutComplete && (
+        <div className="mb-4 p-4 bg-blue-500/20 border border-blue-500/50 rounded-lg">
+          <div className="flex items-center justify-between">
+            <p className="text-white font-medium flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Resuming in-progress workout
+            </p>
+            <button 
+              onClick={discardDraft} 
+              className="text-red-400 hover:text-red-300 font-medium px-3 py-1 rounded transition-colors hover:bg-red-500/10"
+            >
+              Discard & Start Over
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
@@ -1477,7 +1801,7 @@ export default function WorkoutLogger({
                 <div className="flex items-center gap-2">
                   {set.setType === 'working' && set.targetWeight != null && (
                     <span className="text-sm text-[#888888]">
-                      Target: {set.targetWeight} lbs × {set.targetReps} reps @ RPE {set.targetRpe}
+                      Target: {set.targetWeight} lbs × {set.targetReps} reps
                     </span>
                   )}
                 </div>

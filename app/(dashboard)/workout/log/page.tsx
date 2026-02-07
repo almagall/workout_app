@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth-simple'
-import { getTemplates, getTemplateDays } from '@/lib/storage'
+import { getTemplates, getTemplateDays, getDraftWorkoutSession } from '@/lib/storage'
 import { PRESET_TEMPLATES } from '@/lib/preset-templates'
 import type { TemplateDay, WorkoutTemplate } from '@/types/workout'
 
 export default function LogWorkoutPage() {
+  const router = useRouter()
   const [templates, setTemplates] = useState<Array<{
     template: WorkoutTemplate
     days: TemplateDay[]
@@ -23,6 +25,19 @@ export default function LogWorkoutPage() {
         return
       }
 
+      // Check for existing draft workout
+      console.log('🔍 Checking for existing draft workout...')
+      const draft = await getDraftWorkoutSession()
+      
+      if (draft) {
+        console.log('✅ Draft found, redirecting to:', draft.template_day_id)
+        // Redirect to the in-progress workout
+        router.push(`/workout/log/${draft.template_day_id}`)
+        return
+      }
+
+      console.log('ℹ️ No draft found, showing template selection')
+
       const allTemplates = await getTemplates()
       const templatesWithDays = await Promise.all(
         allTemplates.map(async (template) => ({
@@ -36,7 +51,7 @@ export default function LogWorkoutPage() {
     }
 
     loadTemplates()
-  }, [])
+  }, [router])
 
   if (loading) {
     return (

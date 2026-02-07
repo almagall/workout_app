@@ -396,6 +396,7 @@ export async function saveWorkoutSession(session: {
   workoutDate: string
   overallRating?: number
   overallFeedback?: string
+  isComplete?: boolean
   exercises: Array<{
     exerciseName: string
     sets: Array<{
@@ -426,6 +427,7 @@ export async function saveWorkoutSession(session: {
       workout_date: session.workoutDate,
       overall_performance_rating: session.overallRating || null,
       overall_feedback: session.overallFeedback || null,
+      is_complete: session.isComplete ?? true,
     })
     .select()
     .single()
@@ -487,6 +489,7 @@ export async function getWorkoutSessions(): Promise<WorkoutSession[]> {
     workout_date: s.workout_date,
     overall_performance_rating: s.overall_performance_rating,
     overall_feedback: s.overall_feedback,
+    is_complete: s.is_complete ?? true,
     created_at: s.created_at,
   }))
 }
@@ -628,6 +631,7 @@ export async function updateWorkoutSession(
     workoutDate: string
     overallRating?: number
     overallFeedback?: string
+    isComplete?: boolean
     exercises: Array<{
       exerciseName: string
       sets: Array<{
@@ -651,14 +655,20 @@ export async function updateWorkoutSession(
   const supabase = createClient()
 
   // Update session
+  const updateData: any = {
+    template_day_id: session.templateDayId,
+    workout_date: session.workoutDate,
+    overall_performance_rating: session.overallRating || null,
+    overall_feedback: session.overallFeedback || null,
+  }
+  
+  if (session.isComplete !== undefined) {
+    updateData.is_complete = session.isComplete
+  }
+
   const { error: sessionError } = await supabase
     .from('workout_sessions')
-    .update({
-      template_day_id: session.templateDayId,
-      workout_date: session.workoutDate,
-      overall_performance_rating: session.overallRating || null,
-      overall_feedback: session.overallFeedback || null,
-    })
+    .update(updateData)
     .eq('id', sessionId)
     .eq('user_id', user.id)
 
@@ -721,4 +731,155 @@ export async function deleteWorkoutSession(sessionId: string): Promise<void> {
     .eq('user_id', user.id)
 
   if (sessionError) throw new Error(`Failed to delete workout session: ${sessionError.message}`)
+}
+
+// Draft workout management functions
+
+/**
+ * Get the user's current draft workout session (incomplete workout)
+ * Returns null if no draft exists
+ */
+export async function getDraftWorkoutSession(): Promise<WorkoutSession | null> {
+  const user = getCurrentUser()
+  if (!user) {
+    console.log('🔴 No user in getDraftWorkoutSession')
+    return null
+  }
+
+  console.log('🔍 Fetching draft workout session for user:', user.id)
+
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('workout_sessions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('is_complete', false)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  console.log('🔍 getDraftWorkoutSession query result:', { 
+    data: data ? {
+      id: data.id,
+      template_day_id: data.template_day_id,
+      workout_date: data.workout_date,
+      is_complete: data.is_complete
+    } : null,
+    error 
+  })
+
+  if (error) {
+    console.error('❌ Error fetching draft workout session:', error)
+    return null
+  }
+
+  if (!data) {
+    console.log('ℹ️ No draft workout session found')
+    return null
+  }
+
+  console.log('✅ Draft workout session found', { id: data.id, template_day_id: data.template_day_id })
+
+  return {
+    id: data.id,
+    user_id: data.user_id,
+    template_day_id: data.template_day_id,
+    workout_date: data.workout_date,
+    overall_performance_rating: data.overall_performance_rating,
+    overall_feedback: data.overall_feedback,
+    is_complete: data.is_complete,
+    created_at: data.created_at,
+  }
+}
+
+/**
+ * Save or update a draft workout session
+ * If draftSessionId is provided, updates existing draft
+ * Otherwise creates a new draft
+ */
+export async function saveDraftWorkoutSession(
+  session: {
+    templateDayId: string
+    workoutDate: string
+    exercises: Array<{
+      exerciseName: string
+      sets: Array<{
+        setNumber: number
+        setType?: 'warmup' | 'working' | 'cooldown'
+        weight: number
+        reps: number
+        rpe: number
+        targetWeight?: number | null
+        targetReps?: number | null
+        targetRpe?: number | null
+        performanceStatus?: string | null
+        exerciseFeedback?: string | null
+      }>
+    }>
+  },
+  draftSessionId?: string
+): Promise<string> {
+  const user = getCurrentUser()
+  if (!user) {
+    console.error('🔴 saveDraftWorkoutSession: User not authenticated')
+    throw new Error('User not authenticated')
+  }
+
+  console.log('🟢 saveDraftWorkoutSession called', { 
+    draftSessionId, 
+    templateDayId: session.templateDayId,
+    workoutDate: session.workoutDate,
+    exerciseCount: session.exercises.length,
+    isUpdate: !!draftSessionId 
+  })
+
+  const supabase = createClient()
+
+  if (draftSessionId) {
+    // Update existing draft
+    console.log('🔄 Updating existing draft session:', draftSessionId)
+    await updateWorkoutSession(draftSessionId, {
+      ...session,
+      isComplete: false,
+    })
+    console.log('✅ Draft session updated:', draftSessionId)
+    return draftSessionId
+  } else {
+    // Create new draft
+    console.log('🆕 Creating new draft session')
+    const newSessionId = await saveWorkoutSession({
+      ...session,
+      isComplete: false,
+    })
+    console.log('✅ New draft session created:', newSessionId)
+    return newSessionId
+  }
+}
+
+/**
+ * Mark a draft workout session as complete
+ */
+export async function completeWorkoutSession(
+  sessionId: string,
+  completionData: {
+    overallRating: number
+    overallFeedback: string
+  }
+): Promise<void> {
+  const user = getCurrentUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const supabase = createClient()
+
+  const { error: sessionError } = await supabase
+    .from('workout_sessions')
+    .update({
+      is_complete: true,
+      overall_performance_rating: completionData.overallRating,
+      overall_feedback: completionData.overallFeedback,
+    })
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
+
+  if (sessionError) throw new Error(`Failed to complete workout session: ${sessionError.message}`)
 }

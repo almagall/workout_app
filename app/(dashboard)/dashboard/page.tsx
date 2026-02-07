@@ -9,6 +9,10 @@ import PerformanceMetrics from '@/components/dashboard/PerformanceMetrics'
 import WorkoutCalendar from '@/components/dashboard/WorkoutCalendar'
 import RecentPRs from '@/components/dashboard/RecentPRs'
 import { FriendActivityFeed } from '@/components/dashboard/FriendActivityFeed'
+import ProgressionMomentum from '@/components/dashboard/ProgressionMomentum'
+import ConsistencyScore from '@/components/dashboard/ConsistencyScore'
+import ExerciseSparklines from '@/components/dashboard/ExerciseSparklines'
+import StrengthStandards from '@/components/dashboard/StrengthStandards'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
@@ -56,8 +60,9 @@ export default function DashboardPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Workout Dashboard</h1>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-[auto_auto] gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <div className="order-1 lg:col-span-2 lg:col-start-1 lg:row-start-1">
+      {/* Row 1: Progress Chart + Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="lg:col-span-2">
           <ProgressSelectors
             selectedTemplateDayId={selectedTemplateDayId}
             onTemplateDayChange={setSelectedTemplateDayId}
@@ -72,18 +77,30 @@ export default function DashboardPage() {
             />
           </div>
         </div>
-        <div className="order-2 lg:order-none lg:col-start-3 lg:row-start-1">
+        <div>
           <WorkoutCalendar />
         </div>
-        <div className="order-3 lg:col-start-1 lg:row-start-2">
-          <PerformanceMetrics />
+      </div>
+
+      {/* Row 2: New Advanced Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <ProgressionMomentum />
+        <ConsistencyScore />
+        <StrengthStandards />
+      </div>
+
+      {/* Row 3: Exercise Sparklines */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="lg:col-span-2">
+          <ExerciseSparklines />
         </div>
-        <div className="order-4 lg:col-start-2 lg:row-start-2">
-          <RecentPRs />
-        </div>
-        <div className="order-5 lg:col-start-3 lg:row-start-2">
-          <FriendActivityFeed />
-        </div>
+      </div>
+
+      {/* Row 4: Existing Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <PerformanceMetrics />
+        <RecentPRs />
+        <FriendActivityFeed />
       </div>
     </div>
   )

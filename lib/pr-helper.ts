@@ -5,6 +5,7 @@
 
 import { getWorkoutSessions, getExerciseLogs } from './storage'
 import { estimated1RM } from './estimated-1rm'
+import type { WorkoutSession, ExerciseLog } from '@/types/workout'
 
 export interface PRStatus {
   isHeaviestSetPR: boolean
@@ -20,6 +21,8 @@ interface CurrentSet {
  * Check if a set is a personal record (heaviest set and/or estimated 1RM) for this exercise in this template day.
  * Compares against all previous sessions for this day and current workout sets.
  * @param excludeSessionId - When editing, exclude this session from "previous" data
+ * @param cachedSessions - Optional pre-fetched sessions to avoid redundant queries
+ * @param cachedLogs - Optional pre-fetched logs to avoid redundant queries
  */
 export async function checkSetPR(
   dayId: string,
@@ -27,16 +30,20 @@ export async function checkSetPR(
   weight: number,
   reps: number,
   currentSets: CurrentSet[] = [],
-  excludeSessionId?: string
+  excludeSessionId?: string,
+  cachedSessions?: WorkoutSession[],
+  cachedLogs?: ExerciseLog[]
 ): Promise<PRStatus> {
   if (weight <= 0 || reps <= 0) {
     return { isHeaviestSetPR: false, isE1RMPR: false }
   }
 
-  const [sessions, allLogs] = await Promise.all([
-    getWorkoutSessions(),
-    getExerciseLogs(),
-  ])
+  const [sessions, allLogs] = cachedSessions && cachedLogs
+    ? [cachedSessions, cachedLogs]
+    : await Promise.all([
+        getWorkoutSessions(),
+        getExerciseLogs(),
+      ])
 
   const daySessions = sessions.filter(
     (s) => s.template_day_id === dayId && s.id !== excludeSessionId
@@ -88,6 +95,8 @@ export interface SessionPR {
  * Get all PRs from a session's exercise data (before saving).
  * Used for workout complete summary.
  * @param excludeSessionId - When editing, exclude this session from "previous" data
+ * @param cachedSessions - Optional pre-fetched sessions to avoid redundant queries
+ * @param cachedLogs - Optional pre-fetched logs to avoid redundant queries
  */
 export async function getPRsForSession(
   dayId: string,
@@ -95,7 +104,9 @@ export async function getPRsForSession(
     exerciseName: string
     sets: Array<{ setType: string; weight: number; reps: number }>
   }>,
-  excludeSessionId?: string
+  excludeSessionId?: string,
+  cachedSessions?: WorkoutSession[],
+  cachedLogs?: ExerciseLog[]
 ): Promise<SessionPR[]> {
   const prs: SessionPR[] = []
   const seenExercisePR = new Map<string, Set<'heaviestSet' | 'e1RM'>>()
@@ -116,7 +127,9 @@ export async function getPRsForSession(
         set.weight,
         set.reps,
         otherSets,
-        excludeSessionId
+        excludeSessionId,
+        cachedSessions,
+        cachedLogs
       )
 
       const key = exercise.exerciseName

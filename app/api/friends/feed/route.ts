@@ -24,6 +24,18 @@ export interface FeedPR {
   dayLabel?: string
 }
 
+export interface FeedWorkout {
+  type: 'workout'
+  user_id: string
+  username: string
+  templateDayId: string
+  workoutDate: string
+  dayLabel?: string
+  exerciseCount: number
+  hasPRs: boolean
+  prCount?: number
+}
+
 export interface FeedAchievement {
   type: 'achievement'
   user_id: string
@@ -33,7 +45,7 @@ export interface FeedAchievement {
   unlocked_at: string
 }
 
-export type FeedItem = FeedPR | FeedAchievement
+export type FeedItem = FeedPR | FeedWorkout | FeedAchievement
 
 /** GET /api/friends/feed?currentUserId=...&limit=20
  * Returns aggregated recent PRs and achievement unlocks from all friends.
@@ -74,7 +86,7 @@ export async function GET(request: NextRequest) {
     const sharingFriends = allFriendUsers.filter((f) => f.allow_friends_see_prs !== false)
     const sharingFriendIds = sharingFriends.map((f) => f.user_id)
 
-    const prFeed: FeedPR[] = []
+    const workoutFeed: FeedWorkout[] = []
     if (sharingFriendIds.length > 0) {
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -85,7 +97,8 @@ export async function GET(request: NextRequest) {
         .select('id, user_id, template_day_id, workout_date')
         .in('user_id', sharingFriendIds)
         .gte('workout_date', cutoffDate)
-        .order('workout_date', { ascending: true })
+        .order('workout_date', { ascending: false })
+        .limit(100)
 
       if (sessions?.length) {
         const sessionIds = sessions.map((s) => s.id)
@@ -101,22 +114,33 @@ export async function GET(request: NextRequest) {
           sessionByUser.set(s.user_id, arr)
         })
 
+        // Compute PRs for each user
+        const userPRs = new Map<string, Set<string>>() // userId -> Set of workout dates with PRs
         for (const [userId, userSessions] of sessionByUser) {
           const userSessionIds = new Set(userSessions.map((s) => s.id))
           const userLogs = (logs ?? []).filter((l) => userSessionIds.has(l.session_id))
-          const prs = computeRecentPRsFromData(userSessions, userLogs, 10)
-          for (const pr of prs) {
-            prFeed.push({
-              type: 'pr',
-              user_id: userId,
-              username: usernameMap.get(userId) ?? 'Unknown',
-              exerciseName: pr.exerciseName,
-              templateDayId: pr.templateDayId,
-              workoutDate: pr.workoutDate,
-              prType: pr.prType,
-              value: pr.value,
-            })
-          }
+          const prs = computeRecentPRsFromData(userSessions, userLogs, 50)
+          
+          const prDates = new Set(prs.map(pr => `${pr.workoutDate}|${pr.templateDayId}`))
+          userPRs.set(userId, prDates)
+        }
+
+        // Create workout feed entries for all sessions
+        for (const session of sessions) {
+          const sessionLogs = (logs ?? []).filter(l => l.session_id === session.id)
+          const uniqueExercises = new Set(sessionLogs.map(l => l.exercise_name))
+          const sessionKey = `${session.workout_date}|${session.template_day_id}`
+          const hasPRs = userPRs.get(session.user_id)?.has(sessionKey) ?? false
+
+          workoutFeed.push({
+            type: 'workout',
+            user_id: session.user_id,
+            username: usernameMap.get(session.user_id) ?? 'Unknown',
+            templateDayId: session.template_day_id,
+            workoutDate: session.workout_date,
+            exerciseCount: uniqueExercises.size,
+            hasPRs: hasPRs,
+          })
         }
       }
     }
@@ -151,15 +175,15 @@ export async function GET(request: NextRequest) {
 
     // Combined feed with date for sorting (date-only for consistent compare)
     const withDate: { item: FeedItem; date: string }[] = [
-      ...prFeed.map((p) => ({ item: p, date: p.workoutDate })),
+      ...workoutFeed.map((w) => ({ item: w, date: w.workoutDate })),
       ...achievementFeed.map((a) => ({ item: a, date: a.unlocked_at.slice(0, 10) })),
     ]
     withDate.sort((a, b) => b.date.localeCompare(a.date))
     const limited = withDate.slice(0, limit).map((x) => x.item)
 
-    // Add day labels for PRs in the limited set
-    const prsInLimited = limited.filter((x): x is FeedPR => x.type === 'pr')
-    const dayIds = [...new Set(prsInLimited.map((p) => p.templateDayId))]
+    // Add day labels for workouts in the limited set
+    const workoutsInLimited = limited.filter((x): x is FeedWorkout => x.type === 'workout')
+    const dayIds = [...new Set(workoutsInLimited.map((w) => w.templateDayId))]
     let dayLabels: Record<string, string> = {}
     if (dayIds.length > 0) {
       const { data: days } = await supabase
@@ -169,7 +193,7 @@ export async function GET(request: NextRequest) {
       days?.forEach((d) => { dayLabels[d.id] = d.day_label })
     }
     const feedWithLabels: FeedItem[] = limited.map((item) => {
-      if (item.type === 'pr') {
+      if (item.type === 'workout') {
         return { ...item, dayLabel: dayLabels[item.templateDayId] }
       }
       return item

@@ -38,9 +38,10 @@ function LeaderboardTable({
           <p className="text-[#888888] text-sm text-center py-4">{emptyMessage}</p>
         ) : (
           <div className="space-y-2">
-            {activeEntries.map((entry, i) => {
-              const rank = i + 1
+            {activeEntries.map((entry) => {
+              const rank = entry.rank
               const isCurrentUser = entry.user_id === currentUserId
+              console.log('🎯 Rendering entry:', { username: entry.username, count: entry.count, rank })
               return (
                 <div
                   key={entry.user_id}

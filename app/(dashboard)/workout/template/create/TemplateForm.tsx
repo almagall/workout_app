@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { saveTemplate, updateTemplate, getTemplates, getTemplateDays, getTemplateExercises } from '@/lib/storage'
 import type { PlanType } from '@/types/workout'
-import { searchExercises } from '@/lib/exercise-database'
+import { searchExercises, getExerciseByName } from '@/lib/exercise-database'
 import { checkAndUnlockAchievements } from '@/lib/achievements'
 
 interface TemplateDay {
@@ -382,23 +382,38 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
 
               <div>
                 <label className="block text-sm font-medium text-white mb-2">Exercises</label>
-                {day.exercises.map((exercise, exerciseIndex) => (
-                  <div key={exerciseIndex} className="flex gap-2 mb-2 items-start">
-                    <ExerciseAutocompleteInline
-                      value={exercise}
-                      onChange={(val) => updateExercise(dayIndex, exerciseIndex, val)}
-                      placeholder="Search or type exercise name"
-                      className="flex-1 min-w-0"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeExercise(dayIndex, exerciseIndex)}
-                      className="px-3 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-900/50 transition-colors flex-shrink-0"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+                {day.exercises.map((exercise, exerciseIndex) => {
+                  const exerciseData = getExerciseByName(exercise)
+                  return (
+                    <div key={exerciseIndex} className="flex gap-2 mb-2 items-center">
+                      <ExerciseAutocompleteInline
+                        value={exercise}
+                        onChange={(val) => updateExercise(dayIndex, exerciseIndex, val)}
+                        placeholder="Search or type exercise name"
+                        className="flex-1 min-w-0"
+                      />
+                      <div className="flex items-center gap-1.5 flex-shrink-0 w-52">
+                        {exerciseData && exercise.trim() && (
+                          <>
+                            <span className="px-2 py-0.5 rounded text-xs bg-green-600/20 text-green-400 border border-green-600/30">
+                              {exerciseData.muscleGroup}
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-xs bg-blue-600/20 text-blue-400 border border-blue-600/30">
+                              {exerciseData.equipment}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeExercise(dayIndex, exerciseIndex)}
+                        className="px-3 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-900/50 transition-colors flex-shrink-0"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )
+                })}
                 <button
                   type="button"
                   onClick={() => addExercise(dayIndex)}

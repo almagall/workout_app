@@ -14,6 +14,7 @@ export interface LeaderboardEntry {
   user_id: string
   username: string
   count: number
+  rank: number
 }
 
 export interface LeaderboardData {
@@ -31,6 +32,30 @@ function getWeekStart(): string {
 function getMonthStart(): string {
   const now = new Date()
   return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+}
+
+function calculateRanks(entries: Omit<LeaderboardEntry, 'rank'>[]): LeaderboardEntry[] {
+  // Sort by count descending
+  const sorted = [...entries].sort((a, b) => b.count - a.count)
+  
+  const ranked: LeaderboardEntry[] = []
+  let currentRank = 1
+  
+  for (let i = 0; i < sorted.length; i++) {
+    const entry = sorted[i]
+    
+    // If this entry has the same count as the previous, use the same rank
+    if (i > 0 && entry.count === sorted[i - 1].count) {
+      ranked.push({ ...entry, rank: ranked[i - 1].rank })
+    } else {
+      // Otherwise, use the current position as rank (accounts for ties)
+      ranked.push({ ...entry, rank: currentRank })
+    }
+    
+    currentRank++
+  }
+  
+  return ranked
 }
 
 /** GET /api/leaderboards?currentUserId=... */
@@ -71,19 +96,21 @@ export async function GET(request: NextRequest) {
     const weekStart = getWeekStart()
     const monthStart = getMonthStart()
 
-    // Get weekly workout counts
+    // Get weekly workout counts (only completed workouts)
     const { data: weeklySessions } = await supabase
       .from('workout_sessions')
       .select('user_id')
       .in('user_id', userIdArray)
       .gte('workout_date', weekStart)
+      .eq('is_complete', true)
 
-    // Get monthly workout counts
+    // Get monthly workout counts (only completed workouts)
     const { data: monthlySessions } = await supabase
       .from('workout_sessions')
       .select('user_id')
       .in('user_id', userIdArray)
       .gte('workout_date', monthStart)
+      .eq('is_complete', true)
 
     // Count per user
     const weeklyCount = new Map<string, number>()
@@ -97,8 +124,8 @@ export async function GET(request: NextRequest) {
       monthlyCount.set(s.user_id, (monthlyCount.get(s.user_id) ?? 0) + 1)
     })
 
-    // Build leaderboard entries
-    const weeklyWorkouts: LeaderboardEntry[] = userIdArray
+    // Build leaderboard entries (without rank)
+    const weeklyWorkoutsUnsorted = userIdArray
       .map((uid) => ({
         user_id: uid,
         username: usernameMap.get(uid) ?? 'Unknown',
@@ -106,13 +133,24 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.count - a.count)
 
-    const monthlyWorkouts: LeaderboardEntry[] = userIdArray
+    const monthlyWorkoutsUnsorted = userIdArray
       .map((uid) => ({
         user_id: uid,
         username: usernameMap.get(uid) ?? 'Unknown',
         count: monthlyCount.get(uid) ?? 0,
       }))
       .sort((a, b) => b.count - a.count)
+
+    // Apply ranking with tie support
+    const weeklyWorkouts = calculateRanks(weeklyWorkoutsUnsorted)
+    const monthlyWorkouts = calculateRanks(monthlyWorkoutsUnsorted)
+
+    console.log('🏆 Leaderboard data:', {
+      weeklyCount: weeklyWorkouts.length,
+      monthlyCount: monthlyWorkouts.length,
+      weeklyTop3: weeklyWorkouts.slice(0, 3).map(e => ({ username: e.username, count: e.count, rank: e.rank })),
+      monthlyTop3: monthlyWorkouts.slice(0, 3).map(e => ({ username: e.username, count: e.count, rank: e.rank }))
+    })
 
     const data: LeaderboardData = {
       weekly_workouts: weeklyWorkouts,

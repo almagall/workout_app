@@ -12,15 +12,21 @@ import {
   type ReactionInfo,
   type PRComment,
 } from '@/lib/friends'
-import type { FeedPR, FeedItem } from '@/app/api/friends/feed/route'
+import type { FeedPR, FeedWorkout, FeedItem } from '@/app/api/friends/feed/route'
 
 function formatDate(dateStr: string): string {
   const dateOnly = dateStr.slice(0, 10)
   const [y, m, d] = dateOnly.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  const now = new Date()
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
   
+  // Use UTC to avoid timezone issues
+  const date = new Date(Date.UTC(y, m - 1, d))
+  const now = new Date()
+  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  
+  const diffDays = Math.floor((todayUTC.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  
+  // Filter out future dates (negative days)
+  if (diffDays < 0) return ''
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
   if (diffDays < 7) return `${diffDays} days ago`
@@ -56,11 +62,32 @@ export function FriendActivityFeed() {
       const res = await fetch(`/api/friends/feed?currentUserId=${encodeURIComponent(userId)}&limit=20`)
       if (!res.ok) throw new Error('Failed to load feed')
       const data = await res.json()
-      setFeed(data.feed ?? [])
+      
+      // Filter out any items with future dates (timezone issues can cause this)
+      const now = new Date()
+      const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+      const validFeed = (data.feed ?? []).filter((item: FeedItem) => {
+        let dateStr = ''
+        if (item.type === 'workout') {
+          dateStr = item.workoutDate
+        } else if (item.type === 'achievement') {
+          dateStr = item.unlocked_at.slice(0, 10)
+        } else if (item.type === 'pr') {
+          dateStr = item.workoutDate
+        }
+        
+        if (!dateStr) return false
+        
+        const [y, m, d] = dateStr.split('-').map(Number)
+        const itemDate = new Date(Date.UTC(y, m - 1, d))
+        return itemDate.getTime() <= todayUTC.getTime()
+      })
+      
+      setFeed(validFeed)
 
-      // Load reactions only for PR items (achievement items have no reactions)
-      const prItems = (data.feed ?? []).filter((x: FeedItem) => x.type === 'pr')
-      const friendIds = [...new Set(prItems.map((p: FeedPR) => p.user_id))] as string[]
+      // Load reactions only for PR items (workout and achievement items have no reactions)
+      const prItems = (data.feed ?? []).filter((x: FeedItem) => x.type === 'pr') as FeedPR[]
+      const friendIds = [...new Set(prItems.map((p) => p.user_id))] as string[]
       const allReacted = new Map<string, ReactionInfo>()
       for (const friendId of friendIds) {
         const reacted = await getReactedPRs(friendId)
@@ -84,6 +111,18 @@ export function FriendActivityFeed() {
       setLoading(false)
     }
   }, [loadFeed])
+
+  // Auto-refresh feed every 5 minutes
+  useEffect(() => {
+    if (!user) return
+    
+    const intervalId = setInterval(() => {
+      loadFeed(user.id)
+    }, 300000) // 5 minutes
+    
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId)
+  }, [user, loadFeed])
 
   const handleSendReaction = async (pr: FeedPR, reactionType: ReactionType) => {
     if (!user || sendingReaction) return
@@ -203,6 +242,37 @@ export function FriendActivityFeed() {
                         <span className="text-amber-400 font-medium">{item.achievement_name}</span>
                       </p>
                       <p className="text-[#888888] text-xs mt-0.5">{formatDate(item.unlocked_at)}</p>
+                    </div>
+                  </div>
+                )
+              }
+              if (item.type === 'workout') {
+                return (
+                  <div
+                    key={`${item.user_id}-workout-${item.workoutDate}-${item.templateDayId}-${i}`}
+                    className="flex items-start gap-3 py-2 border-b border-[#2a2a2a] last:border-0"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-sm font-medium shrink-0">
+                      {item.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm">
+                        <span className="font-medium">{item.username}</span>
+                        <span className="text-[#888888]"> completed </span>
+                        <span className="text-white font-medium">{item.dayLabel || 'Workout'}</span>
+                        {item.hasPRs && (
+                          <span className="ml-1.5 text-xs font-medium px-1.5 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
+                            PR!
+                          </span>
+                        )}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[#888888] text-xs">
+                          {item.exerciseCount} exercise{item.exerciseCount !== 1 ? 's' : ''}
+                        </span>
+                        <span className="text-[#666666] text-xs">·</span>
+                        <span className="text-[#888888] text-xs">{formatDate(item.workoutDate)}</span>
+                      </div>
                     </div>
                   </div>
                 )

@@ -35,6 +35,7 @@ export interface WorkoutSession {
   workout_date: string
   overall_performance_rating: number | null
   overall_feedback: string | null
+  is_complete: boolean
   created_at: string
 }
 

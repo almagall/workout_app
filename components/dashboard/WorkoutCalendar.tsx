@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getWorkoutSessions, getExerciseLogsForSession, getTemplateDay } from '@/lib/storage'
+import { getWorkoutSessions, getExerciseLogs, getExerciseLogsForSession, getTemplateDay } from '@/lib/storage'
 import { getPRsForSession, type SessionPR } from '@/lib/pr-helper'
 import { toYYYYMMDD, getTodayLocalYYYYMMDD } from '@/lib/date-utils'
 import type { WorkoutSession } from '@/types/workout'
@@ -90,6 +90,13 @@ export default function WorkoutCalendar() {
     let cancelled = false
     setLoadingCompletion(true)
     ;(async () => {
+      // OPTIMIZATION: Fetch all sessions and logs ONCE upfront to avoid redundant queries
+      const [allSessions, allLogs] = await Promise.all([
+        getWorkoutSessions(),
+        getExerciseLogs(),
+      ])
+      if (cancelled) return
+
       const rows: CompletionRow[] = []
       for (const session of sessions) {
         const [logs, day] = await Promise.all([
@@ -111,7 +118,8 @@ export default function WorkoutCalendar() {
           }
           return Array.from(byName.values())
         })()
-        const prs = await getPRsForSession(session.template_day_id, exercises, session.id)
+        // PASS CACHED DATA to avoid redundant fetches
+        const prs = await getPRsForSession(session.template_day_id, exercises, session.id, allSessions, allLogs)
         if (cancelled) return
         rows.push({
           session,
