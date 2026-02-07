@@ -184,7 +184,7 @@ export default function WeightPage() {
         
         {history.length === 0 ? (
           <p className="text-[#888888] text-center py-8">
-            No weight logs yet. Click "Log Weight" to get started.
+            No weight logs yet. Click the Log Weight button to get started.
           </p>
         ) : (
           <div className="space-y-2 max-h-[400px] overflow-y-auto">

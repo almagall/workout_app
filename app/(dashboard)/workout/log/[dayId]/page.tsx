@@ -105,6 +105,7 @@ export default function LogWorkoutDayPage() {
     }
 
     loadDayData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- draftSessionId is set inside effect, including it would cause redundant re-runs
   }, [dayId, router])
 
   const handleDiscardDraft = async () => {
