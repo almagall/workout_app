@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^2.39.0",
     "next": "14.1.0",
     "react": "^18.2.0",
+    "react-body-highlighter": "^2.0.5",
     "react-dom": "^18.2.0",
     "recharts": "^2.10.3"
   },

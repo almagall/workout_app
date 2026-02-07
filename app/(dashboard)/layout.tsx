@@ -114,6 +114,20 @@ export default function DashboardLayout({
                 History
               </Link>
 
+              <Link
+                href="/exercises"
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                  pathname === '/exercises'
+                    ? 'bg-white text-black shadow-lg'
+                    : 'text-[#888888] hover:bg-[#1a1a1a] hover:text-white'
+                }`}
+              >
+                <svg className={`w-5 h-5 ${pathname === '/exercises' ? 'text-black' : 'text-[#888888] group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Exercise Database
+              </Link>
+
               <div className="pt-4 pb-2">
                 <div className="px-3 mb-2">
                   <p className="text-xs font-semibold text-[#666666] uppercase tracking-wider">Social</p>
@@ -295,6 +309,17 @@ export default function DashboardLayout({
                   }`}
                 >
                   History
+                </Link>
+                <Link
+                  href="/exercises"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    pathname === '/exercises'
+                      ? 'bg-[#1a1a1a] text-white'
+                      : 'text-[#888888] hover:bg-[#1a1a1a] hover:text-white'
+                  }`}
+                >
+                  Exercise Database
                 </Link>
                 <Link
                   href="/achievements"

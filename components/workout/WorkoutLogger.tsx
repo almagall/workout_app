@@ -21,7 +21,8 @@ import { estimated1RM } from '@/lib/estimated-1rm'
 import { checkSetPR, getPRsForSession, type SessionPR } from '@/lib/pr-helper'
 import { checkAndUnlockAchievements } from '@/lib/achievements'
 import { getBodyweightForDate } from '@/lib/bodyweight-storage'
-import { isBodyweightExercise } from '@/lib/exercise-database'
+import { isBodyweightExercise, getExerciseByName } from '@/lib/exercise-database'
+import { getEquipmentStyle, getMuscleGroupStyle } from '@/lib/exercise-tag-styles'
 import RestTimer from '@/components/workout/RestTimer'
 import type { PlanType, SetData, ExerciseData, PerformanceStatus, SetType } from '@/types/workout'
 
@@ -1760,9 +1761,41 @@ export default function WorkoutLogger({
       )}
 
       <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-          <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
-          <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-white mb-2">{currentExercise.exerciseName}</h2>
+            {(() => {
+              const entry = getExerciseByName(currentExercise.exerciseName)
+              if (!entry) return null
+              return (
+                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[#888888]">Primary</span>
+                    <span className={`inline-block font-medium px-1.5 py-0.5 rounded border ${getMuscleGroupStyle(entry.muscleGroup)}`}>
+                      {entry.muscleGroup}
+                    </span>
+                  </div>
+                  {(entry.secondaryMuscleGroups ?? []).length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[#888888]">Secondary</span>
+                      {(entry.secondaryMuscleGroups ?? []).map((mg) => (
+                        <span key={mg} className={`inline-block font-medium px-1.5 py-0.5 rounded border ${getMuscleGroupStyle(mg, true)}`}>
+                          {mg}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[#888888]">Equipment</span>
+                    <span className={`inline-block font-medium px-1.5 py-0.5 rounded border ${getEquipmentStyle(entry.equipment)}`}>
+                      {entry.equipment}
+                    </span>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+          <div className="flex items-center gap-3 flex-wrap shrink-0">
             {isEditMode && (
               <span className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-md text-sm">
                 Editing Workout
@@ -1843,7 +1876,6 @@ export default function WorkoutLogger({
               )}
               <div className="mb-1.5 pr-9 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
                 <span className="font-semibold text-white">Set {set.setNumber}</span>
-                <span className="text-[#666]">·</span>
                 <span
                   className={`text-xs font-medium px-2 py-0.5 rounded ${
                     set.setType === 'warmup'
@@ -1856,10 +1888,7 @@ export default function WorkoutLogger({
                   {set.setType === 'warmup' ? 'Warm-up' : set.setType === 'cooldown' ? 'Cool-down' : 'Working'}
                 </span>
                 {set.setType === 'working' && set.targetWeight != null && (
-                  <>
-                    <span className="text-[#666]">·</span>
-                    <span className="text-[#888888]">Target: {set.targetWeight} lbs × {set.targetReps} reps</span>
-                  </>
+                  <span className="text-[#888888]">Target: {set.targetWeight} lbs × {set.targetReps} reps</span>
                 )}
               </div>
               <div className="grid grid-cols-3 gap-1.5">

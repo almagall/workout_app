@@ -13,6 +13,7 @@ import ProgressionMomentum from '@/components/dashboard/ProgressionMomentum'
 import ConsistencyScore from '@/components/dashboard/ConsistencyScore'
 import ExerciseSparklines from '@/components/dashboard/ExerciseSparklines'
 import StrengthStandards from '@/components/dashboard/StrengthStandards'
+import MuscleBalanceWidget from '@/components/dashboard/MuscleBalanceWidget'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
@@ -96,6 +97,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <ProgressionMomentum />
         <ConsistencyScore />
+        <MuscleBalanceWidget />
         <div className="lg:col-span-3">
           <StrengthStandards />
         </div>
