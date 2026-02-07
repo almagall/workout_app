@@ -21,8 +21,9 @@ import { estimated1RM } from '@/lib/estimated-1rm'
 import { checkSetPR, getPRsForSession, type SessionPR } from '@/lib/pr-helper'
 import { checkAndUnlockAchievements } from '@/lib/achievements'
 import { getBodyweightForDate } from '@/lib/bodyweight-storage'
-import { isBodyweightExercise, getExerciseByName } from '@/lib/exercise-database'
+import { isBodyweightExercise, getExerciseByName, type ExerciseEntry } from '@/lib/exercise-database'
 import { getEquipmentStyle, getMuscleGroupStyle } from '@/lib/exercise-tag-styles'
+import { ExerciseDetailModal } from '@/components/exercises/ExerciseDetailModal'
 import RestTimer from '@/components/workout/RestTimer'
 import type { PlanType, SetData, ExerciseData, PerformanceStatus, SetType } from '@/types/workout'
 
@@ -107,6 +108,7 @@ export default function WorkoutLogger({
   const [draftSessionId, setDraftSessionId] = useState<string | null>(initialDraftSessionId || null)
   const [isResumedDraft, setIsResumedDraft] = useState(!!initialDraftSessionId)
   const [autoSaving, setAutoSaving] = useState(false)
+  const [exerciseInfoModal, setExerciseInfoModal] = useState<ExerciseEntry | null>(null)
   const router = useRouter()
   const exerciseSelectorRef = useRef<HTMLDivElement>(null)
 
@@ -1763,7 +1765,28 @@ export default function WorkoutLogger({
       <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
           <div>
-            <h2 className="text-2xl font-semibold text-white mb-2">{currentExercise.exerciseName}</h2>
+            <div className="flex items-center gap-2 mb-2">
+              <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
+              {(() => {
+                const entry = getExerciseByName(currentExercise.exerciseName)
+                if (!entry) return null
+                return (
+                  <button
+                    type="button"
+                    onClick={() => setExerciseInfoModal(entry)}
+                    className="shrink-0 p-1 -m-1 rounded-full text-white/70 hover:text-white/90 hover:bg-[#2a2a2a] transition-colors"
+                    title="Exercise info"
+                    aria-label="Exercise info"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 10v7" />
+                      <circle cx="12" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
+                    </svg>
+                  </button>
+                )
+              })()}
+            </div>
             {(() => {
               const entry = getExerciseByName(currentExercise.exerciseName)
               if (!entry) return null
@@ -1874,19 +1897,21 @@ export default function WorkoutLogger({
                   </button>
                 </div>
               )}
-              <div className="mb-1.5 pr-9 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
-                <span className="font-semibold text-white">Set {set.setNumber}</span>
-                <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded ${
-                    set.setType === 'warmup'
-                      ? 'bg-amber-600/30 text-amber-400'
-                      : set.setType === 'cooldown'
-                      ? 'bg-blue-600/30 text-blue-400'
-                      : 'bg-green-600/30 text-green-400'
-                  }`}
-                >
-                  {set.setType === 'warmup' ? 'Warm-up' : set.setType === 'cooldown' ? 'Cool-down' : 'Working'}
-                </span>
+              <div className="mb-1.5 pr-9 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-y-0.5 gap-x-2 text-sm">
+                <div className="flex items-center gap-x-2 gap-y-0.5">
+                  <span className="font-semibold text-white">Set {set.setNumber}</span>
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded ${
+                      set.setType === 'warmup'
+                        ? 'bg-amber-600/30 text-amber-400'
+                        : set.setType === 'cooldown'
+                        ? 'bg-blue-600/30 text-blue-400'
+                        : 'bg-green-600/30 text-green-400'
+                    }`}
+                  >
+                    {set.setType === 'warmup' ? 'Warm-up' : set.setType === 'cooldown' ? 'Cool-down' : 'Working'}
+                  </span>
+                </div>
                 {set.setType === 'working' && set.targetWeight != null && (
                   <span className="text-[#888888]">Target: {set.targetWeight} lbs × {set.targetReps} reps</span>
                 )}
@@ -2090,6 +2115,10 @@ export default function WorkoutLogger({
           </button>
         )}
       </div>
+
+      {exerciseInfoModal && (
+        <ExerciseDetailModal exercise={exerciseInfoModal} onClose={() => setExerciseInfoModal(null)} />
+      )}
     </div>
   )
 }
