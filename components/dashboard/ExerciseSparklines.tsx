@@ -133,7 +133,7 @@ export default function ExerciseSparklines() {
       })
 
       const results = await Promise.all(exerciseDataPromises)
-      const validResults = results.filter((r): r is ExerciseData => r !== null)
+      const validResults = results.filter((r) => r !== null) as ExerciseData[]
 
       // Sort by percent change (highest first)
       validResults.sort((a, b) => b.percentChange - a.percentChange)
