@@ -165,22 +165,15 @@ export function calculateStrengthTier(
   ]
 
   let tier: typeof tiers[number] = 'beginner'
-  let percentile = 0
 
   // Find which tier the user falls into
   for (let i = 0; i < tiers.length; i++) {
     if (currentWeight >= standards[tiers[i]]) {
       tier = tiers[i]
-      // Estimate percentile (rough approximation)
-      if (i === 0) percentile = 25
-      else if (i === 1) percentile = 50
-      else if (i === 2) percentile = 75
-      else if (i === 3) percentile = 90
-      else percentile = 98
     }
   }
 
-  // Find next tier
+  const currentTierWeight = standards[tier]
   const currentTierIndex = tiers.indexOf(tier)
   const nextTierIndex = Math.min(currentTierIndex + 1, tiers.length - 1)
   const nextTierName = tiers[nextTierIndex]
@@ -190,7 +183,7 @@ export function calculateStrengthTier(
     exercise: normalizeExerciseName(exercise) || exercise,
     currentWeight,
     tier,
-    percentile,
+    currentTierWeight,
     nextTierWeight,
     nextTierName,
   }

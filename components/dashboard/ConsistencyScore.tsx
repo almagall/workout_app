@@ -12,7 +12,7 @@ export default function ConsistencyScore() {
   useEffect(() => {
     async function loadMetrics() {
       setLoading(true)
-      const data = await calculateConsistency(12)
+      const data = await calculateConsistency(13)
       setMetrics(data)
       setLoading(false)
     }
@@ -31,7 +31,7 @@ export default function ConsistencyScore() {
     )
   }
 
-  if (!metrics || metrics.weeklyHitRates.length === 0) {
+  if (!metrics || metrics.weeklyData.length === 0) {
     return (
       <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 h-[400px]">
         <h2 className="text-lg font-semibold text-white mb-4">Performance Consistency</h2>
@@ -43,11 +43,11 @@ export default function ConsistencyScore() {
     )
   }
 
-  // Prepare chart data
-  const chartData = metrics.weeklyHitRates.map((rate, index) => ({
-    week: `W${index + 1}`,
-    hitRate: rate,
-  }))
+  // Chart data: only weeks with data, so x-axis shows only those
+  const chartData = metrics.weeklyData
+    .map((d, i) => ({ index: i, week: d.weekNumber, hitRate: d.hitRate }))
+    .filter((d) => d.hitRate !== null)
+    .map((d, i) => ({ ...d, index: i }))
 
   // Determine color based on score
   const scoreColor =
@@ -91,9 +91,17 @@ export default function ConsistencyScore() {
         <div className="mb-4">
           <p className="text-sm text-[#888888] mb-2">Weekly Target Hit Rate</p>
           <ResponsiveContainer width="100%" height={150}>
-            <LineChart data={chartData}>
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 5, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-              <XAxis dataKey="week" stroke="#888888" tick={{ fontSize: 10 }} />
+              <XAxis
+                dataKey="index"
+                stroke="#888888"
+                tick={{ fontSize: 10 }}
+                ticks={chartData.map((_, i) => i)}
+                interval={0}
+                tickFormatter={(i) => `W${chartData[i]?.week ?? ''}`}
+                padding={{ left: 8, right: 8 }}
+              />
               <YAxis stroke="#888888" tick={{ fontSize: 10 }} domain={[0, 100]} />
               <Tooltip
                 contentStyle={{
@@ -102,6 +110,7 @@ export default function ConsistencyScore() {
                   borderRadius: '8px',
                 }}
                 labelStyle={{ color: '#ffffff' }}
+                labelFormatter={(label) => `W${chartData[Number(label)]?.week ?? label}`}
                 formatter={(value: number) => [`${value.toFixed(1)}%`, 'Hit Rate']}
               />
               <Line

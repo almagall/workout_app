@@ -73,7 +73,7 @@ export default function ProgressionMomentum() {
                       {trend.percentChange > 0 ? '+' : ''}
                       {trend.percentChange.toFixed(1)}%
                     </span>
-                    <span className="text-xs text-[#888888]">(4 weeks)</span>
+                    <span className="text-xs text-[#888888]">(3 weeks)</span>
                   </div>
                   {(trend.trend === 'plateaued' || trend.trend === 'regressing') && (
                     <p className="text-xs text-[#888888] mt-2">{trend.message}</p>

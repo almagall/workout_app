@@ -1,20 +1,24 @@
 import { createClient } from './supabase/client'
 import { getCurrentUser } from './auth-simple'
-import type { ConsistencyMetrics } from '@/types/profile'
+import { getISOWeekOfYear, getISOWeekYear, getWeekMondayKey } from './date-utils'
+import type { ConsistencyMetrics, WeeklyHitRateData } from '@/types/profile'
 
 /**
- * Get weekly target hit rates for past N weeks
+ * Get weekly target hit rates for rolling past N weeks with actual ISO week numbers
  */
-export async function getWeeklyHitRates(weeks: number = 12): Promise<number[]> {
+export async function getWeeklyHitRates(weeks: number = 13): Promise<WeeklyHitRateData[]> {
   const user = getCurrentUser()
   if (!user) return []
 
   const supabase = createClient()
 
-  // Calculate start date (N weeks ago)
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - (weeks * 7))
+  // Rolling N weeks: from (N-1) weeks ago through this week
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const startDate = new Date(today)
+  startDate.setDate(startDate.getDate() - (weeks - 1) * 7)
   const startDateStr = startDate.toISOString().split('T')[0]
+  const endDateStr = today.toISOString().split('T')[0]
 
   // Get all sessions in date range
   const { data: sessions, error } = await supabase
@@ -23,14 +27,19 @@ export async function getWeeklyHitRates(weeks: number = 12): Promise<number[]> {
     .eq('user_id', user.id)
     .eq('is_complete', true)
     .gte('workout_date', startDateStr)
+    .lte('workout_date', endDateStr)
     .order('workout_date', { ascending: true })
 
-  if (error || !sessions || sessions.length === 0) {
+  if (error || !sessions) {
     return []
   }
 
   // Get all exercise logs for these sessions
   const sessionIds = sessions.map(s => s.id)
+  if (sessionIds.length === 0) {
+    return buildWeeklyDataWithWeekNumbers(weeks, today, {})
+  }
+
   const { data: logs, error: logsError } = await supabase
     .from('exercise_logs')
     .select('session_id, performance_status, set_type')
@@ -38,70 +47,82 @@ export async function getWeeklyHitRates(weeks: number = 12): Promise<number[]> {
     .eq('set_type', 'working')
 
   if (logsError || !logs) {
-    return []
+    return buildWeeklyDataWithWeekNumbers(weeks, today, {})
   }
 
-  // Group sessions by week
-  const weeklyHitRates: number[] = []
-  const weekBuckets: { [key: number]: { met: number; total: number } } = {}
+  // Group sessions by week (Monday date as key)
+  const weekBuckets: { [weekKey: string]: { met: number; total: number } } = {}
 
   sessions.forEach(session => {
-    const sessionDate = new Date(session.workout_date)
-    const weeksSinceStart = Math.floor(
-      (sessionDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)
-    )
+    const sessionDate = new Date(session.workout_date + 'T12:00:00')
+    const weekKey = getWeekMondayKey(sessionDate)
 
-    if (!weekBuckets[weeksSinceStart]) {
-      weekBuckets[weeksSinceStart] = { met: 0, total: 0 }
+    if (!weekBuckets[weekKey]) {
+      weekBuckets[weekKey] = { met: 0, total: 0 }
     }
 
     const sessionLogs = logs.filter(log => log.session_id === session.id)
     sessionLogs.forEach(log => {
       if (log.performance_status) {
-        weekBuckets[weeksSinceStart].total++
+        weekBuckets[weekKey].total++
         if (log.performance_status === 'met_target' || log.performance_status === 'overperformed') {
-          weekBuckets[weeksSinceStart].met++
+          weekBuckets[weekKey].met++
         }
       }
     })
   })
 
-  // Calculate hit rate for each week
-  for (let i = 0; i < weeks; i++) {
-    if (weekBuckets[i] && weekBuckets[i].total > 0) {
-      const hitRate = (weekBuckets[i].met / weekBuckets[i].total) * 100
-      weeklyHitRates.push(hitRate)
-    } else {
-      weeklyHitRates.push(0)
-    }
-  }
+  return buildWeeklyDataWithWeekNumbers(weeks, today, weekBuckets)
+}
 
-  return weeklyHitRates
+function buildWeeklyDataWithWeekNumbers(
+  weeks: number,
+  endDate: Date,
+  weekBuckets: { [weekKey: string]: { met: number; total: number } }
+): WeeklyHitRateData[] {
+  const result: WeeklyHitRateData[] = []
+  for (let i = weeks - 1; i >= 0; i--) {
+    const d = new Date(endDate)
+    d.setDate(d.getDate() - i * 7)
+    const weekNum = getISOWeekOfYear(d)
+    const weekYear = getISOWeekYear(d)
+    const weekKey = getWeekMondayKey(d)
+
+    let hitRate: number | null = null
+    if (weekBuckets[weekKey] && weekBuckets[weekKey].total > 0) {
+      hitRate = (weekBuckets[weekKey].met / weekBuckets[weekKey].total) * 100
+    }
+
+    result.push({ weekNumber: weekNum, weekYear, hitRate })
+  }
+  return result
 }
 
 /**
  * Calculate consistency score from hit rate variance
  */
-export async function calculateConsistency(weeks: number = 12): Promise<ConsistencyMetrics> {
-  const weeklyHitRates = await getWeeklyHitRates(weeks)
+export async function calculateConsistency(weeks: number = 13): Promise<ConsistencyMetrics> {
+  const weeklyData = await getWeeklyHitRates(weeks)
 
-  if (weeklyHitRates.length === 0) {
+  if (weeklyData.length === 0) {
     return {
       score: 0,
-      weeklyHitRates: [],
+      weeklyData: [],
       variance: 0,
       trend: 'stable',
       insights: ['Not enough data yet. Keep logging workouts!'],
     }
   }
 
-  // Filter out weeks with no data (0%)
-  const validRates = weeklyHitRates.filter(rate => rate > 0)
+  // Filter to weeks with data for score/variance
+  const validRates = weeklyData
+    .map(d => d.hitRate)
+    .filter((r): r is number => r !== null && r > 0)
 
   if (validRates.length < 2) {
     return {
       score: 0,
-      weeklyHitRates,
+      weeklyData,
       variance: 0,
       trend: 'stable',
       insights: ['Not enough consistent data for analysis.'],
@@ -144,7 +165,7 @@ export async function calculateConsistency(weeks: number = 12): Promise<Consiste
   // Generate insights
   const insights = generateConsistencyInsights({
     score,
-    weeklyHitRates,
+    weeklyData,
     variance,
     trend,
     insights: [],
@@ -152,7 +173,7 @@ export async function calculateConsistency(weeks: number = 12): Promise<Consiste
 
   return {
     score: Math.round(score),
-    weeklyHitRates,
+    weeklyData,
     variance,
     trend,
     insights,
@@ -184,9 +205,10 @@ export function generateConsistencyInsights(metrics: ConsistencyMetrics): string
   }
 
   // Look for recent dips
-  if (metrics.weeklyHitRates.length >= 4) {
-    const recent4 = metrics.weeklyHitRates.slice(-4)
-    const earlier4 = metrics.weeklyHitRates.slice(-8, -4)
+  const hitRates = metrics.weeklyData.map(d => d.hitRate).filter((r): r is number => r !== null)
+  if (hitRates.length >= 4) {
+    const recent4 = hitRates.slice(-4)
+    const earlier4 = hitRates.slice(-8, -4)
 
     if (earlier4.length > 0) {
       const recentAvg = recent4.reduce((a, b) => a + b, 0) / recent4.length

@@ -8,7 +8,6 @@ interface Metrics {
   totalWorkouts: number
   workoutsThisMonth: number
   targetHitRate: number | null
-  averageRating: number
 }
 
 export default function PerformanceMetrics() {
@@ -50,19 +49,10 @@ export default function PerformanceMetrics() {
             ? (hitCount / logsWithStatus.length) * 100
             : null
 
-        const ratings = sessions
-          .map((s) => s.overall_performance_rating)
-          .filter((r) => r !== null) as number[]
-        const averageRating =
-          ratings.length > 0
-            ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
-            : 0
-
         setMetrics({
           totalWorkouts,
           workoutsThisMonth,
           targetHitRate: targetHitRate !== null ? Math.round(targetHitRate * 10) / 10 : null,
-          averageRating: Math.round(averageRating * 10) / 10,
         })
       }
       setLoading(false)
@@ -120,11 +110,6 @@ export default function PerformanceMetrics() {
               {metrics.targetHitRate !== null ? `${metrics.targetHitRate}%` : '—'}
             </p>
             <p className="text-xs text-[#666666] mt-1">Share of sets that met or exceeded target</p>
-          </div>
-          <div>
-            <p className="text-sm text-[#888888]">Average Rating</p>
-            <p className="text-2xl font-bold text-white">{metrics.averageRating}/10</p>
-            <p className="text-xs text-[#666666] mt-1">Average overall workout performance rating across all logged workouts</p>
           </div>
         </div>
         </div>

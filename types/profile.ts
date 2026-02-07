@@ -26,7 +26,7 @@ export interface StrengthStandard {
   exercise: string
   currentWeight: number
   tier: 'beginner' | 'novice' | 'intermediate' | 'advanced' | 'elite'
-  percentile: number
+  currentTierWeight: number  // min weight to be in current tier
   nextTierWeight: number
   nextTierName: string
 }
@@ -40,9 +40,15 @@ export interface ProgressionTrend {
   message: string
 }
 
+export interface WeeklyHitRateData {
+  weekNumber: number
+  weekYear: number // year of the week (ISO year, may differ from calendar year near boundaries)
+  hitRate: number | null
+}
+
 export interface ConsistencyMetrics {
   score: number
-  weeklyHitRates: number[]
+  weeklyData: WeeklyHitRateData[] // rolling period with actual ISO week numbers
   variance: number
   trend: 'improving' | 'stable' | 'declining'
   insights: string[]

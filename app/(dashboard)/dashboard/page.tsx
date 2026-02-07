@@ -60,25 +60,35 @@ export default function DashboardPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Workout Dashboard</h1>
       </div>
       
-      {/* Row 1: Progress Chart + Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <div className="lg:col-span-2">
-          <ProgressSelectors
-            selectedTemplateDayId={selectedTemplateDayId}
-            onTemplateDayChange={setSelectedTemplateDayId}
-            selectedExercise={selectedExercise}
-            onExerciseChange={setSelectedExercise}
-          />
-          <div className="mt-4 sm:mt-6 bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
-            <h2 className="text-xl font-semibold mb-4 text-white">Progress Over Time</h2>
-            <ProgressChart
-              selectedTemplateDayId={selectedTemplateDayId}
-              selectedExercise={selectedExercise}
-            />
+      {/* Row 1: Progress Chart + Calendar - equal height on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 lg:items-stretch">
+        <div className="lg:col-span-2 lg:min-h-0">
+          <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden h-full flex flex-col">
+            <div className="p-4 sm:p-6 border-b border-[#2a2a2a] flex-shrink-0">
+              <h2 className="text-xl font-semibold mb-4 text-white">Progress Over Time</h2>
+              <ProgressSelectors
+                selectedTemplateDayId={selectedTemplateDayId}
+                onTemplateDayChange={setSelectedTemplateDayId}
+                selectedExercise={selectedExercise}
+                onExerciseChange={setSelectedExercise}
+                embedded
+              />
+            </div>
+            <div className="p-4 sm:p-6 flex-1 min-h-0">
+              <ProgressChart
+                selectedTemplateDayId={selectedTemplateDayId}
+                selectedExercise={selectedExercise}
+              />
+            </div>
           </div>
         </div>
-        <div>
-          <WorkoutCalendar />
+        <div className="lg:h-full flex flex-col gap-4 sm:gap-6 min-h-0">
+          <div className="flex-1 min-h-0 [&>div]:h-full">
+            <WorkoutCalendar />
+          </div>
+          <div className="flex-shrink-0">
+            <RecentPRs />
+          </div>
         </div>
       </div>
 
@@ -86,7 +96,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <ProgressionMomentum />
         <ConsistencyScore />
-        <StrengthStandards />
+        <div className="lg:col-span-3">
+          <StrengthStandards />
+        </div>
       </div>
 
       {/* Row 3: Exercise Sparklines */}
@@ -99,7 +111,6 @@ export default function DashboardPage() {
       {/* Row 4: Existing Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <PerformanceMetrics />
-        <RecentPRs />
         <FriendActivityFeed />
       </div>
     </div>

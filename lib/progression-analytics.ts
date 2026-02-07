@@ -4,7 +4,7 @@ import { estimated1RM } from './estimated-1rm'
 import type { ProgressionTrend } from '@/types/profile'
 
 /**
- * Calculate 4-week moving average
+ * Calculate 3-week moving average
  */
 function getMovingAverage(data: number[], windowSize: number): number[] {
   const result: number[] = []
@@ -29,10 +29,10 @@ export async function calculateProgressionVelocity(
 
   const supabase = createClient()
 
-  // Get last 8 weeks of workout data for this exercise
-  const eightWeeksAgo = new Date()
-  eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56)
-  const startDate = eightWeeksAgo.toISOString().split('T')[0]
+  // Get last 6 weeks of workout data for this exercise
+  const sixWeeksAgo = new Date()
+  sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 42)
+  const startDate = sixWeeksAgo.toISOString().split('T')[0]
 
   const { data: sessions, error } = await supabase
     .from('workout_sessions')
@@ -43,8 +43,8 @@ export async function calculateProgressionVelocity(
     .gte('workout_date', startDate)
     .order('workout_date', { ascending: true })
 
-  if (error || !sessions || sessions.length < 4) {
-    return null // Need at least 4 workouts
+  if (error || !sessions || sessions.length < 3) {
+    return null // Need at least 3 workouts
   }
 
   // Get exercise logs for these sessions
@@ -72,16 +72,18 @@ export async function calculateProgressionVelocity(
     }
   })
 
-  if (sessionMaxes.length < 4) {
+  if (sessionMaxes.length < 3) {
     return null
   }
 
-  // Calculate 4-week moving averages
-  const movingAvg = getMovingAverage(sessionMaxes, 4)
+  // Calculate 3-week moving averages
+  const movingAvg = getMovingAverage(sessionMaxes, 3)
 
-  // Compare recent 4-week avg to previous 4-week avg
+  // Compare recent 3-week avg to previous 3-week avg (need at least 4 for valid comparison)
+  if (movingAvg.length < 4) return null
+
   const recentAvg = movingAvg[movingAvg.length - 1]
-  const previousAvg = movingAvg[Math.max(0, movingAvg.length - 5)]
+  const previousAvg = movingAvg[movingAvg.length - 4]
 
   const percentChange = ((recentAvg - previousAvg) / previousAvg) * 100
 

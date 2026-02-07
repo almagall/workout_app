@@ -20,7 +20,7 @@ export default function RecentPRs() {
       const user = getCurrentUser()
       if (!user) return
 
-      const days = await getRecentPRsByDay(6)
+      const days = await getRecentPRsByDay(3)
       setWorkoutDays(days)
       
       // Keep all days collapsed by default
@@ -74,7 +74,7 @@ export default function RecentPRs() {
       <div className="p-4 border-b border-[#2a2a2a]">
         <h2 className="text-lg font-semibold text-white">Recent PRs</h2>
       </div>
-      <div className="p-4 h-[400px] overflow-y-auto">
+      <div className="p-4 max-h-[220px] overflow-y-auto">
         <div className="space-y-3">
           {workoutDays.map((day) => {
           const dayKey = `${day.workoutDate}|${day.templateDayId}`

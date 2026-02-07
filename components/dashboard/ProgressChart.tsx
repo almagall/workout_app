@@ -135,6 +135,12 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
 
   const intervalOptions: TimeIntervalKey[] = ['All', '1M', '3M', '6M', '1Y', 'YTD']
 
+  const dataMax = Math.max(
+    ...data.map((d) => (selectedMetric === 'estimated1RM' ? d.estimated1RM : d.heaviestSet)),
+    0
+  )
+  const yDomain: [number, number] = [0, dataMax > 0 ? dataMax * 1.08 : 100]
+
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -176,7 +182,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
           ))}
         </div>
       </div>
-      <div className="h-[220px] sm:h-[300px] lg:h-[400px] w-full">
+      <div className="h-[280px] sm:h-[300px] lg:h-[450px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
@@ -189,7 +195,13 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
             }
             padding={{ left: 28, right: 28 }}
           />
-          <YAxis stroke="#888888" tick={{ fill: '#888888' }} />
+          <YAxis
+            stroke="#888888"
+            tick={{ fill: '#888888' }}
+            scale="linear"
+            domain={yDomain}
+            tickFormatter={(value) => Number(value).toLocaleString()}
+          />
           <Tooltip 
             contentStyle={{ 
               backgroundColor: '#111111', 

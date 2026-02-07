@@ -16,6 +16,8 @@ interface ProgressSelectorsProps {
   onTemplateDayChange: (dayId: string | null) => void
   selectedExercise: string
   onExerciseChange: (exercise: string) => void
+  /** When true, renders without card wrapper for embedding inside another card */
+  embedded?: boolean
 }
 
 export default function ProgressSelectors({
@@ -23,6 +25,7 @@ export default function ProgressSelectors({
   onTemplateDayChange,
   selectedExercise,
   onExerciseChange,
+  embedded = false,
 }: ProgressSelectorsProps) {
   const [dayOptions, setDayOptions] = useState<DayOption[]>([])
   const [exercises, setExercises] = useState<string[]>([])
@@ -107,9 +110,11 @@ export default function ProgressSelectors({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTemplateDayId])
 
+  const cardClass = embedded ? '' : 'bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6'
+
   if (loadingDays) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+      <div className={embedded ? '' : 'bg-[#111111] rounded-lg border border-[#2a2a2a] p-6'}>
         <div className="text-[#888888]">Loading...</div>
       </div>
     )
@@ -117,7 +122,7 @@ export default function ProgressSelectors({
 
   if (dayOptions.length === 0) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+      <div className={embedded ? '' : 'bg-[#111111] rounded-lg border border-[#2a2a2a] p-6'}>
         <p className="text-[#a1a1a1]">
           Create a template and log workouts to see progress.
         </p>
@@ -126,7 +131,7 @@ export default function ProgressSelectors({
   }
 
   return (
-    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
+    <div className={cardClass || undefined}>
       <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
         <div className="flex flex-col gap-1 sm:gap-2 flex-1 min-w-0">
           <label htmlFor="workout-day-select" className="text-xs sm:text-sm font-medium text-white whitespace-nowrap">
