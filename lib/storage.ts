@@ -561,6 +561,7 @@ export async function getPreviousWorkoutSession(templateDayId: string, beforeDat
     workout_date: data.workout_date,
     overall_performance_rating: data.overall_performance_rating,
     overall_feedback: data.overall_feedback,
+    is_complete: data.is_complete ?? true,
     created_at: data.created_at,
   }
 }
@@ -589,6 +590,7 @@ export async function getWorkoutSessionByDate(templateDayId: string, date: strin
     workout_date: data.workout_date,
     overall_performance_rating: data.overall_performance_rating,
     overall_feedback: data.overall_feedback,
+    is_complete: data.is_complete ?? true,
     created_at: data.created_at,
   }
 }
