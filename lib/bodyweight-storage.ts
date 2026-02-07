@@ -105,6 +105,43 @@ export async function updateCurrentBodyweight(weight: number, unit: 'lbs' | 'kg'
 }
 
 /**
+ * Get user's bodyweight for a specific date.
+ * Uses the most recent bodyweight_history entry on or before the date.
+ * Falls back to profile bodyweight if no history entries exist.
+ * Returns weight in lbs for consistency with workout logging.
+ */
+export async function getBodyweightForDate(date: string): Promise<{ weight: number; unit: 'lbs' } | null> {
+  const user = getCurrentUser()
+  if (!user) return null
+
+  const supabase = createClient()
+
+  // Get most recent bodyweight entry on or before the date
+  const { data: historyEntry, error: historyError } = await supabase
+    .from('bodyweight_history')
+    .select('weight, weight_unit')
+    .eq('user_id', user.id)
+    .lte('log_date', date)
+    .order('log_date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!historyError && historyEntry && historyEntry.weight != null) {
+    const weight = Number(historyEntry.weight)
+    const unit = (historyEntry.weight_unit || 'lbs') as 'lbs' | 'kg'
+    const weightLbs = unit === 'kg' ? weight * 2.20462 : weight
+    return { weight: weightLbs, unit: 'lbs' }
+  }
+
+  // Fall back to profile bodyweight
+  const profile = await getCurrentBodyweight()
+  if (!profile) return null
+
+  const weightLbs = profile.unit === 'kg' ? profile.weight * 2.20462 : profile.weight
+  return { weight: weightLbs, unit: 'lbs' }
+}
+
+/**
  * Get current bodyweight from profile
  */
 export async function getCurrentBodyweight(): Promise<{ weight: number; unit: string } | null> {

@@ -172,6 +172,12 @@ export function getExerciseByName(name: string): ExerciseEntry | null {
   return EXERCISES.find((e) => e.name.toLowerCase() === n) ?? null
 }
 
+/** Check if an exercise is bodyweight-only (equipment is 'Bodyweight'). */
+export function isBodyweightExercise(name: string): boolean {
+  const entry = getExerciseByName(name)
+  return entry?.equipment === 'Bodyweight'
+}
+
 /** All exercises for dropdown when query is empty. */
 export function getExerciseList(): ExerciseEntry[] {
   return [...EXERCISES]
