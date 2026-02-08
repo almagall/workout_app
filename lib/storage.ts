@@ -4,6 +4,7 @@
 import type { PlanType, WorkoutTemplate, TemplateDay, TemplateExercise, WorkoutSession, ExerciseLog } from '@/types/workout'
 import { getCurrentUser } from './auth-simple'
 import { createClient } from './supabase/client'
+import { isInDeloadPeriod } from './deload-detection'
 
 // Template storage
 export async function saveTemplate(template: {
@@ -564,6 +565,93 @@ export async function getPreviousWorkoutSession(templateDayId: string, beforeDat
     is_complete: data.is_complete ?? true,
     created_at: data.created_at,
   }
+}
+
+/**
+ * Get the most recent previous workout session for a template day, excluding sessions
+ * that fall within a deload period. Used for target calculation so we use pre-deload
+ * performance as the baseline.
+ */
+export async function getPreviousWorkoutSessionExcludingDeload(
+  templateDayId: string,
+  beforeDate: string,
+  userId: string
+): Promise<WorkoutSession | null> {
+  const supabase = createClient()
+  const { data: sessions, error } = await supabase
+    .from('workout_sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('template_day_id', templateDayId)
+    .lt('workout_date', beforeDate)
+    .order('workout_date', { ascending: false })
+    .limit(20)
+
+  if (error || !sessions || sessions.length === 0) return null
+
+  for (const s of sessions) {
+    if (!isInDeloadPeriod(userId, s.workout_date)) {
+      return {
+        id: s.id,
+        user_id: s.user_id,
+        template_day_id: s.template_day_id,
+        workout_date: s.workout_date,
+        overall_performance_rating: s.overall_performance_rating,
+        overall_feedback: s.overall_feedback,
+        is_complete: s.is_complete ?? true,
+        created_at: s.created_at,
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * Find the most recent session for a template day that contains a specific exercise.
+ * Used when swapping to an alternative: we need history for the new exercise.
+ */
+export async function getMostRecentSessionWithExercise(
+  templateDayId: string,
+  exerciseName: string,
+  beforeDate: string,
+  userId: string
+): Promise<{ session: WorkoutSession; logs: ExerciseLog[] } | null> {
+  const supabase = createClient()
+  const { data: sessions, error } = await supabase
+    .from('workout_sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('template_day_id', templateDayId)
+    .lt('workout_date', beforeDate)
+    .eq('is_complete', true)
+    .order('workout_date', { ascending: false })
+    .limit(20)
+
+  if (error || !sessions || sessions.length === 0) return null
+
+  for (const s of sessions) {
+    if (isInDeloadPeriod(userId, s.workout_date)) continue
+    const logs = await getExerciseLogsForSession(s.id)
+    const exerciseLogs = logs.filter(
+      (l) => l.exercise_name === exerciseName && (l.set_type ?? 'working') === 'working'
+    )
+    if (exerciseLogs.length > 0) {
+      return {
+        session: {
+          id: s.id,
+          user_id: s.user_id,
+          template_day_id: s.template_day_id,
+          workout_date: s.workout_date,
+          overall_performance_rating: s.overall_performance_rating,
+          overall_feedback: s.overall_feedback,
+          is_complete: s.is_complete ?? true,
+          created_at: s.created_at,
+        },
+        logs: exerciseLogs,
+      }
+    }
+  }
+  return null
 }
 
 export async function getWorkoutSessionByDate(templateDayId: string, date: string): Promise<WorkoutSession | null> {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { createClient } from '@/lib/supabase/client'
 import type { UserProfile } from '@/types/profile'
+import { getPlateConfig, savePlateConfig, STANDARD_PLATES } from '@/lib/plate-calculator'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -25,6 +26,10 @@ export default function SettingsPage() {
   const [trainingExperience, setTrainingExperience] = useState<'beginner' | 'intermediate' | 'advanced' | ''>('')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
+
+  // Plate calculator
+  const [barWeight, setBarWeight] = useState('45')
+  const [selectedPlates, setSelectedPlates] = useState<number[]>(STANDARD_PLATES)
 
   useEffect(() => {
     async function loadProfile() {
@@ -67,6 +72,11 @@ export default function SettingsPage() {
         setHeightFeet(feet.toString())
         setHeightInches(inches.toString())
       }
+
+      // Load plate config from localStorage
+      const plateConfig = getPlateConfig(user.id)
+      setBarWeight(plateConfig.barWeight.toString())
+      setSelectedPlates(plateConfig.plates)
 
       setLoading(false)
     }
@@ -155,6 +165,15 @@ export default function SettingsPage() {
         .eq('user_id', user.id)
 
       if (updateError) throw new Error(updateError.message)
+
+      // Save plate config to localStorage
+      const bw = parseFloat(barWeight)
+      if (!isNaN(bw) && bw >= 0 && bw <= 100) {
+        savePlateConfig(user.id, {
+          barWeight: bw,
+          plates: selectedPlates.length > 0 ? selectedPlates : STANDARD_PLATES,
+        })
+      }
 
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -401,6 +420,57 @@ export default function SettingsPage() {
                 <option value="intermediate">Intermediate (1-3 years)</option>
                 <option value="advanced">Advanced (3+ years)</option>
               </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Plate Calculator */}
+        <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Plate Calculator</h2>
+          <p className="text-sm text-[#888888] mb-4">
+            Target weights and plate breakdowns will use only the plates you select. Choose which plates your gym has.
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                Bar weight (lbs)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={barWeight}
+                onChange={(e) => setBarWeight(e.target.value)}
+                className="w-24 px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                Available plates (lbs)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {STANDARD_PLATES.map((plate) => (
+                  <label
+                    key={plate}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] cursor-pointer hover:bg-[#252525]"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedPlates.includes(plate)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedPlates([...selectedPlates, plate].sort((a, b) => b - a))
+                        } else {
+                          setSelectedPlates(selectedPlates.filter((p) => p !== plate))
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <span className="text-white">{plate}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </div>

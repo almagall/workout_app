@@ -3,10 +3,13 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
-import { getPreviousWorkoutSession, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions, saveDraftWorkoutSession, completeWorkoutSession, deleteWorkoutSession } from '@/lib/storage'
+import { getPreviousWorkoutSessionExcludingDeload, getMostRecentSessionWithExercise, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions, saveDraftWorkoutSession, completeWorkoutSession, deleteWorkoutSession } from '@/lib/storage'
 import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
+import { getTargetExplanation } from '@/lib/target-explanation'
+import { getPlateBreakdown, isBarbellExercise, getPlateConfig, roundToLoadableWeight } from '@/lib/plate-calculator'
+import { isInDeloadPeriod, getDeloadMultiplier } from '@/lib/deload-detection'
 import { getTodayLocalYYYYMMDD } from '@/lib/date-utils'
 import { getPresetTargetStrategy, getPresetExerciseNotes } from '@/lib/preset-templates'
 import {
@@ -21,7 +24,7 @@ import { estimated1RM } from '@/lib/estimated-1rm'
 import { checkSetPR, getPRsForSession, type SessionPR } from '@/lib/pr-helper'
 import { checkAndUnlockAchievements } from '@/lib/achievements'
 import { getBodyweightForDate } from '@/lib/bodyweight-storage'
-import { isBodyweightExercise, getExerciseByName, type ExerciseEntry } from '@/lib/exercise-database'
+import { isBodyweightExercise, getExerciseByName, getExerciseEquivalence, type ExerciseEntry } from '@/lib/exercise-database'
 import { getEquipmentStyle, getMuscleGroupStyle } from '@/lib/exercise-tag-styles'
 import { ExerciseDetailModal } from '@/components/exercises/ExerciseDetailModal'
 import RestTimer from '@/components/workout/RestTimer'
@@ -273,8 +276,9 @@ export default function WorkoutLogger({
             }
           })
         } else {
-          // New workout mode: Get the most recent previous session for THIS SPECIFIC template day
-          const previousSession = await getPreviousWorkoutSession(dayId, workoutDate)
+          // New workout mode: Get the most recent previous session for THIS SPECIFIC template day.
+          // Exclude sessions during deload so targets use pre-deload performance.
+          const previousSession = await getPreviousWorkoutSessionExcludingDeload(dayId, workoutDate, user.id)
           
           // Track if this is a baseline workout (first time logging this template day)
           setIsBaselineWorkout(previousSession === null)
@@ -345,6 +349,13 @@ export default function WorkoutLogger({
 
           const linearSetsPerExercise = targetStrategy === 'stronglifts' ? 5 : 3
 
+          const plateConfig = getPlateConfig(user.id)
+          const roundToLoadable = (w: number) => roundToLoadableWeight(w, plateConfig.plates, plateConfig.barWeight)
+          const inDeload = isInDeloadPeriod(user.id, workoutDate)
+          const deloadMult = getDeloadMultiplier()
+          const applyDeload = (tw: number | null) =>
+            tw != null && inDeload ? Math.round(tw * deloadMult * 2) / 2 : tw
+
           // Initialize exercise data (only working sets from previous session get targets)
           initializedExercises = exercises.map((exerciseName, exerciseIndex) => {
             const exerciseLogs = allPreviousLogs.filter(
@@ -372,11 +383,12 @@ export default function WorkoutLogger({
                 const trainingMax = prevE1RM * 0.9
                 const cycleWeek = get531CycleWeek(daySessions.length + 1)
                 const num531Sets = Math.min(3, sortedLogs.length)
+                const expl531 = getTargetExplanation('met_target', planType, 0, '531', { cycleWeek })
                 sets = sortedLogs.map((log, idx) => {
                   const setIndex = idx < 3 ? (idx as 0 | 1 | 2) : 2
                   const t531 =
                     idx < 3 && trainingMax > 0
-                      ? calculate531SetTarget(cycleWeek, setIndex, trainingMax)
+                      ? calculate531SetTarget(cycleWeek, setIndex, trainingMax, roundToLoadable)
                       : { targetWeight: null, targetReps: null, targetRpe: null }
                   return {
                     setNumber: idx + 1,
@@ -384,9 +396,10 @@ export default function WorkoutLogger({
                     weight: parseFloat(log.weight.toString()),
                     reps: log.reps,
                     rpe: parseFloat(log.rpe.toString()),
-                    targetWeight: t531.targetWeight,
+                    targetWeight: applyDeload(t531.targetWeight),
                     targetReps: t531.targetReps,
                     targetRpe: t531.targetRpe,
+                    targetExplanation: expl531,
                   }
                 })
                 // 5/3/1 main lift is exactly 3 sets; if previous had fewer, pad; if more, keep first 3 with 531
@@ -395,7 +408,7 @@ export default function WorkoutLogger({
                     const setIndex = sets.length as 0 | 1 | 2
                     const t531 =
                       trainingMax > 0
-                        ? calculate531SetTarget(cycleWeek, setIndex, trainingMax)
+                        ? calculate531SetTarget(cycleWeek, setIndex, trainingMax, roundToLoadable)
                         : { targetWeight: null, targetReps: null, targetRpe: null }
                     sets.push({
                       setNumber: sets.length + 1,
@@ -403,9 +416,10 @@ export default function WorkoutLogger({
                       weight: 0,
                       reps: 0,
                       rpe: 5,
-                      targetWeight: t531.targetWeight,
+                      targetWeight: applyDeload(t531.targetWeight),
                       targetReps: t531.targetReps,
                       targetRpe: t531.targetRpe,
+                      targetExplanation: expl531,
                     })
                   }
                 } else if (sets.length > 3) {
@@ -424,13 +438,29 @@ export default function WorkoutLogger({
                       previousSet,
                       planType,
                       resolvedPlanSettings,
-                      consecutiveUnderperformance
+                      consecutiveUnderperformance,
+                      roundToLoadable
+                    )
+                    const status = evaluateSetPerformance(
+                      previousSet.weight,
+                      previousSet.reps,
+                      previousSet.rpe,
+                      previousSet.targetWeight,
+                      previousSet.targetReps,
+                      previousSet.targetRpe
+                    )
+                    const targetExplanation = getTargetExplanation(
+                      status,
+                      planType,
+                      consecutiveUnderperformance,
+                      'default'
                     )
                     sets[i] = {
                       ...sets[i],
-                      targetWeight: setTarget.targetWeight,
+                      targetWeight: applyDeload(setTarget.targetWeight),
                       targetReps: setTarget.targetReps,
                       targetRpe: setTarget.targetRpe,
+                      targetExplanation,
                     }
                   }
                 }
@@ -450,17 +480,20 @@ export default function WorkoutLogger({
                     previousSet,
                     exerciseName,
                     5,
-                    consecutiveUnderperformance
+                    consecutiveUnderperformance,
+                    roundToLoadable
                   )
+                  const explLinear = getTargetExplanation('met_target', planType, consecutiveUnderperformance, 'linear')
                   return {
                     setNumber: idx + 1,
                     setType: 'working' as SetType,
                     weight: parseFloat(log.weight.toString()),
                     reps: log.reps,
                     rpe: parseFloat(log.rpe.toString()),
-                    targetWeight: t.targetWeight,
+                    targetWeight: applyDeload(t.targetWeight),
                     targetReps: t.targetReps,
                     targetRpe: t.targetRpe,
+                    targetExplanation: explLinear,
                   }
                 })
                 while (sets.length < numSets) {
@@ -477,17 +510,20 @@ export default function WorkoutLogger({
                     previousSet,
                     exerciseName,
                     5,
-                    consecutiveUnderperformance
+                    consecutiveUnderperformance,
+                    roundToLoadable
                   )
+                  const explLinear = getTargetExplanation('met_target', planType, consecutiveUnderperformance, 'linear')
                   sets.push({
                     setNumber: sets.length + 1,
                     setType: 'working' as SetType,
                     weight: lastLog ? parseFloat(lastLog.weight.toString()) : 0,
                     reps: lastLog ? lastLog.reps : 0,
                     rpe: lastLog ? parseFloat(lastLog.rpe.toString()) : 5,
-                    targetWeight: t.targetWeight,
+                    targetWeight: applyDeload(t.targetWeight),
                     targetReps: t.targetReps,
                     targetRpe: t.targetRpe,
+                    targetExplanation: explLinear,
                   })
                 }
               } else if (usePhulStrategy) {
@@ -504,7 +540,22 @@ export default function WorkoutLogger({
                     previousSet,
                     phulPlanType,
                     phulSettings,
-                    consecutiveUnderperformance
+                    consecutiveUnderperformance,
+                    roundToLoadable
+                  )
+                  const status = evaluateSetPerformance(
+                    previousSet.weight,
+                    previousSet.reps,
+                    previousSet.rpe,
+                    previousSet.targetWeight,
+                    previousSet.targetReps,
+                    previousSet.targetRpe
+                  )
+                  const targetExplanation = getTargetExplanation(
+                    status,
+                    phulPlanType,
+                    consecutiveUnderperformance,
+                    'default'
                   )
                   return {
                     setNumber: idx + 1,
@@ -512,9 +563,10 @@ export default function WorkoutLogger({
                     weight: parseFloat(log.weight.toString()),
                     reps: log.reps,
                     rpe: parseFloat(log.rpe.toString()),
-                    targetWeight: setTarget.targetWeight,
+                    targetWeight: applyDeload(setTarget.targetWeight),
                     targetReps: setTarget.targetReps,
                     targetRpe: setTarget.targetRpe,
+                    targetExplanation,
                   }
                 })
               } else if (useGzclpStrategy && gzclpTier) {
@@ -533,17 +585,20 @@ export default function WorkoutLogger({
                     idx,
                     previousSet,
                     exerciseName,
-                    consecutiveUnderperformance
+                    consecutiveUnderperformance,
+                    roundToLoadable
                   )
+                  const explGzclp = getTargetExplanation('met_target', planType, consecutiveUnderperformance, 'gzclp')
                   return {
                     setNumber: idx + 1,
                     setType: 'working' as SetType,
                     weight: parseFloat(log.weight.toString()),
                     reps: log.reps,
                     rpe: parseFloat(log.rpe.toString()),
-                    targetWeight: t.targetWeight,
+                    targetWeight: applyDeload(t.targetWeight),
                     targetReps: t.targetReps,
                     targetRpe: t.targetRpe,
+                    targetExplanation: explGzclp,
                   }
                 })
                 while (sets.length < numSets) {
@@ -561,17 +616,20 @@ export default function WorkoutLogger({
                     sets.length,
                     prev,
                     exerciseName,
-                    consecutiveUnderperformance
+                    consecutiveUnderperformance,
+                    roundToLoadable
                   )
+                  const explGzclp = getTargetExplanation('met_target', planType, consecutiveUnderperformance, 'gzclp')
                   sets.push({
                     setNumber: sets.length + 1,
                     setType: 'working' as SetType,
                     weight: lastLog ? parseFloat(lastLog.weight.toString()) : 0,
                     reps: lastLog ? lastLog.reps : 0,
                     rpe: lastLog ? parseFloat(lastLog.rpe.toString()) : 5,
-                    targetWeight: t.targetWeight,
+                    targetWeight: applyDeload(t.targetWeight),
                     targetReps: t.targetReps,
                     targetRpe: t.targetRpe,
+                    targetExplanation: explGzclp,
                   })
                 }
               } else if (useTexasMethodStrategy && texasDayType) {
@@ -590,17 +648,20 @@ export default function WorkoutLogger({
                     idx,
                     previousSet,
                     exerciseName,
-                    consecutiveUnderperformance
+                    consecutiveUnderperformance,
+                    roundToLoadable
                   )
+                  const explTexas = getTargetExplanation('met_target', planType, consecutiveUnderperformance, 'texas', { weekLabel: texasDayType })
                   return {
                     setNumber: idx + 1,
                     setType: 'working' as SetType,
                     weight: parseFloat(log.weight.toString()),
                     reps: log.reps,
                     rpe: parseFloat(log.rpe.toString()),
-                    targetWeight: t.targetWeight,
+                    targetWeight: applyDeload(t.targetWeight),
                     targetReps: t.targetReps,
                     targetRpe: t.targetRpe,
+                    targetExplanation: explTexas,
                   }
                 })
                 while (sets.length < numSets) {
@@ -618,17 +679,20 @@ export default function WorkoutLogger({
                     sets.length,
                     prev,
                     exerciseName,
-                    consecutiveUnderperformance
+                    consecutiveUnderperformance,
+                    roundToLoadable
                   )
+                  const explTexas = getTargetExplanation('met_target', planType, consecutiveUnderperformance, 'texas', { weekLabel: texasDayType })
                   sets.push({
                     setNumber: sets.length + 1,
                     setType: 'working' as SetType,
                     weight: lastLog ? parseFloat(lastLog.weight.toString()) : 0,
                     reps: lastLog ? lastLog.reps : 0,
                     rpe: lastLog ? parseFloat(lastLog.rpe.toString()) : 5,
-                    targetWeight: t.targetWeight,
+                    targetWeight: applyDeload(t.targetWeight),
                     targetReps: t.targetReps,
                     targetRpe: t.targetRpe,
+                    targetExplanation: explTexas,
                   })
                 }
               } else {
@@ -646,7 +710,22 @@ export default function WorkoutLogger({
                     previousSet,
                     planType,
                     resolvedPlanSettings,
-                    consecutiveUnderperformance
+                    consecutiveUnderperformance,
+                    roundToLoadable
+                  )
+                  const status = evaluateSetPerformance(
+                    previousSet.weight,
+                    previousSet.reps,
+                    previousSet.rpe,
+                    previousSet.targetWeight,
+                    previousSet.targetReps,
+                    previousSet.targetRpe
+                  )
+                  const targetExplanation = getTargetExplanation(
+                    status,
+                    planType,
+                    consecutiveUnderperformance,
+                    'default'
                   )
                   return {
                     setNumber: idx + 1,
@@ -654,9 +733,10 @@ export default function WorkoutLogger({
                     weight: parseFloat(log.weight.toString()),
                     reps: log.reps,
                     rpe: parseFloat(log.rpe.toString()),
-                    targetWeight: setTarget.targetWeight,
+                    targetWeight: applyDeload(setTarget.targetWeight),
                     targetReps: setTarget.targetReps,
                     targetRpe: setTarget.targetRpe,
+                    targetExplanation,
                   }
                 })
               }
@@ -773,6 +853,359 @@ export default function WorkoutLogger({
     return set.weight ?? 0
   }
 
+  const handleSelectAlternative = async (newExerciseName: string) => {
+    if (!planSettings) return
+    const exIdx = currentExerciseIndex
+    const originalExerciseName = exerciseData[exIdx]?.exerciseName ?? ''
+
+    let result = await getMostRecentSessionWithExercise(dayId, newExerciseName, workoutDate, userId)
+    let useEquivalenceScaling = false
+    let weightRatio = 1
+
+    if (!result) {
+      const equiv = getExerciseEquivalence(newExerciseName)
+      if (equiv && equiv.equivalentTo === originalExerciseName) {
+        const sourceResult = await getMostRecentSessionWithExercise(dayId, originalExerciseName, workoutDate, userId)
+        if (sourceResult) {
+          result = sourceResult
+          useEquivalenceScaling = true
+          weightRatio = equiv.weightRatio
+        }
+      }
+    }
+
+    const workingLogs = result?.logs ?? []
+    const sortedLogs = [...workingLogs].sort((a, b) => a.set_number - b.set_number)
+
+    const allSessions = await getWorkoutSessions()
+    const daySessions = allSessions
+      .filter((s) => s.template_day_id === dayId)
+      .sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime())
+
+    const exerciseForUnderperformance = useEquivalenceScaling ? originalExerciseName : newExerciseName
+    let consecutiveUnderperformance = 0
+    for (let i = 0; i < Math.min(daySessions.length, 5); i++) {
+      const session = daySessions[i]
+      const sessionLogs = await getExerciseLogsForSession(session.id)
+      const exLogs = sessionLogs.filter(
+        (l) => l.exercise_name === exerciseForUnderperformance && (l.set_type ?? 'working') === 'working'
+      )
+      if (exLogs.length === 0) break
+      if (exLogs.some((l) => l.performance_status === 'underperformed')) consecutiveUnderperformance++
+      else break
+    }
+
+    const targetStrategy = getPresetTargetStrategy(presetId ?? undefined)
+    const use531Strategy = targetStrategy === '531'
+    const useLinearStrategy = targetStrategy === 'startingStrength' || targetStrategy === 'stronglifts'
+    const usePhulStrategy = targetStrategy === 'phul'
+    const useGzclpStrategy = targetStrategy === 'gzclp'
+    const useTexasMethodStrategy = targetStrategy === 'texasMethod'
+    const phulPlanType = dayLabel.toLowerCase().includes('power') ? 'strength' : 'hypertrophy'
+    const phulSettings = getDefaultPlanSettings(phulPlanType)
+    const texasDayType = getTexasMethodDayType(dayLabel)
+    const linearSetsPerExercise = targetStrategy === 'stronglifts' ? 5 : 3
+    const plateConfig = getPlateConfig(userId)
+    const roundToLoadable = (w: number) => roundToLoadableWeight(w, plateConfig.plates, plateConfig.barWeight)
+    const inDeload = isInDeloadPeriod(userId, workoutDate)
+    const deloadMult = getDeloadMultiplier()
+    const applyDeload = (tw: number | null) =>
+      tw != null && inDeload ? Math.round(tw * deloadMult * 2) / 2 : tw
+    const exerciseForTargetComputation = useEquivalenceScaling ? originalExerciseName : newExerciseName
+    const applyTargetWeight = (tw: number | null) => {
+      if (tw == null) return null
+      const val = useEquivalenceScaling ? roundToLoadable(tw * weightRatio) : tw
+      return applyDeload(val)
+    }
+    const logWeight = (log: { weight: unknown }, fallback = 0) =>
+      useEquivalenceScaling ? fallback : parseFloat(String(log.weight ?? 0))
+    const logReps = (log: { reps: number }, fallback = 0) =>
+      useEquivalenceScaling ? fallback : (log.reps ?? 0)
+    const logRpe = (log: { rpe: unknown }, fallback = 5) =>
+      useEquivalenceScaling ? fallback : parseFloat(String(log.rpe ?? 5))
+    const is531MainLift = use531Strategy && exIdx === 0
+    const gzclpTier = useGzclpStrategy ? (exIdx === 0 ? 1 : exIdx === 1 ? 2 : 3) : null
+
+    const emptySet = (n: number): SetData => ({
+      setNumber: n,
+      setType: 'working' as SetType,
+      weight: 0,
+      reps: 0,
+      rpe: 5,
+      targetWeight: null,
+      targetReps: null,
+      targetRpe: null,
+    })
+
+    let sets: SetData[] = []
+    if (sortedLogs.length > 0) {
+      if (is531MainLift) {
+        const set1RMs = sortedLogs.map((l) => estimated1RM(parseFloat(l.weight.toString()), l.reps))
+        const prevE1RM = set1RMs.length > 0 ? Math.max(...set1RMs) : 0
+        const trainingMax = prevE1RM * 0.9
+        const cycleWeek = get531CycleWeek(daySessions.length + 1)
+        const expl531 = getTargetExplanation('met_target', planType, 0, '531', { cycleWeek })
+        sets = sortedLogs.slice(0, 3).map((log, idx) => {
+          const setIndex = idx as 0 | 1 | 2
+          const t531 =
+            trainingMax > 0
+              ? calculate531SetTarget(cycleWeek, setIndex, trainingMax, roundToLoadable)
+              : { targetWeight: null, targetReps: null, targetRpe: null }
+          return {
+            setNumber: idx + 1,
+            setType: 'working' as SetType,
+            weight: logWeight(log),
+            reps: logReps(log),
+            rpe: logRpe(log),
+            targetWeight: applyTargetWeight(t531.targetWeight),
+            targetReps: t531.targetReps,
+            targetRpe: t531.targetRpe,
+            targetExplanation: expl531,
+          }
+        })
+        while (sets.length < 3) {
+          const setIndex = sets.length as 0 | 1 | 2
+          const t531 =
+            trainingMax > 0
+              ? calculate531SetTarget(cycleWeek, setIndex, trainingMax, roundToLoadable)
+              : { targetWeight: null, targetReps: null, targetRpe: null }
+          sets.push({
+            ...emptySet(sets.length + 1),
+            targetWeight: applyTargetWeight(t531.targetWeight),
+            targetReps: t531.targetReps,
+            targetRpe: t531.targetRpe,
+            targetExplanation: expl531,
+          })
+        }
+      } else if (useLinearStrategy) {
+        const deadlift1x5 = newExerciseName.toLowerCase().includes('deadlift')
+        const numSets = deadlift1x5 ? 1 : linearSetsPerExercise
+        const explLinear = getTargetExplanation('met_target', planType, consecutiveUnderperformance, 'linear')
+        sets = sortedLogs.slice(0, numSets).map((log, idx) => {
+          const prev = {
+            weight: parseFloat(log.weight.toString()),
+            reps: log.reps,
+            rpe: parseFloat(log.rpe.toString()),
+            targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+            targetReps: log.target_reps,
+            targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+          }
+          const t = calculateLinearProgressionTarget(prev, exerciseForTargetComputation, 5, consecutiveUnderperformance, roundToLoadable)
+          return {
+            setNumber: idx + 1,
+            setType: 'working' as SetType,
+            weight: logWeight(log),
+            reps: logReps(log),
+            rpe: logRpe(log),
+            targetWeight: applyTargetWeight(t.targetWeight),
+            targetReps: t.targetReps,
+            targetRpe: t.targetRpe,
+            targetExplanation: explLinear,
+          }
+        })
+        while (sets.length < numSets) {
+          const lastLog = sortedLogs[Math.min(sets.length, sortedLogs.length) - 1]
+          const prev = lastLog
+            ? {
+                weight: parseFloat(lastLog.weight.toString()),
+                reps: lastLog.reps,
+                targetWeight: lastLog.target_weight ? parseFloat(lastLog.target_weight.toString()) : null,
+                targetReps: lastLog.target_reps,
+              }
+            : { weight: 0, reps: 0, targetWeight: null, targetReps: null }
+          const t = calculateLinearProgressionTarget(prev, exerciseForTargetComputation, 5, consecutiveUnderperformance, roundToLoadable)
+          sets.push({
+            ...emptySet(sets.length + 1),
+            weight: lastLog ? logWeight(lastLog) : 0,
+            reps: lastLog ? logReps(lastLog) : 0,
+            rpe: lastLog ? logRpe(lastLog) : 5,
+            targetWeight: applyTargetWeight(t.targetWeight),
+            targetReps: t.targetReps,
+            targetRpe: t.targetRpe,
+            targetExplanation: explLinear,
+          })
+        }
+      } else if (usePhulStrategy) {
+        sets = sortedLogs.map((log, idx) => {
+          const prev = {
+            weight: parseFloat(log.weight.toString()),
+            reps: log.reps,
+            rpe: parseFloat(log.rpe.toString()),
+            targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+            targetReps: log.target_reps,
+            targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+          }
+          const st = calculateSetTarget(prev, phulPlanType, phulSettings, consecutiveUnderperformance, roundToLoadable)
+          const status = evaluateSetPerformance(prev.weight, prev.reps, prev.rpe, prev.targetWeight, prev.targetReps, prev.targetRpe)
+          const expl = getTargetExplanation(status, phulPlanType, consecutiveUnderperformance, 'default')
+          return {
+            setNumber: idx + 1,
+            setType: 'working' as SetType,
+            weight: logWeight(log),
+            reps: logReps(log),
+            rpe: logRpe(log),
+            targetWeight: applyTargetWeight(st.targetWeight),
+            targetReps: st.targetReps,
+            targetRpe: st.targetRpe,
+            targetExplanation: expl,
+          }
+        })
+      } else if (useGzclpStrategy && gzclpTier) {
+        const numSets = gzclpTier === 1 ? 5 : 3
+        const explGzclp = getTargetExplanation('met_target', planType, consecutiveUnderperformance, 'gzclp')
+        sets = sortedLogs.slice(0, numSets).map((log, idx) => {
+          const prev = {
+            weight: parseFloat(log.weight.toString()),
+            reps: log.reps,
+            rpe: parseFloat(log.rpe.toString()),
+            targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+            targetReps: log.target_reps,
+            targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+          }
+          const t = calculateGZCLPSetTarget(gzclpTier, idx, prev, exerciseForTargetComputation, consecutiveUnderperformance, roundToLoadable)
+          return {
+            setNumber: idx + 1,
+            setType: 'working' as SetType,
+            weight: logWeight(log),
+            reps: logReps(log),
+            rpe: logRpe(log),
+            targetWeight: applyTargetWeight(t.targetWeight),
+            targetReps: t.targetReps,
+            targetRpe: t.targetRpe,
+            targetExplanation: explGzclp,
+          }
+        })
+        while (sets.length < numSets) {
+          const lastLog = sortedLogs[Math.min(sets.length, sortedLogs.length) - 1]
+          const prev = lastLog
+            ? {
+                weight: parseFloat(lastLog.weight.toString()),
+                reps: lastLog.reps,
+                targetWeight: lastLog.target_weight ? parseFloat(lastLog.target_weight.toString()) : null,
+                targetReps: lastLog.target_reps,
+              }
+            : { weight: 0, reps: 0, targetWeight: null, targetReps: null }
+          const t = calculateGZCLPSetTarget(gzclpTier, sets.length, prev, exerciseForTargetComputation, consecutiveUnderperformance, roundToLoadable)
+          sets.push({
+            ...emptySet(sets.length + 1),
+            weight: lastLog ? logWeight(lastLog) : 0,
+            reps: lastLog ? logReps(lastLog) : 0,
+            rpe: lastLog ? logRpe(lastLog) : 5,
+            targetWeight: applyTargetWeight(t.targetWeight),
+            targetReps: t.targetReps,
+            targetRpe: t.targetRpe,
+            targetExplanation: explGzclp,
+          })
+        }
+      } else if (useTexasMethodStrategy && texasDayType) {
+        const numSets = texasDayType === 'volume' ? 5 : texasDayType === 'recovery' ? 2 : 1
+        const explTexas = getTargetExplanation('met_target', planType, consecutiveUnderperformance, 'texas', { weekLabel: texasDayType })
+        sets = sortedLogs.slice(0, numSets).map((log, idx) => {
+          const prev = {
+            weight: parseFloat(log.weight.toString()),
+            reps: log.reps,
+            rpe: parseFloat(log.rpe.toString()),
+            targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+            targetReps: log.target_reps,
+            targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+          }
+          const t = calculateTexasMethodSetTarget(texasDayType, idx, prev, exerciseForTargetComputation, consecutiveUnderperformance, roundToLoadable)
+          return {
+            setNumber: idx + 1,
+            setType: 'working' as SetType,
+            weight: logWeight(log),
+            reps: logReps(log),
+            rpe: logRpe(log),
+            targetWeight: applyTargetWeight(t.targetWeight),
+            targetReps: t.targetReps,
+            targetRpe: t.targetRpe,
+            targetExplanation: explTexas,
+          }
+        })
+        while (sets.length < numSets) {
+          const lastLog = sortedLogs[Math.min(sets.length, sortedLogs.length) - 1]
+          const prev = lastLog
+            ? {
+                weight: parseFloat(lastLog.weight.toString()),
+                reps: lastLog.reps,
+                targetWeight: lastLog.target_weight ? parseFloat(lastLog.target_weight.toString()) : null,
+                targetReps: lastLog.target_reps,
+              }
+            : { weight: 0, reps: 0, targetWeight: null, targetReps: null }
+          const t = calculateTexasMethodSetTarget(texasDayType, sets.length, prev, exerciseForTargetComputation, consecutiveUnderperformance, roundToLoadable)
+          sets.push({
+            ...emptySet(sets.length + 1),
+            weight: lastLog ? logWeight(lastLog) : 0,
+            reps: lastLog ? logReps(lastLog) : 0,
+            rpe: lastLog ? logRpe(lastLog) : 5,
+            targetWeight: applyTargetWeight(t.targetWeight),
+            targetReps: t.targetReps,
+            targetRpe: t.targetRpe,
+            targetExplanation: explTexas,
+          })
+        }
+      } else {
+        sets = sortedLogs.map((log, idx) => {
+          const prev = {
+            weight: parseFloat(log.weight.toString()),
+            reps: log.reps,
+            rpe: parseFloat(log.rpe.toString()),
+            targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
+            targetReps: log.target_reps,
+            targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+          }
+          const st = calculateSetTarget(prev, planType, planSettings, consecutiveUnderperformance, roundToLoadable)
+          const status = evaluateSetPerformance(prev.weight, prev.reps, prev.rpe, prev.targetWeight, prev.targetReps, prev.targetRpe)
+          const expl = getTargetExplanation(status, planType, consecutiveUnderperformance, 'default')
+          return {
+            setNumber: idx + 1,
+            setType: 'working' as SetType,
+            weight: logWeight(log),
+            reps: logReps(log),
+            rpe: logRpe(log),
+            targetWeight: applyTargetWeight(st.targetWeight),
+            targetReps: st.targetReps,
+            targetRpe: st.targetRpe,
+            targetExplanation: expl,
+          }
+        })
+      }
+    } else {
+      if (is531MainLift) sets = [1, 2, 3].map(emptySet)
+      else if (useLinearStrategy) {
+        const deadlift1x5 = newExerciseName.toLowerCase().includes('deadlift')
+        const numSets = deadlift1x5 ? 1 : linearSetsPerExercise
+        sets = Array.from({ length: numSets }, (_, i) => emptySet(i + 1))
+      } else if (useGzclpStrategy && gzclpTier) {
+        const numSets = gzclpTier === 1 ? 5 : 3
+        sets = Array.from({ length: numSets }, (_, i) => emptySet(i + 1))
+      } else if (useTexasMethodStrategy && texasDayType) {
+        const numSets = texasDayType === 'volume' ? 5 : texasDayType === 'recovery' ? 2 : 1
+        sets = Array.from({ length: numSets }, (_, i) => emptySet(i + 1))
+      } else sets = [emptySet(1)]
+    }
+
+    setExerciseData((prev) => {
+      const next = [...prev]
+      next[exIdx] = {
+        ...next[exIdx],
+        exerciseName: newExerciseName,
+        sets,
+        exerciseFeedback: null,
+        exerciseRating: null,
+      }
+      return next
+    })
+    setExerciseInfoModal(null)
+    setConfirmedSets((prev) => {
+      const next = new Set(prev)
+      next.forEach((key) => {
+        if (key.startsWith(`${exIdx}-`)) next.delete(key)
+      })
+      return next
+    })
+  }
+
   // Helper function to get sort order for set types
   const getSetTypeOrder = (setType: SetType): number => {
     if (setType === 'warmup') return 0
@@ -799,6 +1232,7 @@ export default function WorkoutLogger({
       targetWeight: setType === 'working' ? (template?.targetWeight ?? null) : null,
       targetReps: setType === 'working' ? (template?.targetReps ?? null) : null,
       targetRpe: null,
+      targetExplanation: setType === 'working' ? (template?.targetExplanation ?? null) : null,
     }
 
     // Insert set in the correct position based on type
@@ -1913,7 +2347,16 @@ export default function WorkoutLogger({
                   </span>
                 </div>
                 {set.setType === 'working' && set.targetWeight != null && (
-                  <span className="text-[#888888]">Target: {set.targetWeight} lbs × {set.targetReps} reps</span>
+                  <span className="text-[#888888]">
+                    Target: {set.targetWeight} lbs × {set.targetReps} reps
+                    {set.targetExplanation && (
+                      <span className="ml-1.5 text-[#666666]" title={set.targetExplanation}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 inline-block cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </span>
+                    )}
+                  </span>
                 )}
               </div>
               <div className="grid grid-cols-3 gap-1.5">
@@ -1931,24 +2374,36 @@ export default function WorkoutLogger({
                         : 'Log weight in Profile > Weight'}
                     </div>
                   ) : (
-                    <input
-                      type="number"
-                      min="0"
-                      step="2.5"
-                      value={set.weight || ''}
-                      onChange={(e) =>
-                        updateSet(currentExerciseIndex, originalIndex, 'weight', parseFloat(e.target.value) || 0)
-                      }
-                      className={`w-full px-2.5 py-1 text-sm border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
-                        (() => {
-                          const key = `${currentExerciseIndex}-${originalIndex}`
-                          const prePop = prePopulatedValues.get(key)
-                          return prePop && set.weight === prePop.weight 
-                            ? 'text-[#888888]' 
-                            : 'text-white'
-                        })()
-                      }`}
-                    />
+                    <>
+                      <input
+                        type="number"
+                        min="0"
+                        step="2.5"
+                        value={set.weight || ''}
+                        onChange={(e) =>
+                          updateSet(currentExerciseIndex, originalIndex, 'weight', parseFloat(e.target.value) || 0)
+                        }
+                        className={`w-full px-2.5 py-1 text-sm border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
+                          (() => {
+                            const key = `${currentExerciseIndex}-${originalIndex}`
+                            const prePop = prePopulatedValues.get(key)
+                            return prePop && set.weight === prePop.weight 
+                              ? 'text-[#888888]' 
+                              : 'text-white'
+                          })()
+                        }`}
+                      />
+                      {isBarbellExercise(currentExercise.exerciseName) && (set.weight > 0 || (set.targetWeight ?? 0) > 0) && (() => {
+                        const total = set.weight > 0 ? set.weight : (set.targetWeight ?? 0)
+                        const pc = getPlateConfig(userId)
+                        const breakdown = getPlateBreakdown(total, pc.barWeight, pc.plates)
+                        return breakdown ? (
+                          <p className="mt-1 text-[10px] text-[#666666]" title={breakdown.display}>
+                            Plates: {breakdown.display}
+                          </p>
+                        ) : null
+                      })()}
+                    </>
                   )}
                 </div>
                 <div>
@@ -2117,7 +2572,11 @@ export default function WorkoutLogger({
       </div>
 
       {exerciseInfoModal && (
-        <ExerciseDetailModal exercise={exerciseInfoModal} onClose={() => setExerciseInfoModal(null)} />
+        <ExerciseDetailModal
+          exercise={exerciseInfoModal}
+          onClose={() => setExerciseInfoModal(null)}
+          onSelectAlternative={handleSelectAlternative}
+        />
       )}
     </div>
   )

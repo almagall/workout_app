@@ -1,6 +1,8 @@
 'use client'
 
 import type { ExerciseEntry } from '@/lib/exercise-database'
+import { getExerciseAlternatives } from '@/lib/exercise-database'
+import { getMuscleWikiVideoFilename } from '@/lib/musclewiki-mapping'
 import { MuscleDiagram } from './MuscleDiagram'
 
 const EQUIPMENT_STYLES: Record<string, string> = {
@@ -45,9 +47,11 @@ function getMuscleGroupStyle(muscleGroup: string, isSecondary?: boolean): string
 interface ExerciseDetailModalProps {
   exercise: ExerciseEntry | null
   onClose: () => void
+  /** When provided, alternatives become clickable and trigger a swap. Used in WorkoutLogger. */
+  onSelectAlternative?: (exerciseName: string) => void
 }
 
-export function ExerciseDetailModal({ exercise, onClose }: ExerciseDetailModalProps) {
+export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: ExerciseDetailModalProps) {
   if (!exercise) return null
 
   return (
@@ -101,6 +105,70 @@ export function ExerciseDetailModal({ exercise, onClose }: ExerciseDetailModalPr
               </div>
             )}
           </div>
+
+          {(() => {
+            const hasVideoMapping = getMuscleWikiVideoFilename(exercise.id)
+            if (!hasVideoMapping) return null
+            return (
+              <div className="pt-4 border-t border-[#2a2a2a] mb-4">
+                <h3 className="text-sm font-medium text-white mb-3">Form demo</h3>
+                <video
+                  src={`/api/exercise-video?exerciseName=${encodeURIComponent(exercise.name)}`}
+                  autoPlay
+                  muted
+                  controls
+                  loop
+                  playsInline
+                  className="rounded-lg w-full max-h-64 object-contain bg-[#0a0a0a]"
+                />
+              </div>
+            )
+          })()}
+
+          {(() => {
+            const alternatives = getExerciseAlternatives(exercise.name)
+            if (alternatives.length === 0) return null
+            return (
+              <div className="pt-4 border-t border-[#2a2a2a] mb-4">
+                <h3 className="text-sm font-medium text-white mb-2">Alternatives</h3>
+                <p className="text-xs text-[#888888] mb-2 flex items-center gap-1">
+                  Can&apos;t do this exercise? Try:
+                  <span
+                    className="inline-flex cursor-help text-[#666666] hover:text-[#888888]"
+                    title="Targets are based on each exercise's own history. Your first time with an alternative establishes a new baseline."
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {alternatives.map((name) =>
+                    onSelectAlternative ? (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => {
+                          onSelectAlternative(name)
+                          onClose()
+                        }}
+                        className="text-xs px-2.5 py-1 rounded-md bg-[#2a2a2a] text-[#cccccc] border border-[#3a3a3a] hover:bg-[#3a3a3a] hover:text-white hover:border-[#4a4a4a] transition-colors text-left"
+                      >
+                        {name}
+                      </button>
+                    ) : (
+                      <span
+                        key={name}
+                        className="text-xs px-2.5 py-1 rounded-md bg-[#2a2a2a] text-[#cccccc] border border-[#3a3a3a]"
+                      >
+                        {name}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+            )
+          })()}
 
           <div className="pt-4 border-t border-[#2a2a2a]">
             <h3 className="text-sm font-medium text-white mb-3">Muscles worked</h3>

@@ -68,7 +68,8 @@ export function calculateSetTarget(
   },
   planType: PlanType,
   planSettings: PlanSettings,
-  consecutiveUnderperformance: number = 0
+  consecutiveUnderperformance: number = 0,
+  roundToLoadable?: (w: number) => number
 ): TargetCalculation {
   // If previous workout had targets, evaluate performance against them
   let setStatus: PerformanceStatus = 'met_target'
@@ -191,8 +192,8 @@ export function calculateSetTarget(
     )
   }
 
-  // Round weight to nearest 2.5 lbs (or 1.25 kg for metric)
-  targetWeight = Math.round(targetWeight / 2.5) * 2.5
+  // Round weight: use loadable if provided, else nearest 2.5 lbs
+  targetWeight = roundToLoadable ? roundToLoadable(targetWeight) : Math.round(targetWeight / 2.5) * 2.5
 
   return {
     targetWeight,

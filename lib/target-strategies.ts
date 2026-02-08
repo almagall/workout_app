@@ -38,11 +38,13 @@ const FIVE31_REPS: Record<CycleWeek, [number, number, number]> = {
 export function calculate531SetTarget(
   cycleWeek: CycleWeek,
   setIndex: 0 | 1 | 2,
-  trainingMax: number
+  trainingMax: number,
+  roundToLoadable?: (w: number) => number
 ): SetTargetResult {
   const pct = FIVE31_PERCENTAGES[cycleWeek][setIndex]
   const reps = FIVE31_REPS[cycleWeek][setIndex]
-  const targetWeight = Math.round((trainingMax * (pct / 100)) * 2) / 2 // round to 0.5
+  const raw = trainingMax * (pct / 100)
+  const targetWeight = roundToLoadable ? roundToLoadable(raw) : Math.round(raw * 2) / 2
   const isLastSet = setIndex === 2
   const targetRpe = isLastSet ? 9 : 8 // AMRAP on last set
   return {
@@ -86,7 +88,8 @@ export function calculateLinearProgressionTarget(
   },
   exerciseName: string,
   targetReps: number,
-  consecutiveUnderperformance: number
+  consecutiveUnderperformance: number,
+  roundToLoadable?: (w: number) => number
 ): SetTargetResult {
   const isLower = isLowerBodyExercise(exerciseName)
   const increment = isLower ? 10 : 5
@@ -103,8 +106,9 @@ export function calculateLinearProgressionTarget(
     targetWeight = previousSet.weight + increment
   }
 
+  const rounded = roundToLoadable ? roundToLoadable(targetWeight) : Math.round(targetWeight * 2) / 2
   return {
-    targetWeight: Math.round(targetWeight * 2) / 2,
+    targetWeight: rounded,
     targetReps,
     targetRpe: 8,
   }
@@ -123,8 +127,10 @@ export function calculateGZCLPSetTarget(
     targetReps: number | null
   },
   exerciseName: string,
-  consecutiveUnderperformance: number
+  consecutiveUnderperformance: number,
+  roundToLoadable?: (w: number) => number
 ): SetTargetResult {
+  const round = (w: number) => roundToLoadable ? roundToLoadable(w) : Math.round(w * 2) / 2
   const isLower = isLowerBodyExercise(exerciseName)
   if (tier === 1) {
     const increment = isLower ? 10 : 5
@@ -139,7 +145,7 @@ export function calculateGZCLPSetTarget(
     }
     const isLastSet = setIndex >= 4
     return {
-      targetWeight: Math.round(targetWeight * 2) / 2,
+      targetWeight: round(targetWeight),
       targetReps: 3,
       targetRpe: isLastSet ? 9 : 8,
     }
@@ -156,7 +162,7 @@ export function calculateGZCLPSetTarget(
       targetWeight = previousSet.weight + increment
     }
     return {
-      targetWeight: Math.round(targetWeight * 2) / 2,
+      targetWeight: round(targetWeight),
       targetReps: 10,
       targetRpe: 8,
     }
@@ -185,8 +191,10 @@ export function calculateTexasMethodSetTarget(
     targetReps: number | null
   },
   exerciseName: string,
-  consecutiveUnderperformance: number
+  consecutiveUnderperformance: number,
+  roundToLoadable?: (w: number) => number
 ): SetTargetResult {
+  const round = (w: number) => roundToLoadable ? roundToLoadable(w) : Math.round(w * 2) / 2
   const isLower = isLowerBodyExercise(exerciseName)
   const increment = isLower ? 10 : 5
 
@@ -201,13 +209,13 @@ export function calculateTexasMethodSetTarget(
       targetWeight = previousSet.weight + increment
     }
     return {
-      targetWeight: Math.round(targetWeight * 2) / 2,
+      targetWeight: round(targetWeight),
       targetReps: 5,
       targetRpe: 8,
     }
   }
   if (dayType === 'recovery') {
-    const targetWeight = Math.round(previousSet.weight * 0.9 * 2) / 2
+    const targetWeight = round(previousSet.weight * 0.9)
     return {
       targetWeight: targetWeight > 0 ? targetWeight : previousSet.weight,
       targetReps: 5,
@@ -225,7 +233,7 @@ export function calculateTexasMethodSetTarget(
       targetWeight = previousSet.weight + increment
     }
     return {
-      targetWeight: Math.round(targetWeight * 2) / 2,
+      targetWeight: round(targetWeight),
       targetReps: 5,
       targetRpe: 9,
     }

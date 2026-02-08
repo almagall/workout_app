@@ -93,6 +93,7 @@ export interface SetData {
   targetWeight?: number | null
   targetReps?: number | null
   targetRpe?: number | null
+  targetExplanation?: string | null
 }
 
 export interface ExerciseData {

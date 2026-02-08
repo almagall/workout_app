@@ -160,6 +160,97 @@ const EXERCISES: ExerciseEntry[] = [
   { id: 'toe-touch', name: 'Toe Touch', muscleGroup: 'Core', equipment: 'Bodyweight', description: 'Lie on your back and reach your hands toward your toes while lifting your legs. Targets the upper and lower abs.', secondaryMuscleGroups: ['Legs'] },
 ]
 
+/** Alternatives: same muscle group, similar movement. Key = exercise id, value = alternative exercise names. */
+export const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
+  // Chest
+  'bb-bench': ['Dumbbell Bench Press', 'Push-Up', 'Chest Press Machine'],
+  'incline-bb-bench': ['Incline Dumbbell Press', 'Push-Up', 'Cable Fly'],
+  'db-bench': ['Barbell Bench Press', 'Push-Up', 'Chest Press Machine'],
+  'incline-db-press': ['Incline Barbell Bench Press', 'Cable Fly', 'Pec Deck'],
+  'db-fly': ['Cable Fly', 'Pec Deck', 'Cable Crossover'],
+  'cable-fly': ['Dumbbell Fly', 'Pec Deck', 'Cable Crossover'],
+  'push-up': ['Barbell Bench Press', 'Dumbbell Bench Press', 'Dips'],
+  'dips': ['Push-Up', 'Dumbbell Bench Press', 'Chest Press Machine'],
+  'chest-press-machine': ['Barbell Bench Press', 'Dumbbell Bench Press', 'Push-Up'],
+  // Back
+  'deadlift': ['Romanian Deadlift', 'Rack Pull', 'Leg Press'],
+  'bb-row': ['Dumbbell Row', 'Cable Row', 'T-Bar Row'],
+  'db-row': ['Barbell Row', 'Cable Row', 'Machine Row'],
+  'lat-pulldown': ['Pull-Up', 'Chin-Up', 'Seated Cable Row'],
+  'pull-up': ['Lat Pulldown', 'Chin-Up', 'Inverted Row'],
+  'chin-up': ['Pull-Up', 'Lat Pulldown', 'Inverted Row'],
+  'cable-row': ['Barbell Row', 'Dumbbell Row', 'Machine Row'],
+  'inverted-row': ['Pull-Up', 'Australian Pull-Up', 'Cable Row'],
+  // Shoulders
+  'ohp': ['Dumbbell Shoulder Press', 'Push Press', 'Shoulder Press Machine'],
+  'military-press': ['Overhead Press', 'Dumbbell Shoulder Press', 'Push Press'],
+  'db-shoulder-press': ['Overhead Press', 'Arnold Press', 'Shoulder Press Machine'],
+  'lateral-raise': ['Cable Lateral Raise', 'Front Raise', 'Upright Row'],
+  'rear-delt-fly': ['Reverse Pec Deck', 'Face Pull', 'Reverse Fly'],
+  // Biceps
+  'bb-curl': ['Dumbbell Curl', 'EZ Bar Curl', 'Cable Curl'],
+  'db-curl': ['Barbell Curl', 'Hammer Curl', 'Cable Curl'],
+  'hammer-curl': ['Dumbbell Curl', 'Cable Hammer Curl', 'Preacher Curl'],
+  'preacher-curl': ['Barbell Curl', 'Concentration Curl', 'Cable Curl'],
+  // Triceps
+  'tricep-pushdown': ['Rope Pushdown', 'Skull Crusher', 'Close-Grip Bench Press'],
+  'skull-crusher': ['Overhead Tricep Extension', 'Close-Grip Bench Press', 'Tricep Pushdown'],
+  'close-grip-bench': ['Tricep Pushdown', 'Skull Crusher', 'Tricep Dips'],
+  'tricep-dips': ['Bench Dips', 'Close-Grip Bench Press', 'Diamond Push-Up (Tricep)'],
+  // Legs
+  'bb-squat': ['Leg Press', 'Goblet Squat', 'Front Squat'],
+  'back-squat': ['Barbell Squat', 'Leg Press', 'Front Squat'],
+  'front-squat': ['Barbell Squat', 'Goblet Squat', 'Leg Press'],
+  'leg-press': ['Barbell Squat', 'Hack Squat', 'Goblet Squat'],
+  'rdl': ['Deadlift', 'Stiff Leg Deadlift', 'Dumbbell Romanian Deadlift'],
+  'lunges': ['Bulgarian Split Squat', 'Walking Lunge', 'Step-Up'],
+  'leg-curl': ['Romanian Deadlift', 'Seated Leg Curl', 'Lying Leg Curl'],
+  'hip-thrust-bb': ['Glute Bridge', 'Hip Thrust (Dumbbell)', 'Cable Pull Through'],
+  'calf-raise': ['Standing Calf Raise', 'Seated Calf Raise', 'Calf Raise (Bodyweight)'],
+  // Core
+  'plank': ['Dead Bug', 'Bird Dog', 'Side Plank'],
+  'crunch': ['Bicycle Crunch', 'Cable Crunch', 'Sit-Up'],
+  'leg-raise': ['Hanging Leg Raise', 'Hanging Knee Raise', 'Dead Bug'],
+}
+
+/** Equivalences: when swapping TO this exercise FROM equivalentTo, scale target weight by weightRatio. */
+export const EXERCISE_EQUIVALENCES: Record<string, { equivalentTo: string; weightRatio: number }> = {
+  'Dumbbell Bench Press': { equivalentTo: 'Barbell Bench Press', weightRatio: 0.65 },
+  'Barbell Bench Press': { equivalentTo: 'Dumbbell Bench Press', weightRatio: 1.54 },
+  'Incline Dumbbell Press': { equivalentTo: 'Incline Barbell Bench Press', weightRatio: 0.65 },
+  'Incline Barbell Bench Press': { equivalentTo: 'Incline Dumbbell Press', weightRatio: 1.54 },
+  'Dumbbell Row': { equivalentTo: 'Barbell Row', weightRatio: 0.5 },
+  'Barbell Row': { equivalentTo: 'Dumbbell Row', weightRatio: 2 },
+  'Dumbbell Shoulder Press': { equivalentTo: 'Overhead Press', weightRatio: 0.65 },
+  'Overhead Press': { equivalentTo: 'Dumbbell Shoulder Press', weightRatio: 1.54 },
+  'Leg Press': { equivalentTo: 'Barbell Squat', weightRatio: 2.5 },
+  'Barbell Squat': { equivalentTo: 'Leg Press', weightRatio: 0.4 },
+  'Chest Press Machine': { equivalentTo: 'Barbell Bench Press', weightRatio: 0.9 },
+}
+
+/** Get equivalence for an exercise (the one we're swapping TO). Used when alternative has no history. */
+export function getExerciseEquivalence(exerciseName: string): { equivalentTo: string; weightRatio: number } | null {
+  if (!exerciseName?.trim()) return null
+  const key = Object.keys(EXERCISE_EQUIVALENCES).find(
+    (k) => k.toLowerCase() === exerciseName.trim().toLowerCase()
+  )
+  return key ? EXERCISE_EQUIVALENCES[key] ?? null : null
+}
+
+/** Get alternative exercises for a given exercise (by name). Returns names for display. */
+export function getExerciseAlternatives(exerciseName: string): string[] {
+  const entry = getExerciseByName(exerciseName)
+  if (!entry) return []
+  const alts = EXERCISE_ALTERNATIVES[entry.id]
+  if (alts?.length) return alts
+  // Fallback: same muscle group, exclude self
+  return EXERCISES.filter(
+    (e) => e.muscleGroup === entry.muscleGroup && e.name.toLowerCase() !== entry.name.toLowerCase()
+  )
+    .slice(0, 3)
+    .map((e) => e.name)
+}
+
 /** Search exercises by name (case-insensitive, substring). */
 export function searchExercises(query: string, limit = 15): ExerciseEntry[] {
   if (!query.trim()) return EXERCISES.slice(0, limit)
