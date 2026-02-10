@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const [deloadSuggestion, setDeloadSuggestion] = useState<{ reason: string } | null>(null)
   const [deloadDismissed, setDeloadDismissed] = useState(false)
   const [planType, setPlanType] = useState<PlanType>('hypertrophy')
+  const [insightsExpanded, setInsightsExpanded] = useState(false)
 
   useEffect(() => {
     async function checkAuthAndTemplates() {
@@ -59,9 +60,9 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <p className="text-[#888888]">Loading...</p>
+          <p className="text-muted">Loading...</p>
         </div>
       </div>
     )
@@ -93,26 +94,26 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <div className="mb-4 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white">Workout Dashboard</h1>
+      <div className="mb-3 sm:mb-8">
+        <h1 className="text-xl sm:text-3xl font-bold text-foreground">Workout Dashboard</h1>
       </div>
 
       {deloadSuggestion && !deloadDismissed && (
-        <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-sm font-medium text-amber-400 mb-1">Deload suggestion</h3>
-            <p className="text-sm text-[#cccccc]">{deloadSuggestion.reason}</p>
+        <div className="mb-4 sm:mb-6 rounded-lg border border-accent/30 bg-accent/5 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xs sm:text-sm font-medium text-accent mb-0.5 sm:mb-1">Deload suggestion</h3>
+            <p className="text-xs sm:text-sm text-secondary line-clamp-2 sm:line-clamp-none">{deloadSuggestion.reason}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleStartDeloadWeek}
-              className="px-3 py-1.5 text-sm font-medium rounded-md bg-amber-600/30 text-amber-300 border border-amber-500/50 hover:bg-amber-600/40 transition-colors"
+              className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 transition-colors"
             >
               Start deload week
             </button>
             <button
               onClick={handleDismissDeload}
-              className="p-1.5 rounded text-[#888888] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+              className="p-1.5 rounded text-muted hover:text-foreground hover:bg-elevated transition-colors"
               aria-label="Dismiss"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,11 +125,11 @@ export default function DashboardPage() {
       )}
       
       {/* Row 1: Progress Chart + Calendar - equal height on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8 lg:items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-8 lg:items-stretch">
         <div className="lg:col-span-2 lg:min-h-0">
-          <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden h-full flex flex-col">
-            <div className="p-4 sm:p-6 border-b border-[#2a2a2a] flex-shrink-0">
-              <h2 className="text-xl font-semibold mb-4 text-white">Progress Over Time</h2>
+          <div className="bg-card rounded-lg border border-border overflow-hidden h-full flex flex-col">
+            <div className="p-3 sm:p-6 border-b border-border flex-shrink-0">
+              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground">Progress Over Time</h2>
               <ProgressSelectors
                 selectedTemplateDayId={selectedTemplateDayId}
                 onTemplateDayChange={setSelectedTemplateDayId}
@@ -137,7 +138,7 @@ export default function DashboardPage() {
                 embedded
               />
             </div>
-            <div className="p-4 sm:p-6 flex-1 min-h-0">
+            <div className="p-3 sm:p-6 flex-1 min-h-[280px] sm:min-h-0 flex flex-col">
               <ProgressChart
                 selectedTemplateDayId={selectedTemplateDayId}
                 selectedExercise={selectedExercise}
@@ -145,7 +146,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        <div className="lg:h-full flex flex-col gap-4 sm:gap-6 min-h-0">
+        <div className="lg:h-full flex flex-col gap-3 sm:gap-6 min-h-0">
           <div className="flex-1 min-h-0 [&>div]:h-full">
             <WorkoutCalendar />
           </div>
@@ -155,26 +156,42 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Row 2: New Advanced Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <ProgressionMomentum />
-        <ConsistencyScore />
-        <MuscleBalanceWidget />
-        <FatigueMonitor planType={planType} />
-        <div className="lg:col-span-3">
-          <StrengthStandards />
+      {/* Insights: collapsible on mobile, always visible on desktop */}
+      <section className="mb-4 sm:mb-8">
+        <button
+          type="button"
+          onClick={() => setInsightsExpanded((e) => !e)}
+          className="lg:hidden w-full flex items-center justify-between gap-2 py-3 px-0 text-left border-b border-border"
+          aria-expanded={insightsExpanded}
+        >
+          <h2 className="text-lg font-semibold text-foreground">Insights</h2>
+          <span className="text-sm text-muted">{insightsExpanded ? 'Hide' : 'Show insights'}</span>
+          <svg className={`w-5 h-5 text-muted shrink-0 transition-transform ${insightsExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <h2 className="hidden lg:block text-lg font-semibold text-foreground mb-4">Insights</h2>
+        {/* One grid: on mobile visible when expanded; on desktop always visible */}
+        <div className={`grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mt-4 ${!insightsExpanded ? 'hidden lg:grid' : ''}`}>
+          <ProgressionMomentum />
+          <ConsistencyScore />
+          <MuscleBalanceWidget />
+          <FatigueMonitor planType={planType} />
+          <div className="lg:col-span-3">
+            <StrengthStandards />
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Row 3: Exercise Sparklines */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-8">
         <div className="lg:col-span-2">
           <ExerciseSparklines />
         </div>
       </div>
 
       {/* Row 4: Existing Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-8">
         <PerformanceMetrics />
         <FriendActivityFeed />
       </div>

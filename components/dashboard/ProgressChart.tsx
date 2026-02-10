@@ -114,12 +114,12 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
   }, [selectedTemplateDayId, selectedExercise, selectedInterval])
 
   if (loading) {
-    return <div className="text-[#888888]">Loading chart data...</div>
+    return <div className="text-muted min-h-[260px] flex items-center">Loading chart data...</div>
   }
 
   if (!selectedTemplateDayId || !selectedExercise) {
     return (
-      <div className="text-[#a1a1a1] text-center py-8">
+      <div className="text-secondary text-center py-8 min-h-[260px] flex items-center justify-center">
         Select a workout day and exercise above.
       </div>
     )
@@ -127,7 +127,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
 
   if (data.length === 0) {
     return (
-      <div className="text-[#a1a1a1] text-center py-8">
+      <div className="text-secondary text-center py-8 min-h-[260px] flex items-center justify-center">
         No sessions logged for this workout day yet.
       </div>
     )
@@ -150,7 +150,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
             className={`text-sm px-2.5 py-1 rounded transition-colors ${
               selectedMetric === 'heaviestSet'
                 ? 'bg-white text-black'
-                : 'bg-[#1a1a1a] text-[#a1a1a1] hover:bg-[#2a2a2a] border border-[#2a2a2a]'
+                : 'bg-elevated text-secondary hover:bg-border border border-border'
             }`}
           >
             Top Set
@@ -160,7 +160,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
             className={`text-sm px-2.5 py-1 rounded transition-colors ${
               selectedMetric === 'estimated1RM'
                 ? 'bg-white text-black'
-                : 'bg-[#1a1a1a] text-[#a1a1a1] hover:bg-[#2a2a2a] border border-[#2a2a2a]'
+                : 'bg-elevated text-secondary hover:bg-border border border-border'
             }`}
           >
             Estimated 1RM
@@ -174,7 +174,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
               className={`text-sm px-2.5 py-1 rounded transition-colors ${
                 selectedInterval === interval
                   ? 'bg-white text-black'
-                  : 'bg-[#1a1a1a] text-[#a1a1a1] hover:bg-[#2a2a2a] border border-[#2a2a2a]'
+                  : 'bg-elevated text-secondary hover:bg-border border border-border'
               }`}
             >
               {interval}
@@ -182,7 +182,7 @@ export default function ProgressChart({ selectedTemplateDayId, selectedExercise 
           ))}
         </div>
       </div>
-      <div className="h-[280px] sm:h-[300px] lg:h-[450px] w-full">
+      <div className="min-h-[260px] h-[280px] sm:h-[300px] lg:h-[450px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />

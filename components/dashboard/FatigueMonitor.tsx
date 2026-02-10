@@ -124,18 +124,18 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
 
   if (loading) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <h3 className="text-sm font-medium text-white mb-3">Training load</h3>
-        <p className="text-sm text-[#666666]">Loading...</p>
+        <p className="text-sm text-secondary">Loading...</p>
       </div>
     )
   }
 
   if (!data) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <h3 className="text-sm font-medium text-white mb-3">Training load</h3>
-        <p className="text-sm text-[#666666]">Not enough data yet.</p>
+        <p className="text-sm text-secondary">Not enough data yet.</p>
       </div>
     )
   }
@@ -149,13 +149,13 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
   }
 
   return (
-    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <h3 className="text-sm font-medium text-white mb-3">Training load</h3>
-      <p className="text-xs text-[#888888] mb-3">
+      <p className="text-xs text-muted mb-3">
         {data.weeksTrained} week{data.weeksTrained !== 1 ? 's' : ''} of training
       </p>
 
-      <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden mb-3">
+      <div className="h-2 bg-border rounded-full overflow-hidden mb-3">
         <div
           className={`h-full rounded-full transition-all ${zoneColors[zone]}`}
           style={{ width: `${Math.min(100, data.fatigueScore)}%` }}

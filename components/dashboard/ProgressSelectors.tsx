@@ -110,48 +110,60 @@ export default function ProgressSelectors({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTemplateDayId])
 
-  const cardClass = embedded ? '' : 'bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6'
+  const cardClass = embedded ? '' : 'bg-card rounded-lg border border-border p-4 sm:p-6'
 
   if (loadingDays) {
     return (
-      <div className={embedded ? '' : 'bg-[#111111] rounded-lg border border-[#2a2a2a] p-6'}>
-        <div className="text-[#888888]">Loading...</div>
+      <div className={embedded ? '' : 'bg-card rounded-lg border border-border p-6'}>
+        <div className="text-muted">Loading...</div>
       </div>
     )
   }
 
   if (dayOptions.length === 0) {
     return (
-      <div className={embedded ? '' : 'bg-[#111111] rounded-lg border border-[#2a2a2a] p-6'}>
-        <p className="text-[#a1a1a1]">
+      <div className={embedded ? '' : 'bg-card rounded-lg border border-border p-6'}>
+        <p className="text-secondary">
           Create a template and log workouts to see progress.
         </p>
       </div>
     )
   }
 
+  const compact = embedded
+  const rowClass = compact
+    ? 'flex flex-row items-end gap-2 sm:gap-4'
+    : 'flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4'
+  const labelClass = compact
+    ? 'text-xs font-medium text-foreground whitespace-nowrap'
+    : 'text-xs sm:text-sm font-medium text-foreground whitespace-nowrap'
+  const selectClass = compact
+    ? 'w-full flex-1 min-w-0 px-2 sm:px-3 py-1.5 text-sm rounded-md border border-border bg-elevated text-foreground shadow-sm focus:border-foreground focus:ring-2 focus:ring-foreground focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+    : 'w-full max-w-md px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-md border border-border bg-elevated text-foreground shadow-sm focus:border-foreground focus:ring-2 focus:ring-foreground focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  const optionClass = 'bg-elevated'
+
   return (
     <div className={cardClass || undefined}>
-      <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
-        <div className="flex flex-col gap-1 sm:gap-2 flex-1 min-w-0">
-          <label htmlFor="workout-day-select" className="text-xs sm:text-sm font-medium text-white whitespace-nowrap">
+      <div className={rowClass}>
+        <div className="flex flex-col gap-0.5 sm:gap-2 flex-1 min-w-0">
+          <label htmlFor="workout-day-select" className={labelClass}>
             Workout Day
           </label>
           <select
             id="workout-day-select"
             value={selectedTemplateDayId ?? ''}
             onChange={(e) => onTemplateDayChange(e.target.value || null)}
-            className="w-full max-w-md px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white shadow-sm focus:border-white focus:ring-2 focus:ring-white focus:outline-none transition-colors"
+            className={selectClass}
           >
             {dayOptions.map((opt) => (
-              <option key={opt.dayId} value={opt.dayId} className="bg-[#1a1a1a]">
+              <option key={opt.dayId} value={opt.dayId} className={optionClass}>
                 {opt.label}
               </option>
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-1 sm:gap-2 flex-1 min-w-0">
-          <label htmlFor="exercise-select" className="text-xs sm:text-sm font-medium text-white whitespace-nowrap">
+        <div className="flex flex-col gap-0.5 sm:gap-2 flex-1 min-w-0">
+          <label htmlFor="exercise-select" className={labelClass}>
             Exercise
           </label>
           <select
@@ -159,23 +171,23 @@ export default function ProgressSelectors({
             value={selectedExercise}
             onChange={(e) => onExerciseChange(e.target.value)}
             disabled={!selectedTemplateDayId || loadingExercises || exercises.length === 0}
-            className="w-full max-w-md px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white shadow-sm focus:border-white focus:ring-2 focus:ring-white focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={selectClass}
           >
             {!selectedTemplateDayId ? (
-              <option value="" className="bg-[#1a1a1a]">
+              <option value="" className={optionClass}>
                 Select a workout day first
               </option>
             ) : loadingExercises ? (
-              <option value="" className="bg-[#1a1a1a]">
+              <option value="" className={optionClass}>
                 Loading...
               </option>
             ) : exercises.length === 0 ? (
-              <option value="" className="bg-[#1a1a1a]">
+              <option value="" className={optionClass}>
                 No exercises for this day
               </option>
             ) : (
               exercises.map((name) => (
-                <option key={name} value={name} className="bg-[#1a1a1a]">
+                <option key={name} value={name} className={optionClass}>
                   {name}
                 </option>
               ))

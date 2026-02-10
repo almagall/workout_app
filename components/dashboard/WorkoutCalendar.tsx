@@ -157,22 +157,22 @@ export default function WorkoutCalendar() {
 
   if (loading) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold mb-4 text-white">Workout Calendar</h2>
-        <div className="text-[#888888] text-sm">Loading…</div>
+      <div className="bg-card rounded-lg border border-border p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 text-foreground">Workout Calendar</h2>
+        <div className="text-muted text-sm">Loading…</div>
       </div>
     )
   }
 
   return (
-    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 sm:p-6">
-      <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-white">Workout Calendar</h2>
+    <div className="bg-card rounded-lg border border-border p-4 sm:p-6">
+      <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground">Workout Calendar</h2>
 
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <button
           type="button"
           onClick={prevMonth}
-          className="p-1.5 sm:p-2 rounded-md text-white hover:bg-[#2a2a2a] transition-colors"
+          className="p-1.5 sm:p-2 rounded-md text-foreground hover:bg-elevated transition-colors"
           aria-label="Previous month"
         >
           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,7 +183,7 @@ export default function WorkoutCalendar() {
           <select
             value={viewMonth}
             onChange={(e) => setViewMonth(Number(e.target.value))}
-            className="bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-white"
+            className="bg-elevated border border-border text-foreground rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-white"
           >
             {MONTHS.map((m, i) => (
               <option key={m} value={i}>
@@ -194,7 +194,7 @@ export default function WorkoutCalendar() {
           <select
             value={viewYear}
             onChange={(e) => setViewYear(Number(e.target.value))}
-            className="bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-white"
+            className="bg-elevated border border-border text-foreground rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-white"
           >
             {Array.from({ length: 10 }, (_, i) => now.getFullYear() - 5 + i).map((y) => (
               <option key={y} value={y}>
@@ -206,7 +206,7 @@ export default function WorkoutCalendar() {
         <button
           type="button"
           onClick={nextMonth}
-          className="p-1.5 sm:p-2 rounded-md text-white hover:bg-[#2a2a2a] transition-colors"
+          className="p-1.5 sm:p-2 rounded-md text-foreground hover:bg-elevated transition-colors"
           aria-label="Next month"
         >
           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,7 +217,7 @@ export default function WorkoutCalendar() {
 
       <div className="mx-auto grid grid-cols-7 gap-0.5 text-center max-w-[240px] sm:max-w-none">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-[#888888]">
+          <div key={d} className="py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-muted">
             {d}
           </div>
         ))}
@@ -237,9 +237,9 @@ export default function WorkoutCalendar() {
                 onClick={hasWorkout ? () => setModalDate(dateStr) : undefined}
                 className={`aspect-square flex items-center justify-center rounded-md text-[10px] sm:text-sm ${
                   hasWorkout
-                    ? 'bg-green-600/60 text-white font-semibold cursor-pointer hover:bg-green-600/80 transition-colors'
-                    : 'text-[#a1a1a1]'
-                } ${isToday ? 'ring-2 ring-white ring-offset-2 ring-offset-[#111111]' : ''}`}
+                    ? 'bg-green-600/60 text-foreground font-semibold cursor-pointer hover:bg-green-600/80 transition-colors'
+                    : 'text-secondary'
+                } ${isToday ? 'ring-2 ring-white ring-offset-2 ring-offset-background' : ''}`}
                 title={hasWorkout ? `Workout on ${dateStr} – click for details` : undefined}
               >
                 {day}
@@ -249,14 +249,14 @@ export default function WorkoutCalendar() {
         )}
       </div>
 
-      <div className="mt-2 sm:mt-3 flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-[10px] sm:text-xs text-[#888888]">
+      <div className="mt-2 sm:mt-3 flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-[10px] sm:text-xs text-muted">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-green-600/60" />
           Workout logged
         </span>
         {isCurrentMonth && (
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded ring-2 ring-white ring-offset-1 ring-offset-[#111111] bg-transparent" />
+            <span className="w-3 h-3 rounded ring-2 ring-white ring-offset-1 ring-offset-background bg-transparent" />
             Today
           </span>
         )}
@@ -272,14 +272,14 @@ export default function WorkoutCalendar() {
           aria-label="Workout Completion Log"
         >
           <div
-            className="bg-[#111111] rounded-lg border border-[#2a2a2a] shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-card rounded-lg border border-border shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-[#2a2a2a] flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-white">
+            <div className="p-4 border-b border-border flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-foreground">
                 Workout Completion Log
                 {modalDate && (
-                  <span className="block text-sm font-normal text-[#888888] mt-0.5">
+                  <span className="block text-sm font-normal text-muted mt-0.5">
                     {(() => {
                       const [y, m, d] = modalDate.split('-').map(Number)
                       return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
@@ -290,7 +290,7 @@ export default function WorkoutCalendar() {
               <button
                 type="button"
                 onClick={() => setModalDate(null)}
-                className="p-1.5 rounded text-[#888888] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+                className="p-1.5 rounded text-muted hover:text-foreground hover:bg-elevated transition-colors"
                 aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -300,32 +300,32 @@ export default function WorkoutCalendar() {
             </div>
             <div className="p-4 overflow-auto flex-1">
               {loadingCompletion && (
-                <p className="text-[#888888] text-sm text-center py-6">Loading…</p>
+                <p className="text-muted text-sm text-center py-6">Loading…</p>
               )}
               {!loadingCompletion && completionData && completionData.length === 0 && (
-                <p className="text-[#888888] text-sm text-center py-6">No sessions found for this date.</p>
+                <p className="text-muted text-sm text-center py-6">No sessions found for this date.</p>
               )}
               {!loadingCompletion && completionData && completionData.length > 0 && (
                 <div className="space-y-6">
                   {completionData.map((row) => (
-                    <div key={row.session.id} className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-4">
+                    <div key={row.session.id} className="bg-elevated rounded-lg border border-border p-4">
                       <div className="flex justify-between items-start mb-3">
-                        <h4 className="text-base font-semibold text-white">{row.dayLabel}</h4>
+                        <h4 className="text-base font-semibold text-foreground">{row.dayLabel}</h4>
                         <Link
                           href={`/workout/edit/${row.session.id}`}
                           onClick={() => setModalDate(null)}
-                          className="text-sm font-medium text-white bg-[#2a2a2a] hover:bg-[#3a3a3a] px-3 py-1.5 rounded-md transition-colors"
+                          className="text-sm font-medium text-foreground bg-elevated hover:bg-border px-3 py-1.5 rounded-md transition-colors"
                         >
                           Edit workout
                         </Link>
                       </div>
                       {row.rating !== null && (
-                        <p className="text-white text-sm mb-2">
+                        <p className="text-foreground text-sm mb-2">
                           Overall rating: <span className="font-bold">{row.rating}/10</span>
                         </p>
                       )}
                       {row.feedback && (
-                        <p className="text-[#a1a1a1] text-sm whitespace-pre-line mb-3">{row.feedback}</p>
+                        <p className="text-secondary text-sm whitespace-pre-line mb-3">{row.feedback}</p>
                       )}
                       {row.prs.length > 0 && (
                         <div className="text-amber-300 text-sm font-medium">

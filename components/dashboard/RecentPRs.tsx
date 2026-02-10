@@ -45,12 +45,12 @@ export default function RecentPRs() {
 
   if (loading) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
-        <div className="p-4 border-b border-[#2a2a2a]">
-          <h2 className="text-lg font-semibold text-white">Recent PRs</h2>
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
         </div>
         <div className="p-4">
-          <div className="text-[#888888] text-sm">Loading...</div>
+          <div className="text-muted text-sm">Loading...</div>
         </div>
       </div>
     )
@@ -58,21 +58,21 @@ export default function RecentPRs() {
 
   if (workoutDays.length === 0) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
-        <div className="p-4 border-b border-[#2a2a2a]">
-          <h2 className="text-lg font-semibold text-white">Recent PRs</h2>
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
         </div>
         <div className="p-4">
-          <p className="text-[#888888] text-sm">No personal records yet. Log workouts to see your PRs here.</p>
+          <p className="text-muted text-sm">No personal records yet. Log workouts to see your PRs here.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
-      <div className="p-4 border-b border-[#2a2a2a]">
-        <h2 className="text-lg font-semibold text-white">Recent PRs</h2>
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
+      <div className="p-4 border-b border-border">
+        <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
       </div>
       <div className="p-4 max-h-[220px] overflow-y-auto">
         <div className="space-y-3">
@@ -81,15 +81,15 @@ export default function RecentPRs() {
           const isExpanded = expandedDays.has(dayKey)
           
           return (
-            <div key={dayKey} className="border border-[#2a2a2a] rounded-lg overflow-hidden">
+            <div key={dayKey} className="border border-border rounded-lg overflow-hidden">
               {/* Day Header */}
               <button
                 onClick={() => toggleDay(day.workoutDate, day.templateDayId)}
-                className="w-full bg-[#1a1a1a] hover:bg-[#222222] px-4 py-3 flex items-center justify-between transition-colors"
+                className="w-full bg-elevated hover:bg-border px-4 py-3 flex items-center justify-between transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <svg
-                    className={`w-4 h-4 text-[#888888] transition-transform ${
+                    className={`w-4 h-4 text-muted transition-transform ${
                       isExpanded ? 'rotate-90' : 'rotate-0'
                     }`}
                     fill="none"
@@ -98,12 +98,12 @@ export default function RecentPRs() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  <span className="text-white font-medium">
+                  <span className="text-foreground font-medium">
                     {formatDate(day.workoutDate)} · {day.dayLabel}
                   </span>
                 </div>
                 {!isExpanded && (
-                  <span className="text-xs text-[#888888]">
+                  <span className="text-xs text-muted">
                     ({day.prs.length} PR{day.prs.length !== 1 ? 's' : ''})
                   </span>
                 )}
@@ -111,15 +111,15 @@ export default function RecentPRs() {
 
               {/* PRs List */}
               {isExpanded && (
-                <div className="bg-[#111111] divide-y divide-[#2a2a2a]">
+                <div className="bg-[#111111] divide-y divide-border">
                   {day.prs.map((pr, i) => (
                     <div
                       key={`${pr.exerciseName}-${pr.prType}-${i}`}
                       className="flex items-center justify-between px-4 py-3"
                     >
                       <div>
-                        <p className="text-white font-medium">{pr.exerciseName}</p>
-                        <p className="text-xs text-[#888888]">
+                        <p className="text-foreground font-medium">{pr.exerciseName}</p>
+                        <p className="text-xs text-muted">
                           {pr.prType === 'heaviestSet' ? 'Heaviest set' : 'Est. 1RM'}
                         </p>
                       </div>

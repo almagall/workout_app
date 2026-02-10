@@ -31,8 +31,8 @@ export default function MuscleBalanceWidget() {
   const neglectedMuscles = ALL_MUSCLE_GROUPS.filter((g) => (muscleVolume[g] ?? 0) === 0)
 
   return (
-    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
-      <div className="p-4 border-b border-[#2a2a2a]">
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
+      <div className="p-4 border-b border-border">
         <h2 className="text-lg font-semibold text-white mb-3">Muscle Balance</h2>
         <div className="flex gap-2">
           {TIME_RANGES.map(({ days, label }) => (
@@ -42,7 +42,7 @@ export default function MuscleBalanceWidget() {
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 selectedDays === days
                   ? 'bg-white text-black'
-                  : 'bg-[#2a2a2a] text-[#888888] hover:text-white hover:bg-[#333333]'
+                  : 'bg-border text-muted hover:text-foreground hover:bg-elevated'
               }`}
             >
               {label}
@@ -52,22 +52,22 @@ export default function MuscleBalanceWidget() {
       </div>
       <div className="p-4">
         {loading ? (
-          <div className="flex items-center justify-center py-12 text-[#888888]">Loading...</div>
+          <div className="flex items-center justify-center py-12 text-muted">Loading...</div>
         ) : !hasData ? (
           <div className="text-center py-8">
-            <p className="text-[#888888] mb-2">No data for this period</p>
-            <p className="text-sm text-[#666666]">Log workouts to see your training distribution</p>
+            <p className="text-muted mb-2">No data for this period</p>
+            <p className="text-sm text-secondary">Log workouts to see your training distribution</p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
             <MuscleBalanceDiagram muscleVolume={muscleVolume} />
             {neglectedMuscles.length > 0 && (
-              <div className="pt-2 border-t border-[#2a2a2a]">
-                <p className="text-xs text-[#888888] mb-1.5">Not worked this period</p>
-                <p className="text-sm text-[#a1a1a1]">{neglectedMuscles.join(', ')}</p>
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs text-muted mb-1.5">Not worked this period</p>
+                <p className="text-sm text-secondary">{neglectedMuscles.join(', ')}</p>
               </div>
             )}
-            <p className="text-xs text-[#666666]">Weighted sets: primary muscle groups get 1.0 per set, secondary muscle groups get 0.5 per set.</p>
+            <p className="text-xs text-secondary">Weighted sets: primary muscle groups get 1.0 per set, secondary muscle groups get 0.5 per set.</p>
           </div>
         )}
       </div>

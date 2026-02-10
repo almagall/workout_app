@@ -12,6 +12,13 @@ const config: Config = {
       colors: {
         background: 'var(--background)',
         foreground: 'var(--foreground)',
+        card: 'var(--card)',
+        elevated: 'var(--elevated)',
+        border: 'var(--border)',
+        'border-subtle': 'var(--border-subtle)',
+        muted: 'var(--muted)',
+        secondary: 'var(--secondary)',
+        accent: 'var(--accent)',
       },
     },
   },

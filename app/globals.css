@@ -3,17 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
-  --card-bg: #111111;
-  --border: #2a2a2a;
-  --text-muted: #888888;
-  --text-secondary: #a1a1a1;
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #111111;
+  --elevated: #141414;
+  --border: #1f1f1f;
+  --border-subtle: #262626;
+  --muted: #737373;
+  --secondary: #a3a3a3;
+  --accent: #f97316;
 }
 
 /* Dark background throughout to prevent white bars on sides (e.g. mobile landscape) */
 html {
-  background-color: #000000;
+  background-color: var(--background);
   min-height: 100vh;
   min-width: 100vw;
   overflow-x: hidden;
@@ -22,7 +25,7 @@ html {
 
 body {
   color: var(--foreground);
-  background-color: #000000;
+  background-color: var(--background);
   min-height: 100vh;
   min-width: 100vw;
   overflow-x: hidden;

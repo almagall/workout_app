@@ -63,12 +63,12 @@ export default function PerformanceMetrics() {
 
   if (loading) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
-        <div className="p-4 border-b border-[#2a2a2a]">
-          <h2 className="text-lg font-semibold text-white">Performance Metrics</h2>
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">Performance Metrics</h2>
         </div>
         <div className="p-4">
-          <div className="text-[#888888]">Loading metrics...</div>
+          <div className="text-muted">Loading metrics...</div>
         </div>
       </div>
     )
@@ -76,12 +76,12 @@ export default function PerformanceMetrics() {
 
   if (!metrics) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
-        <div className="p-4 border-b border-[#2a2a2a]">
-          <h2 className="text-lg font-semibold text-white">Performance Metrics</h2>
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">Performance Metrics</h2>
         </div>
         <div className="p-4">
-          <p className="text-[#a1a1a1]">No metrics available yet.</p>
+          <p className="text-secondary">No metrics available yet.</p>
         </div>
       </div>
     )
@@ -89,27 +89,27 @@ export default function PerformanceMetrics() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
-        <div className="p-4 border-b border-[#2a2a2a]">
-          <h2 className="text-lg font-semibold text-white">Performance Metrics</h2>
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">Performance Metrics</h2>
         </div>
         <div className="p-4 h-[400px]">
           <div className="space-y-4">
           <div>
-            <p className="text-sm text-[#888888]">Total Workouts</p>
-            <p className="text-2xl font-bold text-white">{metrics.totalWorkouts}</p>
+            <p className="text-sm text-muted">Total Workouts</p>
+            <p className="text-2xl font-bold text-foreground">{metrics.totalWorkouts}</p>
           </div>
           <div>
-            <p className="text-sm text-[#888888]">Workouts This Month</p>
-            <p className="text-2xl font-bold text-white">{metrics.workoutsThisMonth}</p>
-            <p className="text-xs text-[#666666] mt-1">Sessions logged in the current month</p>
+            <p className="text-sm text-muted">Workouts This Month</p>
+            <p className="text-2xl font-bold text-foreground">{metrics.workoutsThisMonth}</p>
+            <p className="text-xs text-secondary mt-1">Sessions logged in the current month</p>
           </div>
           <div>
-            <p className="text-sm text-[#888888]">Target Hit Rate</p>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-sm text-muted">Target Hit Rate</p>
+            <p className="text-2xl font-bold text-foreground">
               {metrics.targetHitRate !== null ? `${metrics.targetHitRate}%` : '—'}
             </p>
-            <p className="text-xs text-[#666666] mt-1">Share of sets that met or exceeded target</p>
+            <p className="text-xs text-secondary mt-1">Share of sets that met or exceeded target</p>
           </div>
         </div>
         </div>

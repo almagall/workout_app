@@ -179,10 +179,10 @@ export default function ExerciseSparklines() {
 
   if (loading) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 h-[400px]">
-        <h2 className="text-lg font-semibold text-white mb-4">Exercise Progression</h2>
+      <div className="bg-card rounded-lg border border-border p-6 h-[400px]">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Exercise Progression</h2>
         <div className="flex items-center justify-center h-[300px]">
-          <p className="text-[#888888]">Loading...</p>
+          <p className="text-muted">Loading...</p>
         </div>
       </div>
     )
@@ -190,27 +190,27 @@ export default function ExerciseSparklines() {
 
   if (allExercises.length === 0) {
     return (
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 h-[400px]">
-        <h2 className="text-lg font-semibold text-white mb-4">Exercise Progression</h2>
+      <div className="bg-card rounded-lg border border-border p-6 h-[400px]">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Exercise Progression</h2>
         <div className="flex flex-col items-center justify-center h-[300px] text-center">
-          <p className="text-[#888888] mb-2">Not enough data yet</p>
-          <p className="text-sm text-[#666666]">Log at least 2 workouts per exercise to see trends</p>
+          <p className="text-muted mb-2">Not enough data yet</p>
+          <p className="text-sm text-secondary">Log at least 2 workouts per exercise to see trends</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden h-[400px] flex flex-col">
-      <div className="p-4 border-b border-[#2a2a2a]">
+    <div className="bg-card rounded-lg border border-border overflow-hidden h-[400px] flex flex-col">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-white">Exercise Progression</h2>
+          <h2 className="text-lg font-semibold text-foreground">Exercise Progression</h2>
         </div>
         {/* Workout Day Filter */}
         <select
           value={selectedDayId}
           onChange={(e) => setSelectedDayId(e.target.value)}
-          className="w-full px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white text-sm"
+          className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-white text-sm"
         >
           <option value="all">All Workout Days</option>
           {templateDays.map((day) => (
@@ -224,18 +224,18 @@ export default function ExerciseSparklines() {
       <div className="flex-1 overflow-y-auto p-4">
         {exercises.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-[#888888] text-sm">No exercises found for this workout day</p>
+            <p className="text-muted text-sm">No exercises found for this workout day</p>
           </div>
         ) : (
           <div className="space-y-2">
             {exercises.map((exercise, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] hover:bg-[#222222] transition-colors"
+              className="flex items-center justify-between p-3 bg-elevated rounded-lg border border-border hover:bg-border transition-colors"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="text-white font-medium text-sm truncate">
+                  <p className="text-foreground font-medium text-sm truncate">
                     {exercise.exerciseName}
                   </p>
                   {exercise.equipment && (
@@ -244,7 +244,7 @@ export default function ExerciseSparklines() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[#888888]">
+                <p className="text-xs text-muted">
                   {exercise.currentMax.toFixed(1)} lbs (est. 1RM)
                 </p>
               </div>

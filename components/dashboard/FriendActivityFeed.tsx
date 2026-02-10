@@ -201,23 +201,23 @@ export function FriendActivityFeed() {
   if (!user) return null
 
   return (
-    <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] overflow-hidden">
-      <div className="p-4 border-b border-[#2a2a2a] flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Friend Activity</h2>
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">Friend Activity</h2>
         <Link href="/friends" className="text-sm text-amber-400 hover:text-amber-300">
           View all
         </Link>
       </div>
       <div className="p-4 h-[400px] overflow-y-auto">
         {loading && (
-          <p className="text-[#888888] text-sm text-center py-4">Loading...</p>
+          <p className="text-muted text-sm text-center py-4">Loading...</p>
         )}
         {error && (
           <p className="text-red-400 text-sm text-center py-4">{error}</p>
         )}
         {!loading && !error && feed.length === 0 && (
           <div className="text-center py-4">
-            <p className="text-[#888888] text-sm mb-2">No recent friend activity</p>
+            <p className="text-muted text-sm mb-2">No recent friend activity</p>
             <Link href="/friends" className="text-sm text-amber-400 hover:text-amber-300">
               Add friends to see their PRs
             </Link>
@@ -230,18 +230,18 @@ export function FriendActivityFeed() {
                 return (
                   <div
                     key={`${item.user_id}-achievement-${item.achievement_id}-${item.unlocked_at}-${i}`}
-                    className="flex items-start gap-3 py-2 border-b border-[#2a2a2a] last:border-0"
+                    className="flex items-start gap-3 py-2 border-b border-border last:border-0"
                   >
                     <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-sm font-medium shrink-0">
                       {item.username.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm">
+                      <p className="text-foreground text-sm">
                         <span className="font-medium">{item.username}</span>
-                        <span className="text-[#888888]"> unlocked </span>
+                        <span className="text-muted"> unlocked </span>
                         <span className="text-amber-400 font-medium">{item.achievement_name}</span>
                       </p>
-                      <p className="text-[#888888] text-xs mt-0.5">{formatDate(item.unlocked_at)}</p>
+                      <p className="text-muted text-xs mt-0.5">{formatDate(item.unlocked_at)}</p>
                     </div>
                   </div>
                 )
@@ -250,16 +250,16 @@ export function FriendActivityFeed() {
                 return (
                   <div
                     key={`${item.user_id}-workout-${item.workoutDate}-${item.templateDayId}-${i}`}
-                    className="flex items-start gap-3 py-2 border-b border-[#2a2a2a] last:border-0"
+                    className="flex items-start gap-3 py-2 border-b border-border last:border-0"
                   >
                     <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-sm font-medium shrink-0">
                       {item.username.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm">
+                      <p className="text-foreground text-sm">
                         <span className="font-medium">{item.username}</span>
-                        <span className="text-[#888888]"> completed </span>
-                        <span className="text-white font-medium">{item.dayLabel || 'Workout'}</span>
+                        <span className="text-muted"> completed </span>
+                        <span className="text-foreground font-medium">{item.dayLabel || 'Workout'}</span>
                         {item.hasPRs && (
                           <span className="ml-1.5 text-xs font-medium px-1.5 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
                             PR!
@@ -267,11 +267,11 @@ export function FriendActivityFeed() {
                         )}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[#888888] text-xs">
+                        <span className="text-muted text-xs">
                           {item.exerciseCount} exercise{item.exerciseCount !== 1 ? 's' : ''}
                         </span>
-                        <span className="text-[#666666] text-xs">·</span>
-                        <span className="text-[#888888] text-xs">{formatDate(item.workoutDate)}</span>
+                        <span className="text-secondary text-xs">·</span>
+                        <span className="text-muted text-xs">{formatDate(item.workoutDate)}</span>
                       </div>
                     </div>
                   </div>
@@ -289,25 +289,25 @@ export function FriendActivityFeed() {
               return (
                 <div
                   key={`${pr.user_id}-${pr.exerciseName}-${pr.workoutDate}-${pr.prType}-${i}`}
-                  className="py-2 border-b border-[#2a2a2a] last:border-0"
+                  className="py-2 border-b border-border last:border-0"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-sm font-medium shrink-0">
                       {pr.username.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm">
+                      <p className="text-foreground text-sm">
                         <span className="font-medium">{pr.username}</span>
-                        <span className="text-[#888888]"> hit a new PR!</span>
+                        <span className="text-muted"> hit a new PR!</span>
                       </p>
-                      <p className="text-white font-medium mt-0.5">{pr.exerciseName}</p>
+                      <p className="text-foreground font-medium mt-0.5">{pr.exerciseName}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-amber-300 font-semibold text-sm">{pr.value} lbs</span>
-                        <span className="text-[#888888] text-xs">
+                        <span className="text-muted text-xs">
                           {pr.prType === 'heaviestSet' ? 'Heaviest' : 'Est. 1RM'}
                         </span>
-                        <span className="text-[#666666] text-xs">·</span>
-                        <span className="text-[#888888] text-xs">{formatDate(pr.workoutDate)}</span>
+                        <span className="text-secondary text-xs">·</span>
+                        <span className="text-muted text-xs">{formatDate(pr.workoutDate)}</span>
                       </div>
                     </div>
                     <div className="relative shrink-0 flex items-center gap-0.5">
@@ -315,7 +315,7 @@ export function FriendActivityFeed() {
                         type="button"
                         onClick={() => toggleComments(pr)}
                         className={`p-1.5 rounded-full transition-colors ${
-                          isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-[#888888] hover:text-blue-400 hover:bg-[#2a2a2a]'
+                          isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-muted hover:text-blue-400 hover:bg-elevated'
                         }`}
                         title="Comment"
                       >
@@ -336,7 +336,7 @@ export function FriendActivityFeed() {
                             type="button"
                             disabled={isSending}
                             onClick={() => setShowReactionPicker(isPickerOpen ? null : key)}
-                            className="p-1.5 rounded-full text-[#888888] hover:text-amber-400 hover:bg-[#2a2a2a] transition-colors disabled:opacity-60"
+                            className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-elevated transition-colors disabled:opacity-60"
                             title="React"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -344,13 +344,13 @@ export function FriendActivityFeed() {
                             </svg>
                           </button>
                           {isPickerOpen && (
-                            <div className="absolute right-0 top-full mt-1 flex gap-1 bg-[#2a2a2a] rounded-full p-1 shadow-lg z-10">
+                            <div className="absolute right-0 top-full mt-1 flex gap-1 bg-elevated rounded-full p-1 shadow-lg z-10">
                               {(['kudos', 'strong', 'fire'] as ReactionType[]).map((type) => (
                                 <button
                                   key={type}
                                   type="button"
                                   onClick={() => handleSendReaction(pr, type)}
-                                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#3a3a3a] text-lg transition-colors"
+                                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-border text-lg transition-colors"
                                   title={type}
                                 >
                                   {getReactionEmoji(type)}
@@ -363,19 +363,19 @@ export function FriendActivityFeed() {
                     </div>
                   </div>
                   {isCommentsOpen && (
-                    <div className="mt-2 ml-11 pl-2 border-l-2 border-[#2a2a2a]">
+                    <div className="mt-2 ml-11 pl-2 border-l-2 border-border">
                       {isLoadingComments && (
-                        <p className="text-xs text-[#888888]">Loading comments...</p>
+                        <p className="text-xs text-muted">Loading comments...</p>
                       )}
                       {!isLoadingComments && comments.length === 0 && (
-                        <p className="text-xs text-[#888888] mb-2">No comments yet</p>
+                        <p className="text-xs text-muted mb-2">No comments yet</p>
                       )}
                       {!isLoadingComments && comments.length > 0 && (
                         <div className="space-y-1.5 mb-2">
                           {comments.map((c) => (
                             <div key={c.id} className="text-xs">
-                              <span className="font-medium text-white">{c.from_username}</span>
-                              <span className="text-[#e5e5e5] ml-1">{c.comment}</span>
+                              <span className="font-medium text-foreground">{c.from_username}</span>
+                              <span className="text-secondary ml-1">{c.comment}</span>
                             </div>
                           ))}
                         </div>
@@ -388,13 +388,13 @@ export function FriendActivityFeed() {
                           onKeyDown={(e) => e.key === 'Enter' && handlePostComment(pr)}
                           placeholder="Add a comment..."
                           maxLength={200}
-                          className="flex-1 text-xs px-2 py-1.5 rounded bg-[#2a2a2a] border border-[#3a3a3a] text-white placeholder-[#888888] focus:outline-none focus:border-blue-500"
+                          className="flex-1 text-xs px-2 py-1.5 rounded bg-elevated border border-[#3a3a3a] text-foreground placeholder-[#888888] focus:outline-none focus:border-blue-500"
                         />
                         <button
                           type="button"
                           onClick={() => handlePostComment(pr)}
                           disabled={postingComment || !newComment.trim()}
-                          className="px-2 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-2 py-1.5 text-xs bg-blue-600 text-foreground rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Post
                         </button>
