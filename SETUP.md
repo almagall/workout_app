@@ -23,7 +23,6 @@
      - `NEXT_PUBLIC_SUPABASE_URL`
      - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
      - `SUPABASE_SERVICE_ROLE_KEY`
-   - **Optional – Form demo videos:** Add `RAPIDAPI_KEY` (or `MUSCLEWIKI_RAPIDAPI_KEY`) to enable exercise form demo videos. Get a free API key from [RapidAPI MuscleWiki](https://rapidapi.com/musclewiki-sezc-musclewiki-sezc-default/api/musclewiki-api). To discover or verify video filenames, run `RAPIDAPI_KEY=your_key node scripts/build-musclewiki-mapping.mjs`.
 
 4. **Run Development Server**
    ```bash

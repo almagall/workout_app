@@ -8,7 +8,7 @@ import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-ov
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
 import { getTargetExplanation } from '@/lib/target-explanation'
-import { getPlateBreakdown, isBarbellExercise, getPlateConfig, roundToLoadableWeight } from '@/lib/plate-calculator'
+import { getPlateBreakdown, getPlateConfig, roundToLoadableWeight } from '@/lib/plate-calculator'
 import { isInDeloadPeriod, getDeloadMultiplier } from '@/lib/deload-detection'
 import { getTodayLocalYYYYMMDD } from '@/lib/date-utils'
 import { getPresetTargetStrategy, getPresetExerciseNotes } from '@/lib/preset-templates'
@@ -112,6 +112,7 @@ export default function WorkoutLogger({
   const [isResumedDraft, setIsResumedDraft] = useState(!!initialDraftSessionId)
   const [autoSaving, setAutoSaving] = useState(false)
   const [exerciseInfoModal, setExerciseInfoModal] = useState<ExerciseEntry | null>(null)
+  const [plateCalcWeight, setPlateCalcWeight] = useState<string>('')
   const router = useRouter()
   const exerciseSelectorRef = useRef<HTMLDivElement>(null)
 
@@ -2171,6 +2172,28 @@ export default function WorkoutLogger({
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 mb-4 py-2 px-3 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
+        <span className="text-sm text-[#888888]">Plate calc:</span>
+        <input
+          type="number"
+          min="0"
+          step="2.5"
+          placeholder="Weight (lbs)"
+          value={plateCalcWeight}
+          onChange={(e) => setPlateCalcWeight(e.target.value)}
+          className="w-24 px-2.5 py-1.5 text-sm border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
+        />
+        <span className="text-sm text-[#cccccc]">
+          {(() => {
+            const total = parseFloat(plateCalcWeight) || 0
+            if (total <= 0) return '—'
+            const pc = getPlateConfig(userId)
+            const breakdown = getPlateBreakdown(total, pc.barWeight, pc.plates)
+            return breakdown ? breakdown.display : '—'
+          })()}
+        </span>
+      </div>
+
       {error && (
         <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded mb-6">
           {error}
@@ -2347,15 +2370,8 @@ export default function WorkoutLogger({
                   </span>
                 </div>
                 {set.setType === 'working' && set.targetWeight != null && (
-                  <span className="text-[#888888]">
+                  <span className="text-[#888888]" title={set.targetExplanation ?? undefined}>
                     Target: {set.targetWeight} lbs × {set.targetReps} reps
-                    {set.targetExplanation && (
-                      <span className="ml-1.5 text-[#666666]" title={set.targetExplanation}>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 inline-block cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </span>
-                    )}
                   </span>
                 )}
               </div>
@@ -2393,16 +2409,6 @@ export default function WorkoutLogger({
                           })()
                         }`}
                       />
-                      {isBarbellExercise(currentExercise.exerciseName) && (set.weight > 0 || (set.targetWeight ?? 0) > 0) && (() => {
-                        const total = set.weight > 0 ? set.weight : (set.targetWeight ?? 0)
-                        const pc = getPlateConfig(userId)
-                        const breakdown = getPlateBreakdown(total, pc.barWeight, pc.plates)
-                        return breakdown ? (
-                          <p className="mt-1 text-[10px] text-[#666666]" title={breakdown.display}>
-                            Plates: {breakdown.display}
-                          </p>
-                        ) : null
-                      })()}
                     </>
                   )}
                 </div>

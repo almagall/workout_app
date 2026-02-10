@@ -2,7 +2,6 @@
 
 import type { ExerciseEntry } from '@/lib/exercise-database'
 import { getExerciseAlternatives } from '@/lib/exercise-database'
-import { getMuscleWikiVideoFilename } from '@/lib/musclewiki-mapping'
 import { MuscleDiagram } from './MuscleDiagram'
 
 const EQUIPMENT_STYLES: Record<string, string> = {
@@ -105,25 +104,6 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
               </div>
             )}
           </div>
-
-          {(() => {
-            const hasVideoMapping = getMuscleWikiVideoFilename(exercise.id)
-            if (!hasVideoMapping) return null
-            return (
-              <div className="pt-4 border-t border-[#2a2a2a] mb-4">
-                <h3 className="text-sm font-medium text-white mb-3">Form demo</h3>
-                <video
-                  src={`/api/exercise-video?exerciseName=${encodeURIComponent(exercise.name)}`}
-                  autoPlay
-                  muted
-                  controls
-                  loop
-                  playsInline
-                  className="rounded-lg w-full max-h-64 object-contain bg-[#0a0a0a]"
-                />
-              </div>
-            )
-          })()}
 
           {(() => {
             const alternatives = getExerciseAlternatives(exercise.name)
