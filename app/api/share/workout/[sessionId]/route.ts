@@ -26,6 +26,7 @@ export interface WorkoutSummary {
   exercises: ExerciseSummary[]
   total_sets: number
   total_volume: number
+  duration_seconds?: number | null
 }
 
 /** GET /api/share/workout/[sessionId] */
@@ -45,7 +46,7 @@ export async function GET(
     // Get the session
     const { data: session, error: sessionErr } = await supabase
       .from('workout_sessions')
-      .select('id, user_id, template_day_id, workout_date')
+      .select('id, user_id, template_day_id, workout_date, duration_seconds')
       .eq('id', sessionId)
       .single()
 
@@ -126,6 +127,7 @@ export async function GET(
       exercises,
       total_sets: totalSets,
       total_volume: totalVolume,
+      duration_seconds: session.duration_seconds ?? null,
     }
 
     return NextResponse.json({ summary })

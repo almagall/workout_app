@@ -398,6 +398,7 @@ export async function saveWorkoutSession(session: {
   overallRating?: number
   overallFeedback?: string
   isComplete?: boolean
+  durationSeconds?: number
   exercises: Array<{
     exerciseName: string
     sets: Array<{
@@ -429,6 +430,7 @@ export async function saveWorkoutSession(session: {
       overall_performance_rating: session.overallRating || null,
       overall_feedback: session.overallFeedback || null,
       is_complete: session.isComplete ?? true,
+      ...(session.durationSeconds != null && { duration_seconds: session.durationSeconds }),
     })
     .select()
     .single()
@@ -492,6 +494,7 @@ export async function getWorkoutSessions(): Promise<WorkoutSession[]> {
     overall_feedback: s.overall_feedback,
     is_complete: s.is_complete ?? true,
     created_at: s.created_at,
+    duration_seconds: s.duration_seconds ?? null,
   }))
 }
 
@@ -722,6 +725,7 @@ export async function updateWorkoutSession(
     overallRating?: number
     overallFeedback?: string
     isComplete?: boolean
+    durationSeconds?: number
     exercises: Array<{
       exerciseName: string
       sets: Array<{
@@ -754,6 +758,9 @@ export async function updateWorkoutSession(
   
   if (session.isComplete !== undefined) {
     updateData.is_complete = session.isComplete
+  }
+  if (session.durationSeconds != null) {
+    updateData.duration_seconds = session.durationSeconds
   }
 
   const { error: sessionError } = await supabase
@@ -954,6 +961,7 @@ export async function completeWorkoutSession(
   completionData: {
     overallRating: number
     overallFeedback: string
+    durationSeconds?: number
   }
 ): Promise<void> {
   const user = getCurrentUser()
@@ -961,13 +969,18 @@ export async function completeWorkoutSession(
 
   const supabase = createClient()
 
+  const updatePayload: Record<string, unknown> = {
+    is_complete: true,
+    overall_performance_rating: completionData.overallRating,
+    overall_feedback: completionData.overallFeedback,
+  }
+  if (completionData.durationSeconds != null) {
+    updatePayload.duration_seconds = completionData.durationSeconds
+  }
+
   const { error: sessionError } = await supabase
     .from('workout_sessions')
-    .update({
-      is_complete: true,
-      overall_performance_rating: completionData.overallRating,
-      overall_feedback: completionData.overallFeedback,
-    })
+    .update(updatePayload)
     .eq('id', sessionId)
     .eq('user_id', user.id)
 

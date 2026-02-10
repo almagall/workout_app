@@ -21,6 +21,14 @@ function formatVolume(volume: number): string {
   return volume.toLocaleString()
 }
 
+function formatDuration(seconds: number): string {
+  const totalMins = Math.floor(seconds / 60)
+  if (totalMins < 60) return `${totalMins}m`
+  const h = Math.floor(totalMins / 60)
+  const m = totalMins % 60
+  return m > 0 ? `${h}hr ${m}m` : `${h}hr`
+}
+
 export default function ShareWorkoutPage({ params }: { params: { sessionId: string } }) {
   const { sessionId } = params
   const [summary, setSummary] = useState<WorkoutSummary | null>(null)
@@ -125,7 +133,7 @@ export default function ShareWorkoutPage({ params }: { params: { sessionId: stri
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 border-b border-[#2a2a2a]">
+          <div className={`grid border-b border-[#2a2a2a] ${summary.duration_seconds != null ? 'grid-cols-4' : 'grid-cols-3'}`}>
             <div className="p-4 text-center border-r border-[#2a2a2a]">
               <p className="text-2xl font-bold text-white">{summary.exercises.length}</p>
               <p className="text-[#888888] text-xs">Exercises</p>
@@ -134,10 +142,16 @@ export default function ShareWorkoutPage({ params }: { params: { sessionId: stri
               <p className="text-2xl font-bold text-white">{summary.total_sets}</p>
               <p className="text-[#888888] text-xs">Total Sets</p>
             </div>
-            <div className="p-4 text-center">
+            <div className="p-4 text-center border-r border-[#2a2a2a]">
               <p className="text-2xl font-bold text-amber-400">{formatVolume(summary.total_volume)}</p>
               <p className="text-[#888888] text-xs">Total Volume (lbs)</p>
             </div>
+            {summary.duration_seconds != null && (
+              <div className="p-4 text-center">
+                <p className="text-2xl font-bold text-white">{formatDuration(summary.duration_seconds)}</p>
+                <p className="text-[#888888] text-xs">Duration</p>
+              </div>
+            )}
           </div>
 
           {/* Exercises */}

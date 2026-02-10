@@ -37,6 +37,7 @@ export interface WorkoutSession {
   overall_feedback: string | null
   is_complete: boolean
   created_at: string
+  duration_seconds?: number | null
 }
 
 export type SetType = 'warmup' | 'working' | 'cooldown'

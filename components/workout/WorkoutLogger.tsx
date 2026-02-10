@@ -8,7 +8,7 @@ import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-ov
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
 import { getTargetExplanation } from '@/lib/target-explanation'
-import { getPlateBreakdown, getPlateConfig, roundToLoadableWeight } from '@/lib/plate-calculator'
+import { getPlateBreakdown, getPlateConfig, roundToLoadableWeight, isBarbellExercise } from '@/lib/plate-calculator'
 import { isInDeloadPeriod, getDeloadMultiplier } from '@/lib/deload-detection'
 import { getTodayLocalYYYYMMDD } from '@/lib/date-utils'
 import { getPresetTargetStrategy, getPresetExerciseNotes } from '@/lib/preset-templates'
@@ -113,8 +113,33 @@ export default function WorkoutLogger({
   const [autoSaving, setAutoSaving] = useState(false)
   const [exerciseInfoModal, setExerciseInfoModal] = useState<ExerciseEntry | null>(null)
   const [plateCalcWeight, setPlateCalcWeight] = useState<string>('')
+  // Workout duration: starts on first set confirm, stops on complete
+  const [workoutStartedAt, setWorkoutStartedAt] = useState<number | null>(null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [completedWorkoutDurationSeconds, setCompletedWorkoutDurationSeconds] = useState<number | null>(null)
+  const workoutDurationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const router = useRouter()
   const exerciseSelectorRef = useRef<HTMLDivElement>(null)
+
+  // Workout duration: tick every second and cleanup on unmount or when workout completes
+  useEffect(() => {
+    if (workoutComplete || workoutStartedAt == null) {
+      if (workoutDurationIntervalRef.current) {
+        clearInterval(workoutDurationIntervalRef.current)
+        workoutDurationIntervalRef.current = null
+      }
+      return
+    }
+    workoutDurationIntervalRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - workoutStartedAt) / 1000))
+    }, 1000)
+    return () => {
+      if (workoutDurationIntervalRef.current) {
+        clearInterval(workoutDurationIntervalRef.current)
+        workoutDurationIntervalRef.current = null
+      }
+    }
+  }, [workoutStartedAt, workoutComplete])
 
   useEffect(() => {
     async function initializeWorkout() {
@@ -1438,9 +1463,17 @@ export default function WorkoutLogger({
 
     setSetValidationError(null)
     console.log('🔵 Confirming set', { exerciseIndex, setIndex, key })
+    const isFirstConfirm = confirmedSets.size === 0
     const newConfirmed = new Set(confirmedSets)
     newConfirmed.add(key)
     setConfirmedSets(newConfirmed)
+
+    // Start workout duration timer on first set confirm (not in edit mode)
+    if (!isEditMode && isFirstConfirm) {
+      const now = Date.now()
+      setWorkoutStartedAt(now)
+      setElapsedSeconds(0)
+    }
 
     const effectiveWeight = getEffectiveWeight(exercise.exerciseName, set)
     if (set.setType === 'working' && effectiveWeight > 0 && set.reps > 0) {
@@ -1693,6 +1726,8 @@ export default function WorkoutLogger({
           setWorkoutCompletePRs(draftPrs)
         }
 
+        const durationSeconds = workoutStartedAt != null ? Math.round((Date.now() - workoutStartedAt) / 1000) : undefined
+
         // Update the draft session with performance data and mark as complete
         await updateWorkoutSession(draftSessionId, {
           templateDayId: dayId,
@@ -1700,6 +1735,7 @@ export default function WorkoutLogger({
           overallRating: rating,
           overallFeedback: feedback,
           isComplete: true,
+          ...(durationSeconds != null && { durationSeconds }),
           exercises: exerciseData.map((exercise) => ({
             exerciseName: exercise.exerciseName,
             sets: exercise.sets.map((set) => {
@@ -1732,6 +1768,7 @@ export default function WorkoutLogger({
           })),
         })
 
+        if (durationSeconds != null) setCompletedWorkoutDurationSeconds(durationSeconds)
         setOverallRating(rating)
         setOverallFeedback(feedback)
         setWorkoutComplete(true)
@@ -1864,10 +1901,13 @@ export default function WorkoutLogger({
           sets: e.sets.map((s) => ({ setType: s.setType, weight: getEffectiveWeight(e.exerciseName, s), reps: s.reps })),
         })))
 
+        const baselineDurationSeconds = workoutStartedAt != null ? Math.round((Date.now() - workoutStartedAt) / 1000) : undefined
+
         // Save workout session without rating/feedback (baseline week)
         await saveWorkoutSession({
           templateDayId: dayId,
           workoutDate,
+          ...(baselineDurationSeconds != null && { durationSeconds: baselineDurationSeconds }),
           exercises: exerciseData.map((exercise) => ({
             exerciseName: exercise.exerciseName,
             sets: exercise.sets.map((set) => {
@@ -1888,6 +1928,7 @@ export default function WorkoutLogger({
           })),
         })
 
+        if (baselineDurationSeconds != null) setCompletedWorkoutDurationSeconds(baselineDurationSeconds)
         setOverallRating(null)
         setOverallFeedback(null) // PRs shown as bullet list when present
         setWorkoutCompletePRs(baselinePrs.length > 0 ? baselinePrs : null)
@@ -1954,12 +1995,15 @@ export default function WorkoutLogger({
       })))
       if (prs.length > 0) setWorkoutCompletePRs(prs)
 
+      const newWorkoutDurationSeconds = workoutStartedAt != null ? Math.round((Date.now() - workoutStartedAt) / 1000) : undefined
+
       // Save workout session (all sets; performanceStatus only for working sets)
       await saveWorkoutSession({
         templateDayId: dayId,
         workoutDate,
         overallRating: rating,
         overallFeedback: feedback,
+        ...(newWorkoutDurationSeconds != null && { durationSeconds: newWorkoutDurationSeconds }),
         exercises: exerciseData.map((exercise) => ({
           exerciseName: exercise.exerciseName,
           sets: exercise.sets.map((set) => {
@@ -1992,6 +2036,7 @@ export default function WorkoutLogger({
         })),
       })
 
+      if (newWorkoutDurationSeconds != null) setCompletedWorkoutDurationSeconds(newWorkoutDurationSeconds)
       checkAndUnlockAchievements().catch(() => {})
       setOverallRating(rating)
       setOverallFeedback(feedback) // PRs shown as bullet list below, not in paragraph
@@ -2016,6 +2061,17 @@ export default function WorkoutLogger({
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
           <h2 className="text-2xl font-bold mb-4 text-white">Workout Complete!</h2>
+          {completedWorkoutDurationSeconds != null && (
+            <p className="text-[#888888] mb-4">
+              Workout time: {(() => {
+                const totalMins = Math.floor(completedWorkoutDurationSeconds / 60)
+                if (totalMins < 60) return `${totalMins}m`
+                const h = Math.floor(totalMins / 60)
+                const m = totalMins % 60
+                return m > 0 ? `${h}hr ${m}m` : `${h}hr`
+              })()}
+            </p>
+          )}
           {overallRating === null ? (
             <div className="mb-6">
               <p className="text-lg font-semibold text-white mb-2">Baseline Recorded</p>
@@ -2172,27 +2228,38 @@ export default function WorkoutLogger({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4 py-2 px-3 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
-        <span className="text-sm text-[#888888]">Plate calc:</span>
-        <input
-          type="number"
-          min="0"
-          step="2.5"
-          placeholder="Weight (lbs)"
-          value={plateCalcWeight}
-          onChange={(e) => setPlateCalcWeight(e.target.value)}
-          className="w-24 px-2.5 py-1.5 text-sm border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-        />
-        <span className="text-sm text-[#cccccc]">
-          {(() => {
-            const total = parseFloat(plateCalcWeight) || 0
-            if (total <= 0) return '—'
-            const pc = getPlateConfig(userId)
-            const breakdown = getPlateBreakdown(total, pc.barWeight, pc.plates)
-            return breakdown ? breakdown.display : '—'
-          })()}
-        </span>
-      </div>
+      {currentExercise && isBarbellExercise(currentExercise.exerciseName) && (
+        <div className="flex flex-wrap items-center gap-2 mb-4 py-2 px-3 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
+          <span className="text-sm text-[#888888]">Plate calc:</span>
+          <input
+            type="number"
+            min={0}
+            step="2.5"
+            placeholder="Weight (lbs)"
+            value={plateCalcWeight}
+            onChange={(e) => {
+              const v = e.target.value
+              if (v === '') {
+                setPlateCalcWeight('')
+                return
+              }
+              const n = parseFloat(v)
+              if (!Number.isNaN(n) && n < 0) return
+              setPlateCalcWeight(v)
+            }}
+            className="w-24 px-2.5 py-1.5 text-sm border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
+          />
+          <span className="text-sm text-[#cccccc]">
+            {(() => {
+              const total = parseFloat(plateCalcWeight) || 0
+              if (total <= 0) return '—'
+              const pc = getPlateConfig(userId)
+              const breakdown = getPlateBreakdown(total, pc.barWeight, pc.plates)
+              return breakdown ? breakdown.display : '—'
+            })()}
+          </span>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded mb-6">
@@ -2304,6 +2371,14 @@ export default function WorkoutLogger({
               </svg>
               <span className="inline">Timer {restTimerEnabled ? 'On' : 'Off'}</span>
             </button>
+            {!isEditMode && workoutStartedAt != null && !workoutComplete && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Workout {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:{String(elapsedSeconds % 60).padStart(2, '0')}
+              </span>
+            )}
           </div>
         </div>
 
