@@ -2514,8 +2514,8 @@ export default function WorkoutLogger({
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div ref={exerciseSelectorRef}>
-        {/* Mobile only: Workout Date, Workout day, Plate calc, Duration */}
-        <div className="space-y-3 sm:hidden mb-4">
+        {/* Mobile only: Workout Date, Workout day, Select Exercise, Plate calc, Duration */}
+        <div className="space-y-3 sm:hidden mb-4 min-w-0 overflow-hidden">
           <div className="w-full min-w-0">
             <label htmlFor="workout-date-mobile" className="block text-sm font-medium text-foreground mb-1">
               Workout Date
@@ -2535,7 +2535,26 @@ export default function WorkoutLogger({
                   })()}
             </p>
           </div>
-          <p className="text-sm text-foreground font-medium">Workout: {dayLabel}</p>
+          <div className="min-w-0">
+            <h1 className="font-display text-2xl font-semibold text-foreground tracking-tight break-words">Workout: {dayLabel}</h1>
+          </div>
+          <div className="w-full min-w-0 relative">
+            <button
+              onClick={() => setShowExerciseSelector(!showExerciseSelector)}
+              className="w-full min-h-[44px] px-3 py-2.5 text-sm bg-elevated text-foreground rounded-md hover:bg-elevated border border-border transition-colors flex items-center justify-between gap-1.5"
+            >
+              <span>Select Exercise</span>
+              <svg
+                className={`w-4 h-4 shrink-0 transition-transform ${showExerciseSelector ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showExerciseSelector && exerciseSelectorDropdown}
+          </div>
           {plateCalcBlock}
           {!isEditMode && workoutStartedAt != null && !workoutComplete && (
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-elevated text-muted border border-border">
@@ -2546,25 +2565,6 @@ export default function WorkoutLogger({
             </span>
           )}
         </div>
-
-        {/* Mobile: Select Exercise full width */}
-        <div className="sm:hidden mb-4 relative w-full">
-        <button
-          onClick={() => setShowExerciseSelector(!showExerciseSelector)}
-          className="w-full min-h-[44px] px-3 py-2.5 text-sm bg-elevated text-foreground rounded-md hover:bg-elevated border border-border transition-colors flex items-center justify-between gap-1.5"
-        >
-          <span>Select Exercise</span>
-          <svg
-            className={`w-4 h-4 shrink-0 transition-transform ${showExerciseSelector ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {showExerciseSelector && exerciseSelectorDropdown}
-      </div>
 
       {/* Desktop: header with dayLabel, Exercise count, Select Exercise, Workout Date */}
       <div className="hidden sm:flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
@@ -2874,7 +2874,7 @@ export default function WorkoutLogger({
           {workingSets.map(renderSetCard)}
         </div>
         {/* Add Working Set + Add Cool Down - below working sets */}
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mt-4 mb-3 flex flex-wrap gap-2">
           <button
             onClick={() => addSet(currentExerciseIndex, 'working')}
             className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md bg-green-600/20 text-green-400 hover:bg-green-600/30 border border-green-600/50 transition-colors"
