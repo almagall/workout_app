@@ -4,6 +4,8 @@
  * Supports user-configured plate availability.
  */
 
+import { getExerciseByName } from './exercise-database'
+
 const DEFAULT_BAR_WEIGHT = 45
 export const STANDARD_PLATES = [45, 25, 10, 5, 2.5, 1.25] // lbs per side
 
@@ -131,8 +133,9 @@ export function getPlateBreakdown(
 
 /**
  * Check if an exercise uses a barbell (for showing plate calculator).
+ * Uses the exercise's equipment type from the database.
  */
 export function isBarbellExercise(exerciseName: string): boolean {
-  const lower = exerciseName.toLowerCase()
-  return lower.includes('barbell') || lower.includes('bb-')
+  const entry = getExerciseByName(exerciseName)
+  return entry?.equipment === 'Barbell'
 }

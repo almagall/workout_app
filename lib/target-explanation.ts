@@ -13,10 +13,15 @@ export function getTargetExplanation(
   planType: PlanType,
   consecutiveUnderperformance: number,
   strategy: TargetStrategy = 'default',
-  strategyContext?: { cycleWeek?: number; weekLabel?: string }
+  strategyContext?: { cycleWeek?: number; weekLabel?: string },
+  highRpeLastTime?: boolean
 ): string {
   if (strategy !== 'default') {
     return getPresetStrategyExplanation(strategy, strategyContext)
+  }
+
+  if (highRpeLastTime) {
+    return 'High RPE last time—same target to keep intensity in range.'
   }
 
   switch (performanceStatus) {
@@ -24,7 +29,7 @@ export function getTargetExplanation(
       return 'You beat last time—slightly higher target to keep progressing.'
     case 'met_target':
       return planType === 'hypertrophy'
-        ? 'Same weight, +1 rep from last session.'
+        ? 'Met target—same weight and reps. Beat it to add reps next time.'
         : 'Met target—small weight bump this week.'
     case 'underperformed':
       if (consecutiveUnderperformance === 0) {

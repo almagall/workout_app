@@ -18,6 +18,7 @@ export default function LogWorkoutDayPage() {
     planType: PlanType
     presetId: string | null
     exercises: string[]
+    exerciseFocus: (PlanType | null)[]
   } | null>(null)
   const [draftSessionId, setDraftSessionId] = useState<string | null>(null)
   const [showDraftConflict, setShowDraftConflict] = useState(false)
@@ -87,12 +88,14 @@ export default function LogWorkoutDayPage() {
       // Get exercises for this day
       const exercisesData = await getTemplateExercises(dayId)
       const exercises = exercisesData.map(ex => ex.exercise_name)
+      const exerciseFocus = exercisesData.map(ex => ex.focus ?? null)
 
       setDayData({
         dayLabel: day.day_label,
         planType: template.plan_type,
         presetId: template.preset_id ?? null,
         exercises,
+        exerciseFocus,
       })
       
       console.log('✅ Day data loaded successfully', { 
@@ -166,6 +169,7 @@ export default function LogWorkoutDayPage() {
       planType={dayData.planType}
       presetId={dayData.presetId}
       exercises={dayData.exercises}
+      exerciseFocus={dayData.exerciseFocus}
       userId={user.id}
       draftSessionId={draftSessionId || undefined}
     />

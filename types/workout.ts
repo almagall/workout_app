@@ -25,6 +25,8 @@ export interface TemplateExercise {
   template_day_id: string
   exercise_name: string
   exercise_order: number
+  /** Per-exercise focus override. Null = use template plan_type. */
+  focus?: PlanType | null
   created_at: string
 }
 

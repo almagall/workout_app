@@ -31,6 +31,7 @@ CREATE TABLE template_exercises (
   template_day_id UUID NOT NULL REFERENCES template_days(id) ON DELETE CASCADE,
   exercise_name TEXT NOT NULL,
   exercise_order INTEGER NOT NULL,
+  focus TEXT CHECK (focus IN ('strength', 'hypertrophy')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

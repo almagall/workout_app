@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef, Fragment } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getPreviousWorkoutSessionExcludingDeload, getMostRecentSessionWithExercise, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions, saveDraftWorkoutSession, completeWorkoutSession, deleteWorkoutSession } from '@/lib/storage'
 import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
+import { getE1RMTrendForExercises, getHitStreakForExercises } from '@/lib/performance-analytics'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
 import { getTargetExplanation } from '@/lib/target-explanation'
 import { getPlateBreakdown, getPlateConfig, roundToLoadableWeight, isBarbellExercise } from '@/lib/plate-calculator'
@@ -24,7 +26,7 @@ import { estimated1RM } from '@/lib/estimated-1rm'
 import { checkSetPR, getPRsForSession, type SessionPR } from '@/lib/pr-helper'
 import { checkAndUnlockAchievements } from '@/lib/achievements'
 import { getBodyweightForDate } from '@/lib/bodyweight-storage'
-import { isBodyweightExercise, getExerciseByName, getExerciseEquivalence, type ExerciseEntry } from '@/lib/exercise-database'
+import { isBodyweightExercise, getExerciseByName, getExerciseAlternativesWithEquipment, type ExerciseEntry } from '@/lib/exercise-database'
 import { getEquipmentStyle, getMuscleGroupStyle } from '@/lib/exercise-tag-styles'
 import { ExerciseDetailModal } from '@/components/exercises/ExerciseDetailModal'
 import RestTimer from '@/components/workout/RestTimer'
@@ -35,6 +37,8 @@ interface WorkoutLoggerProps {
   dayLabel: string
   planType: PlanType
   exercises: string[]
+  /** Per-exercise focus override. Same length as exercises; null/undefined = use template planType. */
+  exerciseFocus?: (PlanType | null)[]
   userId: string
   presetId?: string | null
   sessionId?: string // Optional: if provided, we're editing an existing workout
@@ -47,6 +51,7 @@ export default function WorkoutLogger({
   dayLabel,
   planType,
   exercises,
+  exerciseFocus,
   userId,
   presetId,
   sessionId,
@@ -56,10 +61,13 @@ export default function WorkoutLogger({
   const [exerciseData, setExerciseData] = useState<ExerciseData[]>([])
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
   const [planSettings, setPlanSettings] = useState<any>(null)
+  /** Resolved settings per plan type (for per-exercise focus). */
+  const [planSettingsByType, setPlanSettingsByType] = useState<Record<PlanType, any> | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [workoutComplete, setWorkoutComplete] = useState(false)
+  const [completedSessionId, setCompletedSessionId] = useState<string | null>(null)
   const [overallFeedback, setOverallFeedback] = useState<string | null>(null)
   const [overallRating, setOverallRating] = useState<number | null>(null)
   const [workoutCompletePRs, setWorkoutCompletePRs] = useState<SessionPR[] | null>(null)
@@ -79,10 +87,16 @@ export default function WorkoutLogger({
     underperformanceMap: Map<string, number>
     lastSessionRpeMap: Map<string, number>
     targetStrategy: string | null
+    e1rmTrendMap: Map<string, { trend: 'up' | 'down' | 'stable'; changeLbs: number | null; message: string }>
+    hitStreakMap: Map<string, number>
+    daysSinceLastSession: number | null
   }>({
     underperformanceMap: new Map(),
     lastSessionRpeMap: new Map(),
     targetStrategy: null,
+    e1rmTrendMap: new Map(),
+    hitStreakMap: new Map(),
+    daysSinceLastSession: null,
   })
   const [workoutDate, setWorkoutDate] = useState<string>(() => {
     // Use provided date or default to today's date in YYYY-MM-DD format (local timezone)
@@ -120,6 +134,8 @@ export default function WorkoutLogger({
   const workoutDurationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const router = useRouter()
   const exerciseSelectorRef = useRef<HTMLDivElement>(null)
+  const [showSwapPopover, setShowSwapPopover] = useState(false)
+  const swapPopoverRef = useRef<HTMLDivElement>(null)
 
   // Workout duration: tick every second and cleanup on unmount or when workout completes
   useEffect(() => {
@@ -152,11 +168,12 @@ export default function WorkoutLogger({
 
         // Get plan settings from localStorage (legacy) or use defaults per template plan type
         let resolvedPlanSettings = getDefaultPlanSettings(planType)
+        let settingsData: { settings_json?: Record<PlanType, any> } | null = null
         const settingsStr = localStorage.getItem(`workout_settings_${user.id}`)
         if (settingsStr) {
           try {
-            const settingsData = JSON.parse(settingsStr)
-            if (settingsData.settings_json && settingsData.settings_json[planType]) {
+            settingsData = JSON.parse(settingsStr)
+            if (settingsData?.settings_json?.[planType]) {
               resolvedPlanSettings = settingsData.settings_json[planType]
             }
           } catch (e) {
@@ -164,6 +181,12 @@ export default function WorkoutLogger({
           }
         }
         setPlanSettings(resolvedPlanSettings)
+        // Resolve settings for both plan types (for per-exercise focus)
+        const planSettingsByType: Record<PlanType, any> = {
+          strength: settingsData?.settings_json?.strength ?? getDefaultPlanSettings('strength'),
+          hypertrophy: settingsData?.settings_json?.hypertrophy ?? getDefaultPlanSettings('hypertrophy'),
+        }
+        setPlanSettingsByType(planSettingsByType)
 
         let initializedExercises: ExerciseData[] = []
 
@@ -320,6 +343,11 @@ export default function WorkoutLogger({
             ? await getExerciseLogsForSession(previousSession.id)
             : []
 
+          // Days since last time this workout day was done (for recency-based target scaling)
+          const daysSinceLastSession = previousSession
+            ? Math.round((new Date(workoutDate).getTime() - new Date(previousSession.workout_date).getTime()) / (1000 * 60 * 60 * 24))
+            : null
+
           // Pre-calculate consecutive underperformance for each exercise
           const exerciseUnderperformanceMap = new Map<string, number>()
           for (const exerciseName of exercises) {
@@ -465,7 +493,8 @@ export default function WorkoutLogger({
                       planType,
                       resolvedPlanSettings,
                       consecutiveUnderperformance,
-                      roundToLoadable
+                      roundToLoadable,
+                      daysSinceLastSession
                     )
                     const status = evaluateSetPerformance(
                       previousSet.weight,
@@ -479,7 +508,9 @@ export default function WorkoutLogger({
                       status,
                       planType,
                       consecutiveUnderperformance,
-                      'default'
+                      'default',
+                      undefined,
+                      setTarget.highRpeLastTime
                     )
                     sets[i] = {
                       ...sets[i],
@@ -567,7 +598,8 @@ export default function WorkoutLogger({
                     phulPlanType,
                     phulSettings,
                     consecutiveUnderperformance,
-                    roundToLoadable
+                    roundToLoadable,
+                    daysSinceLastSession
                   )
                   const status = evaluateSetPerformance(
                     previousSet.weight,
@@ -581,7 +613,9 @@ export default function WorkoutLogger({
                     status,
                     phulPlanType,
                     consecutiveUnderperformance,
-                    'default'
+                    'default',
+                    undefined,
+                    setTarget.highRpeLastTime
                   )
                   return {
                     setNumber: idx + 1,
@@ -722,7 +756,9 @@ export default function WorkoutLogger({
                   })
                 }
               } else {
-                // Default: planType-based progression (custom templates)
+                // Default: planType-based progression (custom templates); per-exercise focus when provided
+                const exercisePlanType = (exerciseFocus?.[exerciseIndex] ?? planType) as PlanType
+                const exercisePlanSettings = planSettingsByType[exercisePlanType] ?? resolvedPlanSettings
                 sets = sortedLogs.map((log, idx) => {
                   const previousSet = {
                     weight: parseFloat(log.weight.toString()),
@@ -734,10 +770,11 @@ export default function WorkoutLogger({
                   }
                   const setTarget = calculateSetTarget(
                     previousSet,
-                    planType,
-                    resolvedPlanSettings,
+                    exercisePlanType,
+                    exercisePlanSettings,
                     consecutiveUnderperformance,
-                    roundToLoadable
+                    roundToLoadable,
+                    daysSinceLastSession
                   )
                   const status = evaluateSetPerformance(
                     previousSet.weight,
@@ -749,9 +786,11 @@ export default function WorkoutLogger({
                   )
                   const targetExplanation = getTargetExplanation(
                     status,
-                    planType,
+                    exercisePlanType,
                     consecutiveUnderperformance,
-                    'default'
+                    'default',
+                    undefined,
+                    setTarget.highRpeLastTime
                   )
                   return {
                     setNumber: idx + 1,
@@ -802,10 +841,19 @@ export default function WorkoutLogger({
           })
 
           // Store feedback context for smarter exercise/workout feedback (new workout only)
-          setFeedbackContext({
+          setFeedbackContext((prev) => ({
+            ...prev,
             underperformanceMap: exerciseUnderperformanceMap,
             lastSessionRpeMap,
             targetStrategy,
+            daysSinceLastSession: daysSinceLastSession ?? null,
+          }))
+          // Load e1RM trends and hit streaks for feedback (non-blocking)
+          getE1RMTrendForExercises(exercises).then((e1rmTrendMap) => {
+            setFeedbackContext((prev) => ({ ...prev, e1rmTrendMap }))
+          })
+          getHitStreakForExercises(exercises).then((hitStreakMap) => {
+            setFeedbackContext((prev) => ({ ...prev, hitStreakMap }))
           })
         }
 
@@ -833,7 +881,7 @@ export default function WorkoutLogger({
 
     initializeWorkout()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dayId, planType, exercises, userId, workoutDate, presetId])
+  }, [dayId, planType, exercises, exerciseFocus, userId, workoutDate, presetId])
 
   // Fetch user bodyweight for workout date (used for bodyweight exercises)
   useEffect(() => {
@@ -860,6 +908,22 @@ export default function WorkoutLogger({
     }
   }, [showExerciseSelector])
 
+  // Close swap popover when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (swapPopoverRef.current && !swapPopoverRef.current.contains(event.target as Node)) {
+        setShowSwapPopover(false)
+      }
+    }
+
+    if (showSwapPopover) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [showSwapPopover])
+
   // Mark exercises as completed when in edit mode if they have feedback
   useEffect(() => {
     if (isEditMode && exerciseData.length > 0) {
@@ -880,26 +944,12 @@ export default function WorkoutLogger({
   }
 
   const handleSelectAlternative = async (newExerciseName: string) => {
-    if (!planSettings) return
     const exIdx = currentExerciseIndex
-    const originalExerciseName = exerciseData[exIdx]?.exerciseName ?? ''
+    const exercisePlanType = (exerciseFocus?.[exIdx] ?? planType) as PlanType
+    const exercisePlanSettings = planSettingsByType?.[exercisePlanType] ?? planSettings
+    if (!exercisePlanSettings) return
 
-    let result = await getMostRecentSessionWithExercise(dayId, newExerciseName, workoutDate, userId)
-    let useEquivalenceScaling = false
-    let weightRatio = 1
-
-    if (!result) {
-      const equiv = getExerciseEquivalence(newExerciseName)
-      if (equiv && equiv.equivalentTo === originalExerciseName) {
-        const sourceResult = await getMostRecentSessionWithExercise(dayId, originalExerciseName, workoutDate, userId)
-        if (sourceResult) {
-          result = sourceResult
-          useEquivalenceScaling = true
-          weightRatio = equiv.weightRatio
-        }
-      }
-    }
-
+    const result = await getMostRecentSessionWithExercise(dayId, newExerciseName, workoutDate, userId)
     const workingLogs = result?.logs ?? []
     const sortedLogs = [...workingLogs].sort((a, b) => a.set_number - b.set_number)
 
@@ -908,7 +958,7 @@ export default function WorkoutLogger({
       .filter((s) => s.template_day_id === dayId)
       .sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime())
 
-    const exerciseForUnderperformance = useEquivalenceScaling ? originalExerciseName : newExerciseName
+    const exerciseForUnderperformance = newExerciseName
     let consecutiveUnderperformance = 0
     for (let i = 0; i < Math.min(daySessions.length, 5); i++) {
       const session = daySessions[i]
@@ -937,18 +987,12 @@ export default function WorkoutLogger({
     const deloadMult = getDeloadMultiplier()
     const applyDeload = (tw: number | null) =>
       tw != null && inDeload ? Math.round(tw * deloadMult * 2) / 2 : tw
-    const exerciseForTargetComputation = useEquivalenceScaling ? originalExerciseName : newExerciseName
-    const applyTargetWeight = (tw: number | null) => {
-      if (tw == null) return null
-      const val = useEquivalenceScaling ? roundToLoadable(tw * weightRatio) : tw
-      return applyDeload(val)
-    }
-    const logWeight = (log: { weight: unknown }, fallback = 0) =>
-      useEquivalenceScaling ? fallback : parseFloat(String(log.weight ?? 0))
-    const logReps = (log: { reps: number }, fallback = 0) =>
-      useEquivalenceScaling ? fallback : (log.reps ?? 0)
-    const logRpe = (log: { rpe: unknown }, fallback = 5) =>
-      useEquivalenceScaling ? fallback : parseFloat(String(log.rpe ?? 5))
+    const exerciseForTargetComputation = newExerciseName
+    const applyTargetWeight = (tw: number | null) =>
+      tw == null ? null : applyDeload(roundToLoadable(tw))
+    const logWeight = (log: { weight: unknown }) => parseFloat(String(log.weight ?? 0))
+    const logReps = (log: { reps: number }) => log.reps ?? 0
+    const logRpe = (log: { rpe: unknown }) => parseFloat(String(log.rpe ?? 5))
     const is531MainLift = use531Strategy && exIdx === 0
     const gzclpTier = useGzclpStrategy ? (exIdx === 0 ? 1 : exIdx === 1 ? 2 : 3) : null
 
@@ -1063,7 +1107,7 @@ export default function WorkoutLogger({
           }
           const st = calculateSetTarget(prev, phulPlanType, phulSettings, consecutiveUnderperformance, roundToLoadable)
           const status = evaluateSetPerformance(prev.weight, prev.reps, prev.rpe, prev.targetWeight, prev.targetReps, prev.targetRpe)
-          const expl = getTargetExplanation(status, phulPlanType, consecutiveUnderperformance, 'default')
+          const expl = getTargetExplanation(status, phulPlanType, consecutiveUnderperformance, 'default', undefined, st.highRpeLastTime)
           return {
             setNumber: idx + 1,
             setType: 'working' as SetType,
@@ -1180,9 +1224,9 @@ export default function WorkoutLogger({
             targetReps: log.target_reps,
             targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
           }
-          const st = calculateSetTarget(prev, planType, planSettings, consecutiveUnderperformance, roundToLoadable)
+          const st = calculateSetTarget(prev, exercisePlanType, exercisePlanSettings, consecutiveUnderperformance, roundToLoadable)
           const status = evaluateSetPerformance(prev.weight, prev.reps, prev.rpe, prev.targetWeight, prev.targetReps, prev.targetRpe)
-          const expl = getTargetExplanation(status, planType, consecutiveUnderperformance, 'default')
+          const expl = getTargetExplanation(status, exercisePlanType, consecutiveUnderperformance, 'default', undefined, st.highRpeLastTime)
           return {
             setNumber: idx + 1,
             setType: 'working' as SetType,
@@ -1468,6 +1512,36 @@ export default function WorkoutLogger({
     newConfirmed.add(key)
     setConfirmedSets(newConfirmed)
 
+    // First set high RPE → nudge later sets same session (conservative targets)
+    if (set.setType === 'working' && (set.rpe ?? 0) >= 9) {
+      const workingIndices = exercise.sets
+        .map((s, i) => ({ set: s, i }))
+        .filter((x) => x.set.setType === 'working')
+        .map((x) => x.i)
+      const isFirstWorkingSet = workingIndices[0] === setIndex
+      if (isFirstWorkingSet && workingIndices.length > 1) {
+        const weightUsed = getEffectiveWeight(exercise.exerciseName, set)
+        const repsUsed = set.reps ?? 0
+        if (weightUsed > 0 && repsUsed >= 1) {
+          const conservativeReps = Math.max(1, repsUsed - 1)
+          setExerciseData((prev) => {
+            const next = prev.map((ex, exIdx) =>
+              exIdx !== exerciseIndex
+                ? ex
+                : {
+                    ...ex,
+                    sets: ex.sets.map((s, i) => {
+                      if (!workingIndices.includes(i) || i === setIndex) return s
+                      return { ...s, targetWeight: weightUsed, targetReps: conservativeReps }
+                    }),
+                  }
+            )
+            return next
+          })
+        }
+      }
+    }
+
     // Start workout duration timer on first set confirm (not in edit mode)
     if (!isEditMode && isFirstConfirm) {
       const now = Date.now()
@@ -1636,6 +1710,9 @@ export default function WorkoutLogger({
         underperformanceMap: feedbackContext.underperformanceMap,
         lastSessionRpeMap: feedbackContext.lastSessionRpeMap,
         targetStrategy: feedbackContext.targetStrategy ?? getPresetTargetStrategy(presetId ?? undefined),
+        e1rmTrendMap: feedbackContext.e1rmTrendMap,
+        hitStreakMap: feedbackContext.hitStreakMap,
+        daysSinceLastSession: feedbackContext.daysSinceLastSession,
       }
     )
 
@@ -1712,6 +1789,9 @@ export default function WorkoutLogger({
           underperformanceMap: feedbackContext.underperformanceMap,
           lastSessionRpeMap: feedbackContext.lastSessionRpeMap,
           targetStrategy: feedbackContext.targetStrategy ?? getPresetTargetStrategy(presetId ?? undefined),
+          e1rmTrendMap: feedbackContext.e1rmTrendMap,
+          hitStreakMap: feedbackContext.hitStreakMap,
+          daysSinceLastSession: feedbackContext.daysSinceLastSession,
         })
 
         const draftPrs = await getPRsForSession(
@@ -1771,6 +1851,7 @@ export default function WorkoutLogger({
         if (durationSeconds != null) setCompletedWorkoutDurationSeconds(durationSeconds)
         setOverallRating(rating)
         setOverallFeedback(feedback)
+        setCompletedSessionId(draftSessionId)
         setWorkoutComplete(true)
         checkAndUnlockAchievements().catch(() => {})
         return
@@ -1827,6 +1908,9 @@ export default function WorkoutLogger({
           underperformanceMap: feedbackContext.underperformanceMap,
           lastSessionRpeMap: feedbackContext.lastSessionRpeMap,
           targetStrategy: feedbackContext.targetStrategy ?? getPresetTargetStrategy(presetId ?? undefined),
+          e1rmTrendMap: feedbackContext.e1rmTrendMap,
+          hitStreakMap: feedbackContext.hitStreakMap,
+          daysSinceLastSession: feedbackContext.daysSinceLastSession,
         })
 
         const editPrs = await getPRsForSession(
@@ -1881,6 +1965,7 @@ export default function WorkoutLogger({
 
         setOverallRating(rating)
         setOverallFeedback(feedback)
+        setCompletedSessionId(sessionId)
         setWorkoutComplete(true)
         return
       }
@@ -1904,7 +1989,7 @@ export default function WorkoutLogger({
         const baselineDurationSeconds = workoutStartedAt != null ? Math.round((Date.now() - workoutStartedAt) / 1000) : undefined
 
         // Save workout session without rating/feedback (baseline week)
-        await saveWorkoutSession({
+        const baselineSessionId = await saveWorkoutSession({
           templateDayId: dayId,
           workoutDate,
           ...(baselineDurationSeconds != null && { durationSeconds: baselineDurationSeconds }),
@@ -1932,6 +2017,7 @@ export default function WorkoutLogger({
         setOverallRating(null)
         setOverallFeedback(null) // PRs shown as bullet list when present
         setWorkoutCompletePRs(baselinePrs.length > 0 ? baselinePrs : null)
+        setCompletedSessionId(baselineSessionId)
         setWorkoutComplete(true)
         checkAndUnlockAchievements().catch(() => {})
         return
@@ -1987,6 +2073,9 @@ export default function WorkoutLogger({
         underperformanceMap: feedbackContext.underperformanceMap,
         lastSessionRpeMap: feedbackContext.lastSessionRpeMap,
         targetStrategy: feedbackContext.targetStrategy ?? getPresetTargetStrategy(presetId ?? undefined),
+        e1rmTrendMap: feedbackContext.e1rmTrendMap,
+        hitStreakMap: feedbackContext.hitStreakMap,
+        daysSinceLastSession: feedbackContext.daysSinceLastSession,
       })
 
       const prs = await getPRsForSession(dayId, exerciseData.map((e) => ({
@@ -1998,7 +2087,7 @@ export default function WorkoutLogger({
       const newWorkoutDurationSeconds = workoutStartedAt != null ? Math.round((Date.now() - workoutStartedAt) / 1000) : undefined
 
       // Save workout session (all sets; performanceStatus only for working sets)
-      await saveWorkoutSession({
+      const newSessionId = await saveWorkoutSession({
         templateDayId: dayId,
         workoutDate,
         overallRating: rating,
@@ -2040,6 +2129,7 @@ export default function WorkoutLogger({
       checkAndUnlockAchievements().catch(() => {})
       setOverallRating(rating)
       setOverallFeedback(feedback) // PRs shown as bullet list below, not in paragraph
+      setCompletedSessionId(newSessionId)
       setWorkoutComplete(true)
     } catch (err: any) {
       setError(err.message || 'Failed to save workout')
@@ -2116,12 +2206,22 @@ export default function WorkoutLogger({
               </div>
             </>
           )}
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
-          >
-            Back to Dashboard
-          </button>
+          <div className="flex flex-wrap items-center gap-3 mt-4">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
+            >
+              Back to Dashboard
+            </button>
+            {completedSessionId && (
+              <Link
+                href={`/share/workout/${completedSessionId}`}
+                className="px-4 py-2 rounded-md border border-[#3a3a3a] text-white/90 hover:bg-[#2a2a2a] transition-colors font-medium"
+              >
+                View workout summary
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -2289,25 +2389,108 @@ export default function WorkoutLogger({
       <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
-              {(() => {
-                const entry = getExerciseByName(currentExercise.exerciseName)
-                if (!entry) return null
+            <div ref={swapPopoverRef} className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
+                {(() => {
+                  const entry = getExerciseByName(currentExercise.exerciseName)
+                  if (!entry) return null
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setExerciseInfoModal(entry)}
+                      className="shrink-0 p-1 -m-1 rounded-full text-white/70 hover:text-white/90 hover:bg-[#2a2a2a] transition-colors"
+                      title="Exercise info"
+                      aria-label="Exercise info"
+                    >
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 10v7" />
+                        <circle cx="12" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
+                      </svg>
+                    </button>
+                  )
+                })()}
+                {(() => {
+                  const swapAlternatives = getExerciseAlternativesWithEquipment(currentExercise.exerciseName)
+                  if (swapAlternatives.length === 0) return null
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExerciseSelector(false)
+                        setShowSwapPopover((v) => !v)
+                      }}
+                      className="shrink-0 px-2 py-1 rounded-md text-xs font-medium text-white/80 hover:text-white bg-[#2a2a2a] hover:bg-[#333333] border border-[#3a3a3a] transition-colors"
+                      title="Swap exercise"
+                      aria-label="Swap exercise"
+                    >
+                      Swap
+                    </button>
+                  )
+                })()}
+              </div>
+              {showSwapPopover && (() => {
+                const EQUIPMENT_ORDER = ['Cable', 'Dumbbell', 'Machine', 'Barbell', 'Bodyweight', 'Other'] as const
+                const alternativesWithEquipment = getExerciseAlternativesWithEquipment(currentExercise.exerciseName)
+                const byEquipment = alternativesWithEquipment.reduce<Record<string, string[]>>((acc, { name, equipment }) => {
+                  const key = equipment || 'Other'
+                  if (!acc[key]) acc[key] = []
+                  acc[key].push(name)
+                  return acc
+                }, {})
                 return (
-                  <button
-                    type="button"
-                    onClick={() => setExerciseInfoModal(entry)}
-                    className="shrink-0 p-1 -m-1 rounded-full text-white/70 hover:text-white/90 hover:bg-[#2a2a2a] transition-colors"
-                    title="Exercise info"
-                    aria-label="Exercise info"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 10v7" />
-                      <circle cx="12" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
-                    </svg>
-                  </button>
+                  <div className="absolute left-0 mt-1 z-20 w-72 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md shadow-lg p-3 max-h-[min(60vh,320px)] overflow-y-auto">
+                    <p className="text-xs text-[#888888] mb-3">Equipment taken? Choose an alternative.</p>
+                    <div className="flex flex-col gap-3">
+                      {EQUIPMENT_ORDER.filter((eq) => byEquipment[eq]?.length).map((equipment) => (
+                        <div key={equipment}>
+                          <span className="inline-block text-[10px] uppercase tracking-wider text-[#999] mb-1.5">
+                            {equipment}
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {byEquipment[equipment].map((name) => (
+                              <button
+                                key={name}
+                                type="button"
+                                onClick={() => {
+                                  handleSelectAlternative(name)
+                                  setShowSwapPopover(false)
+                                }}
+                                className="text-xs px-2.5 py-1 rounded-md border border-[#3a3a3a] bg-[#252525] text-white/90 hover:bg-[#2a2a2a] transition-colors text-left"
+                              >
+                                {name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      {Object.keys(byEquipment)
+                        .filter((eq) => !EQUIPMENT_ORDER.includes(eq as (typeof EQUIPMENT_ORDER)[number]))
+                        .map((equipment) => (
+                          <div key={equipment}>
+                            <span className="inline-block text-[10px] uppercase tracking-wider text-[#999] mb-1.5">
+                              {equipment}
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {byEquipment[equipment].map((name) => (
+                                <button
+                                  key={name}
+                                  type="button"
+                                  onClick={() => {
+                                    handleSelectAlternative(name)
+                                    setShowSwapPopover(false)
+                                  }}
+                                  className="text-xs px-2.5 py-1 rounded-md border border-[#3a3a3a] bg-[#252525] text-white/90 hover:bg-[#2a2a2a] transition-colors text-left"
+                                >
+                                  {name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
                 )
               })()}
             </div>
@@ -2390,6 +2573,27 @@ export default function WorkoutLogger({
               <p className="text-sm text-[#a1a1a1]">{note}</p>
             </div>
           ) : null
+        })()}
+
+        {currentExercise && isBarbellExercise(currentExercise.exerciseName) && (() => {
+          const firstWorking = currentExercise.sets.find((s) => s.setType === 'working')
+          const targetWeight = firstWorking?.targetWeight ?? null
+          if (targetWeight == null || targetWeight <= 0) return null
+          const pc = getPlateConfig(userId)
+          const warmupWeight = Math.max(pc.barWeight, roundToLoadableWeight(targetWeight * 0.5, pc.plates, pc.barWeight))
+          const showEmptyBar = pc.barWeight > 0
+          const showSecond = warmupWeight > pc.barWeight
+          if (!showEmptyBar && !showSecond) return null
+          return (
+            <div className="mb-3 px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
+              <p className="text-xs font-medium text-[#888888] uppercase tracking-wide mb-1">Suggested warm-up</p>
+              <p className="text-sm text-[#a1a1a1]">
+                {showEmptyBar && `${pc.barWeight} lb (empty bar) × 5`}
+                {showEmptyBar && showSecond && ' → '}
+                {showSecond && `${warmupWeight} lb × 3`}
+              </p>
+            </div>
+          )
         })()}
 
         <div className="space-y-1.5">

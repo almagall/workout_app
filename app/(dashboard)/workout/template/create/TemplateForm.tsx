@@ -8,11 +8,16 @@ import type { PlanType } from '@/types/workout'
 import { searchExercises, getExerciseByName } from '@/lib/exercise-database'
 import { checkAndUnlockAchievements } from '@/lib/achievements'
 
+interface TemplateDayExercise {
+  name: string
+  focus: PlanType | null
+}
+
 interface TemplateDay {
   id?: string
   dayLabel: string
   dayOrder: number
-  exercises: string[]
+  exercises: TemplateDayExercise[]
 }
 
 interface TemplateFormProps {
@@ -134,7 +139,10 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
                 id: day.id,
                 dayLabel: day.day_label,
                 dayOrder: day.day_order,
-                exercises: exercises.map(ex => ex.exercise_name),
+                exercises: exercises.map(ex => ({
+                  name: ex.exercise_name,
+                  focus: ex.focus ?? null,
+                })),
               }
             })
           )
@@ -177,13 +185,19 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
 
   const addExercise = (dayIndex: number) => {
     const newDays = [...days]
-    newDays[dayIndex].exercises.push('')
+    newDays[dayIndex].exercises.push({ name: '', focus: null })
     setDays(newDays)
   }
 
-  const updateExercise = (dayIndex: number, exerciseIndex: number, value: string) => {
+  const updateExercise = (dayIndex: number, exerciseIndex: number, name: string) => {
     const newDays = [...days]
-    newDays[dayIndex].exercises[exerciseIndex] = value
+    newDays[dayIndex].exercises[exerciseIndex] = { ...newDays[dayIndex].exercises[exerciseIndex], name }
+    setDays(newDays)
+  }
+
+  const updateExerciseFocus = (dayIndex: number, exerciseIndex: number, focus: PlanType | null) => {
+    const newDays = [...days]
+    newDays[dayIndex].exercises[exerciseIndex] = { ...newDays[dayIndex].exercises[exerciseIndex], focus }
     setDays(newDays)
   }
 
@@ -231,7 +245,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
         return
       }
       for (const exercise of day.exercises) {
-        if (!exercise.trim()) {
+        if (!exercise.name.trim()) {
           setError('All exercises must have a name')
           return
         }
@@ -256,7 +270,9 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
           days: days.map(day => ({
             dayLabel: day.dayLabel,
             dayOrder: day.dayOrder,
-            exercises: day.exercises.map(ex => ex.trim()),
+            exercises: day.exercises.map(ex =>
+              ex.focus ? { name: ex.name.trim(), focus: ex.focus } : ex.name.trim()
+            ),
           })),
         })
       } else {
@@ -266,7 +282,9 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
           days: days.map(day => ({
             dayLabel: day.dayLabel,
             dayOrder: day.dayOrder,
-            exercises: day.exercises.map(ex => ex.trim()),
+            exercises: day.exercises.map(ex =>
+              ex.focus ? { name: ex.name.trim(), focus: ex.focus } : ex.name.trim()
+            ),
           })),
         })
       }
@@ -383,17 +401,33 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
               <div>
                 <label className="block text-sm font-medium text-white mb-2">Exercises</label>
                 {day.exercises.map((exercise, exerciseIndex) => {
-                  const exerciseData = getExerciseByName(exercise)
+                  const exerciseData = getExerciseByName(exercise.name)
                   return (
-                    <div key={exerciseIndex} className="flex gap-2 mb-2 items-center">
+                    <div key={exerciseIndex} className="flex flex-wrap gap-2 mb-2 items-center">
                       <ExerciseAutocompleteInline
-                        value={exercise}
+                        value={exercise.name}
                         onChange={(val) => updateExercise(dayIndex, exerciseIndex, val)}
                         placeholder="Search or type exercise name"
-                        className="flex-1 min-w-0"
+                        className="flex-1 min-w-[140px]"
                       />
+                      <select
+                        value={exercise.focus ?? ''}
+                        onChange={(e) =>
+                          updateExerciseFocus(
+                            dayIndex,
+                            exerciseIndex,
+                            e.target.value === '' ? null : (e.target.value as PlanType)
+                          )
+                        }
+                        className="px-2 py-2 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white text-sm focus:outline-none focus:ring-2 focus:ring-white flex-shrink-0 w-[120px]"
+                        title="Focus for this exercise"
+                      >
+                        <option value="">Use template</option>
+                        <option value="strength">Strength</option>
+                        <option value="hypertrophy">Hypertrophy</option>
+                      </select>
                       <div className="flex items-center gap-1.5 flex-shrink-0 w-52">
-                        {exerciseData && exercise.trim() && (
+                        {exerciseData && exercise.name.trim() && (
                           <>
                             <span className="px-2 py-0.5 rounded text-xs bg-green-600/20 text-green-400 border border-green-600/30">
                               {exerciseData.muscleGroup}

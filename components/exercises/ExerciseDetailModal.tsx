@@ -1,8 +1,10 @@
 'use client'
 
 import type { ExerciseEntry } from '@/lib/exercise-database'
-import { getExerciseAlternatives } from '@/lib/exercise-database'
+import { getExerciseAlternativesWithEquipment } from '@/lib/exercise-database'
 import { MuscleDiagram } from './MuscleDiagram'
+
+const EQUIPMENT_ORDER = ['Cable', 'Dumbbell', 'Machine', 'Barbell', 'Bodyweight', 'Other'] as const
 
 const EQUIPMENT_STYLES: Record<string, string> = {
   Barbell: 'bg-slate-600/30 text-slate-300 border border-slate-500/40',
@@ -106,13 +108,19 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
           </div>
 
           {(() => {
-            const alternatives = getExerciseAlternatives(exercise.name)
-            if (alternatives.length === 0) return null
+            const alternativesWithEquipment = getExerciseAlternativesWithEquipment(exercise.name)
+            if (alternativesWithEquipment.length === 0) return null
+            const byEquipment = alternativesWithEquipment.reduce<Record<string, string[]>>((acc, { name, equipment }) => {
+              const key = equipment || 'Other'
+              if (!acc[key]) acc[key] = []
+              acc[key].push(name)
+              return acc
+            }, {})
             return (
               <div className="pt-4 border-t border-[#2a2a2a] mb-4">
                 <h3 className="text-sm font-medium text-white mb-2">Alternatives</h3>
-                <p className="text-xs text-[#888888] mb-2 flex items-center gap-1">
-                  Can&apos;t do this exercise? Try:
+                <p className="text-xs text-[#888888] mb-3 flex items-center gap-1">
+                  Equipment taken? Swap to the same movement with different equipment.
                   <span
                     className="inline-flex cursor-help text-[#666666] hover:text-[#888888]"
                     title="Targets are based on each exercise's own history. Your first time with an alternative establishes a new baseline."
@@ -122,29 +130,71 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
                     </svg>
                   </span>
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {alternatives.map((name) =>
-                    onSelectAlternative ? (
-                      <button
-                        key={name}
-                        type="button"
-                        onClick={() => {
-                          onSelectAlternative(name)
-                          onClose()
-                        }}
-                        className="text-xs px-2.5 py-1 rounded-md bg-[#2a2a2a] text-[#cccccc] border border-[#3a3a3a] hover:bg-[#3a3a3a] hover:text-white hover:border-[#4a4a4a] transition-colors text-left"
-                      >
-                        {name}
-                      </button>
-                    ) : (
-                      <span
-                        key={name}
-                        className="text-xs px-2.5 py-1 rounded-md bg-[#2a2a2a] text-[#cccccc] border border-[#3a3a3a]"
-                      >
-                        {name}
+                <div className="flex flex-col gap-3">
+                  {EQUIPMENT_ORDER.filter((eq) => byEquipment[eq]?.length).map((equipment) => (
+                    <div key={equipment}>
+                      <span className="inline-block text-[10px] uppercase tracking-wider text-[#999] mb-1.5">
+                        {equipment}
                       </span>
-                    )
-                  )}
+                      <div className="flex flex-wrap gap-2">
+                        {byEquipment[equipment].map((name) =>
+                          onSelectAlternative ? (
+                            <button
+                              key={name}
+                              type="button"
+                              onClick={() => {
+                                onSelectAlternative(name)
+                                onClose()
+                              }}
+                              className={`text-xs px-2.5 py-1 rounded-md border transition-colors text-left ${getEquipmentStyle(equipment)} hover:opacity-90`}
+                            >
+                              {name}
+                            </button>
+                          ) : (
+                            <span
+                              key={name}
+                              className={`text-xs px-2.5 py-1 rounded-md border ${getEquipmentStyle(equipment)}`}
+                            >
+                              {name}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {Object.keys(byEquipment)
+                    .filter((eq) => !EQUIPMENT_ORDER.includes(eq as (typeof EQUIPMENT_ORDER)[number]))
+                    .map((equipment) => (
+                      <div key={equipment}>
+                        <span className="inline-block text-[10px] uppercase tracking-wider text-[#999] mb-1.5">
+                          {equipment}
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {byEquipment[equipment].map((name) =>
+                            onSelectAlternative ? (
+                              <button
+                                key={name}
+                                type="button"
+                                onClick={() => {
+                                  onSelectAlternative(name)
+                                  onClose()
+                                }}
+                                className={`text-xs px-2.5 py-1 rounded-md border transition-colors text-left ${getEquipmentStyle(equipment)} hover:opacity-90`}
+                              >
+                                {name}
+                              </button>
+                            ) : (
+                              <span
+                                key={name}
+                                className={`text-xs px-2.5 py-1 rounded-md border ${getEquipmentStyle(equipment)}`}
+                              >
+                                {name}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    ))}
                 </div>
               </div>
             )

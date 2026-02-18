@@ -6,6 +6,9 @@ import { getCurrentUser } from './auth-simple'
 import { createClient } from './supabase/client'
 import { isInDeloadPeriod } from './deload-detection'
 
+/** Exercise in a template day: name only (presets) or name + optional focus override. */
+export type TemplateDayExercise = string | { name: string; focus?: PlanType | null }
+
 // Template storage
 export async function saveTemplate(template: {
   name: string
@@ -14,7 +17,7 @@ export async function saveTemplate(template: {
   days: Array<{
     dayLabel: string
     dayOrder: number
-    exercises: string[]
+    exercises: TemplateDayExercise[]
   }>
 }): Promise<string> {
   const user = getCurrentUser()
@@ -65,15 +68,19 @@ export async function saveTemplate(template: {
   if (fetchDaysError) throw new Error(`Failed to fetch template days: ${fetchDaysError.message}`)
 
   // Insert template exercises
-  const exercisesToInsert = template.days.flatMap((day, dayIndex) => {
+  const exercisesToInsert = template.days.flatMap((day) => {
     const dayData = insertedDays?.find(d => d.day_order === day.dayOrder)
     if (!dayData) return []
-    
-    return day.exercises.map((exerciseName, exerciseIndex) => ({
-      template_day_id: dayData.id,
-      exercise_name: exerciseName,
-      exercise_order: exerciseIndex + 1,
-    }))
+    return day.exercises.map((ex, exerciseIndex) => {
+      const name = typeof ex === 'string' ? ex : ex.name
+      const focus = typeof ex === 'string' ? null : (ex.focus ?? null)
+      return {
+        template_day_id: dayData.id,
+        exercise_name: name,
+        exercise_order: exerciseIndex + 1,
+        ...(focus != null && { focus }),
+      }
+    })
   })
 
   if (exercisesToInsert.length > 0) {
@@ -95,7 +102,7 @@ export async function updateTemplate(
     days: Array<{
       dayLabel: string
       dayOrder: number
-      exercises: string[]
+      exercises: TemplateDayExercise[]
     }>
   }
 ): Promise<void> {
@@ -203,12 +210,14 @@ export async function updateTemplate(
   }
 
   // Rename exercise_logs when an exercise name changed at the same position (preserve history)
+  const getExerciseName = (ex: TemplateDayExercise) => (typeof ex === 'string' ? ex : ex.name)
   for (const [oldDayId, newDayId] of oldDayToNewDayMap.entries()) {
     const sessionIds = dayIdToSessionsMap.get(oldDayId) ?? []
     if (sessionIds.length === 0) continue
     const oldDay = existingDays?.find((d) => d.id === oldDayId)
     if (!oldDay) continue
-    const newNames = template.days.find((d) => d.dayOrder === oldDay.day_order)?.exercises ?? []
+    const dayExercises = template.days.find((d) => d.dayOrder === oldDay.day_order)?.exercises ?? []
+    const newNames = dayExercises.map(getExerciseName)
     const oldNames = oldExercisesMap.get(oldDayId) ?? []
     const len = Math.min(oldNames.length, newNames.length)
     for (let i = 0; i < len; i++) {
@@ -253,15 +262,19 @@ export async function updateTemplate(
   }
 
   // Insert template exercises
-  const exercisesToInsert = template.days.flatMap((day, dayIndex) => {
+  const exercisesToInsert = template.days.flatMap((day) => {
     const dayData = insertedDays?.find(d => d.day_order === day.dayOrder)
     if (!dayData) return []
-    
-    return day.exercises.map((exerciseName, exerciseIndex) => ({
-      template_day_id: dayData.id,
-      exercise_name: exerciseName,
-      exercise_order: exerciseIndex + 1,
-    }))
+    return day.exercises.map((ex, exerciseIndex) => {
+      const name = typeof ex === 'string' ? ex : ex.name
+      const focus = typeof ex === 'string' ? null : (ex.focus ?? null)
+      return {
+        template_day_id: dayData.id,
+        exercise_name: name,
+        exercise_order: exerciseIndex + 1,
+        ...(focus != null && { focus }),
+      }
+    })
   })
 
   if (exercisesToInsert.length > 0) {
@@ -362,6 +375,7 @@ export async function getTemplateExercises(dayId: string): Promise<TemplateExerc
     template_day_id: e.template_day_id,
     exercise_name: e.exercise_name,
     exercise_order: e.exercise_order,
+    focus: e.focus ?? null,
     created_at: e.created_at,
   }))
 }

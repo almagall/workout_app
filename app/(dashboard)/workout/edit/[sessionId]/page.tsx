@@ -18,6 +18,7 @@ export default function EditWorkoutPage() {
     planType: PlanType
     presetId: string | null
     exercises: string[]
+    exerciseFocus: (PlanType | null)[]
     userId: string
     workoutDate: string
   } | null>(null)
@@ -56,6 +57,7 @@ export default function EditWorkoutPage() {
       // Get exercises for this day
       const exercisesData = await getTemplateExercises(day.id)
       const exercises = exercisesData.map(ex => ex.exercise_name)
+      const exerciseFocus = exercisesData.map(ex => ex.focus ?? null)
 
       setWorkoutData({
         dayId: day.id,
@@ -63,6 +65,7 @@ export default function EditWorkoutPage() {
         planType: template.plan_type,
         presetId: template.preset_id ?? null,
         exercises,
+        exerciseFocus,
         userId: user.id,
         workoutDate: session.workout_date,
       })
@@ -91,6 +94,7 @@ export default function EditWorkoutPage() {
       planType={workoutData.planType}
       presetId={workoutData.presetId}
       exercises={workoutData.exercises}
+      exerciseFocus={workoutData.exerciseFocus}
       userId={workoutData.userId}
       sessionId={sessionId}
       workoutDate={workoutData.workoutDate}

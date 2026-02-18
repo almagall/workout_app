@@ -1,9 +1,11 @@
 import type { PlanType, ExerciseLog, PerformanceStatus } from '@/types/workout'
 
-interface TargetCalculation {
+export interface TargetCalculation {
   targetWeight: number | null
   targetReps: number | null
   targetRpe: number | null
+  /** True when target was held/reduced because logged RPE was above target band. */
+  highRpeLastTime?: boolean
 }
 
 interface PreviousExerciseData {
@@ -57,6 +59,9 @@ export function getDefaultPlanSettings(planType: PlanType): PlanSettings {
  * Calculate target for a single set based on the previous set's performance
  * Uses double progression: increase reps to max, then increase weight and reset reps
  */
+/**
+ * @param daysSinceLastSession Days since the last time this workout day was done. When 0-1: maintain (no progression); when 14+: "welcome back" maintain; 2-13: normal progression.
+ */
 export function calculateSetTarget(
   previousSet: {
     weight: number
@@ -69,7 +74,8 @@ export function calculateSetTarget(
   planType: PlanType,
   planSettings: PlanSettings,
   consecutiveUnderperformance: number = 0,
-  roundToLoadable?: (w: number) => number
+  roundToLoadable?: (w: number) => number,
+  daysSinceLastSession?: number | null
 ): TargetCalculation {
   // If previous workout had targets, evaluate performance against them
   let setStatus: PerformanceStatus = 'met_target'
@@ -92,6 +98,7 @@ export function calculateSetTarget(
   let targetWeight: number
   let targetReps: number
   let targetRpe: number
+  let highRpeModulated = false
 
   if (planType === 'hypertrophy') {
     // Hypertrophy: Double progression - prioritize rep progression, then weight
@@ -131,16 +138,15 @@ export function calculateSetTarget(
         targetRpe = planSettings.target_rpe_max
       }
     } else {
-      // Met target: slight progression
+      // Met target: maintain reps (only overperformed = +1 rep for sustainable progression)
       if (isAtRepMax) {
         // At rep max: increase weight, reset reps
         targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200) // Half the increase
         targetReps = planSettings.rep_range_min
         targetRpe = planSettings.target_rpe_max
       } else {
-        // Increase reps (volume priority)
-        targetWeight = previousSet.weight // Maintain weight
-        targetReps = Math.min(previousSet.reps + 1, planSettings.rep_range_max)
+        targetWeight = previousSet.weight
+        targetReps = previousSet.reps
         targetRpe = planSettings.target_rpe_max
       }
     }
@@ -152,9 +158,11 @@ export function calculateSetTarget(
     )
   } else {
     // Strength: Focus on weight progression, maintain rep range
+    const isAtStrengthRepMax = previousSet.reps >= planSettings.rep_range_max
+    const weightPct = isAtStrengthRepMax ? planSettings.weight_increase_percent / 2 : planSettings.weight_increase_percent
     if (setStatus === 'overperformed') {
       // Increase weight, maintain or slightly adjust reps within range
-      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 100)
+      targetWeight = previousSet.weight * (1 + weightPct / 100)
       targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
       // If at rep max, try to maintain; if below, can increase slightly
       if (previousSet.reps < planSettings.rep_range_max) {
@@ -179,8 +187,8 @@ export function calculateSetTarget(
         targetRpe = planSettings.target_rpe_max
       }
     } else {
-      // Met target: slight weight increase, maintain reps
-      targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200) // Half the increase
+      // Met target: slight weight increase (smaller when at top of rep range)
+      targetWeight = previousSet.weight * (1 + weightPct / 200)
       targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
       targetRpe = planSettings.target_rpe_max
     }
@@ -192,6 +200,27 @@ export function calculateSetTarget(
     )
   }
 
+  // RPE-aware modulation: if effort was above target band, hold or reduce next target
+  if (previousSet.rpe > planSettings.target_rpe_max && setStatus !== 'underperformed') {
+    highRpeModulated = true
+    targetWeight = previousSet.weight
+    targetReps = previousSet.reps
+    targetRpe = planSettings.target_rpe_max
+  }
+
+  // Recency: same/next day or long gap ("welcome back") → maintain to avoid overreaching
+  if (daysSinceLastSession != null) {
+    if (daysSinceLastSession <= 1) {
+      targetWeight = previousSet.weight
+      targetReps = previousSet.reps
+      targetRpe = planSettings.target_rpe_max
+    } else if (daysSinceLastSession >= 14) {
+      targetWeight = previousSet.weight
+      targetReps = previousSet.reps
+      targetRpe = planSettings.target_rpe_max
+    }
+  }
+
   // Round weight: use loadable if provided, else nearest 2.5 lbs
   targetWeight = roundToLoadable ? roundToLoadable(targetWeight) : Math.round(targetWeight / 2.5) * 2.5
 
@@ -199,6 +228,7 @@ export function calculateSetTarget(
     targetWeight,
     targetReps: Math.round(targetReps),
     targetRpe,
+    highRpeLastTime: highRpeModulated || undefined,
   }
 }
 

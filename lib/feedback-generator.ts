@@ -23,10 +23,21 @@ interface WorkoutPerformance {
   overallRating: number
 }
 
+export interface E1RMTrendContext {
+  trend: 'up' | 'down' | 'stable'
+  changeLbs: number | null
+  message: string
+}
+
 export interface FeedbackContext {
   underperformanceMap?: Map<string, number>
   lastSessionRpeMap?: Map<string, number>
   targetStrategy?: string | null
+  e1rmTrendMap?: Map<string, E1RMTrendContext>
+  /** Consecutive sessions (before today) where exercise met/overperformed. Used for "N sessions in a row." */
+  hitStreakMap?: Map<string, number>
+  /** Days since last time user did this workout day. Used for "First time back in 2 weeks." */
+  daysSinceLastSession?: number | null
 }
 
 /** Helper: avg RPE of working sets */
@@ -190,6 +201,9 @@ export function generateExerciseFeedback(
   const streak = (context?.underperformanceMap?.get(exerciseName) ?? 0) + (status === 'underperformed' ? 1 : 0)
   const lastSessionRpe = context?.lastSessionRpeMap?.get(exerciseName)
   const programType = context?.targetStrategy ?? null
+  const previousHitStreak = context?.hitStreakMap?.get(exerciseName) ?? 0
+  const currentHitStreak =
+    status === 'met_target' || status === 'overperformed' ? previousHitStreak + 1 : 0
 
   const parts: string[] = []
 
@@ -257,6 +271,15 @@ export function generateExerciseFeedback(
   const deload = deloadCue(streak, programType)
   if (deload) parts.push(deload)
 
+  // e1RM trend (readiness / progress)
+  const e1rmTrend = context?.e1rmTrendMap?.get(exerciseName)
+  if (e1rmTrend?.message) parts.push(e1rmTrend.message)
+
+  // Hit streak (sessions in a row meeting target)
+  if (currentHitStreak >= 2) {
+    parts.push(`You've hit this exercise ${currentHitStreak} sessions in a row.`)
+  }
+
   return parts.join(' ')
 }
 
@@ -291,6 +314,10 @@ export function generateWorkoutFeedback(
   const programType = context?.targetStrategy ?? null
 
   const parts: string[] = []
+
+  if ((context?.daysSinceLastSession ?? 0) >= 14) {
+    parts.push('First time back in 2+ weeks—targets were kept conservative. ')
+  }
 
   if (overallRating >= 8) {
     parts.push(

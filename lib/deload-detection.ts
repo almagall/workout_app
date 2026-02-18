@@ -6,7 +6,7 @@
 
 import { getCurrentUser } from './auth-simple'
 import { getDefaultPlanSettings } from './progressive-overload'
-import { getWeeklyHitRates } from './performance-analytics'
+import { getWeeklyHitRates, getWeeklyRpeAverages, getWeeklyVolume } from './performance-analytics'
 import type { PlanType } from '@/types/workout'
 
 const DELOAD_STORAGE_KEY = 'deload_week'
@@ -89,13 +89,47 @@ export async function getDeloadSuggestion(planType: PlanType): Promise<DeloadSug
   const planSettings = getDefaultPlanSettings(planType)
   const deloadWeeks = planSettings.deload_frequency_weeks ?? (planType === 'hypertrophy' ? 5 : 7)
 
-  const weeklyData = await getWeeklyHitRates(12)
+  const [weeklyData, weeklyRpe, weeklyVolume] = await Promise.all([
+    getWeeklyHitRates(12),
+    getWeeklyRpeAverages(6),
+    getWeeklyVolume(6),
+  ])
   const validWeeks = weeklyData.filter((d) => d.hitRate !== null && d.hitRate > 0)
   if (validWeeks.length < deloadWeeks) return null
 
   const hitRates = validWeeks.map((d) => d.hitRate as number)
   const recentCount = Math.min(4, hitRates.length)
   const recentRates = hitRates.slice(-recentCount)
+
+  // RPE trend: effort creeping up over last 3+ weeks (fatigue signal)
+  if (weeklyRpe.length >= 3) {
+    const rpeValues = weeklyRpe.slice(-4).map((w) => w.avgRpe)
+    let risingCount = 0
+    for (let i = 1; i < rpeValues.length; i++) {
+      if (rpeValues[i] > rpeValues[i - 1]) risingCount++
+    }
+    const recentRpe = rpeValues[rpeValues.length - 1]
+    const earlierRpe = rpeValues[0]
+    if (risingCount >= 2 && recentRpe >= 7.5 && recentRpe > earlierRpe + 0.5) {
+      return {
+        shouldDeload: true,
+        reason: "Effort (RPE) has been creeping up. A lighter week can help you recover and bounce back stronger.",
+      }
+    }
+  }
+
+  // Volume: several high-volume weeks with declining hit rate
+  if (weeklyVolume.length >= 4 && hitRates.length >= 3) {
+    const recentVol = weeklyVolume.slice(-3).reduce((s, w) => s + w.volume, 0) / 3
+    const earlierVol = weeklyVolume.slice(0, -3).reduce((s, w) => s + w.volume, 0) / Math.max(1, weeklyVolume.length - 3)
+    const recentHitAvg = recentRates.reduce((a, b) => a + b, 0) / recentRates.length
+    if (earlierVol > 0 && recentVol > earlierVol * 1.15 && recentHitAvg < 65) {
+      return {
+        shouldDeload: true,
+        reason: "You've had several high-volume weeks and performance is dipping. Consider a lighter week (fewer sets or lighter weight).",
+      }
+    }
+  }
 
   // Consecutive low hit rate (2+ weeks below 50%)
   let lowHitStreak = 0

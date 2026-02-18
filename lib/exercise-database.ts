@@ -192,6 +192,7 @@ export const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
   'db-shoulder-press': ['Overhead Press', 'Arnold Press', 'Shoulder Press Machine'],
   'lateral-raise': ['Cable Lateral Raise', 'Front Raise', 'Upright Row'],
   'rear-delt-fly': ['Reverse Pec Deck', 'Face Pull', 'Reverse Fly'],
+  'reverse-pec-deck': ['Face Pull', 'Reverse Fly', 'Rear Delt Fly'],
   // Biceps
   'bb-curl': ['Dumbbell Curl', 'EZ Bar Curl', 'Cable Curl'],
   'db-curl': ['Barbell Curl', 'Hammer Curl', 'Cable Curl'],
@@ -218,30 +219,6 @@ export const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
   'leg-raise': ['Hanging Leg Raise', 'Hanging Knee Raise', 'Dead Bug'],
 }
 
-/** Equivalences: when swapping TO this exercise FROM equivalentTo, scale target weight by weightRatio. */
-export const EXERCISE_EQUIVALENCES: Record<string, { equivalentTo: string; weightRatio: number }> = {
-  'Dumbbell Bench Press': { equivalentTo: 'Barbell Bench Press', weightRatio: 0.65 },
-  'Barbell Bench Press': { equivalentTo: 'Dumbbell Bench Press', weightRatio: 1.54 },
-  'Incline Dumbbell Press': { equivalentTo: 'Incline Barbell Bench Press', weightRatio: 0.65 },
-  'Incline Barbell Bench Press': { equivalentTo: 'Incline Dumbbell Press', weightRatio: 1.54 },
-  'Dumbbell Row': { equivalentTo: 'Barbell Row', weightRatio: 0.5 },
-  'Barbell Row': { equivalentTo: 'Dumbbell Row', weightRatio: 2 },
-  'Dumbbell Shoulder Press': { equivalentTo: 'Overhead Press', weightRatio: 0.65 },
-  'Overhead Press': { equivalentTo: 'Dumbbell Shoulder Press', weightRatio: 1.54 },
-  'Leg Press': { equivalentTo: 'Barbell Squat', weightRatio: 2.5 },
-  'Barbell Squat': { equivalentTo: 'Leg Press', weightRatio: 0.4 },
-  'Chest Press Machine': { equivalentTo: 'Barbell Bench Press', weightRatio: 0.9 },
-}
-
-/** Get equivalence for an exercise (the one we're swapping TO). Used when alternative has no history. */
-export function getExerciseEquivalence(exerciseName: string): { equivalentTo: string; weightRatio: number } | null {
-  if (!exerciseName?.trim()) return null
-  const key = Object.keys(EXERCISE_EQUIVALENCES).find(
-    (k) => k.toLowerCase() === exerciseName.trim().toLowerCase()
-  )
-  return key ? EXERCISE_EQUIVALENCES[key] ?? null : null
-}
-
 /** Get alternative exercises for a given exercise (by name). Returns names for display. */
 export function getExerciseAlternatives(exerciseName: string): string[] {
   const entry = getExerciseByName(exerciseName)
@@ -254,6 +231,15 @@ export function getExerciseAlternatives(exerciseName: string): string[] {
   )
     .slice(0, 3)
     .map((e) => e.name)
+}
+
+/** Get alternatives with equipment for grouping/filtering in the UI. */
+export function getExerciseAlternativesWithEquipment(exerciseName: string): { name: string; equipment: string }[] {
+  const names = getExerciseAlternatives(exerciseName)
+  return names.map((name) => {
+    const entry = getExerciseByName(name)
+    return { name, equipment: entry?.equipment ?? 'Other' }
+  })
 }
 
 /** Search exercises by name (case-insensitive, substring). */
