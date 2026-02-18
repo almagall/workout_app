@@ -95,11 +95,11 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       <div className="mb-3 sm:mb-8">
-        <h1 className="text-xl sm:text-3xl font-bold text-foreground">Workout Dashboard</h1>
+        <h1 className="font-display text-xl sm:text-3xl font-semibold text-foreground tracking-tight">Workout Dashboard</h1>
       </div>
 
       {deloadSuggestion && !deloadDismissed && (
-        <div className="mb-4 sm:mb-6 rounded-lg border border-accent/30 bg-accent/5 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="mb-4 sm:mb-6 rounded-xl border border-accent/30 bg-accent/5 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 shadow-card">
           <div className="flex-1 min-w-0">
             <h3 className="text-xs sm:text-sm font-medium text-accent mb-0.5 sm:mb-1">Deload suggestion</h3>
             <p className="text-xs sm:text-sm text-secondary line-clamp-2 sm:line-clamp-none">{deloadSuggestion.reason}</p>
@@ -107,7 +107,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleStartDeloadWeek}
-              className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 transition-colors"
+              className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 hover:shadow-glow transition-all duration-200"
             >
               Start deload week
             </button>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
       {/* Row 1: Progress Chart + Calendar - equal height on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-8 lg:items-stretch">
         <div className="lg:col-span-2 lg:min-h-0">
-          <div className="bg-card rounded-lg border border-border overflow-hidden h-full flex flex-col">
+          <div className="bg-card rounded-xl border border-border overflow-hidden h-full flex flex-col shadow-card transition-shadow duration-200 hover:shadow-card-hover">
             <div className="p-3 sm:p-6 border-b border-border flex-shrink-0">
               <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground">Progress Over Time</h2>
               <ProgressSelectors
@@ -164,13 +164,13 @@ export default function DashboardPage() {
           className="lg:hidden w-full flex items-center justify-between gap-2 py-3 px-0 text-left border-b border-border"
           aria-expanded={insightsExpanded}
         >
-          <h2 className="text-lg font-semibold text-foreground">Insights</h2>
+          <h2 className="font-display text-lg font-semibold text-foreground tracking-tight">Insights</h2>
           <span className="text-sm text-muted">{insightsExpanded ? 'Hide' : 'Show insights'}</span>
           <svg className={`w-5 h-5 text-muted shrink-0 transition-transform ${insightsExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-        <h2 className="hidden lg:block text-lg font-semibold text-foreground mb-4">Insights</h2>
+        <h2 className="hidden lg:block font-display text-lg font-semibold text-foreground mb-4 tracking-tight">Insights</h2>
         {/* One grid: on mobile visible when expanded; on desktop always visible */}
         <div className={`grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mt-4 ${!insightsExpanded ? 'hidden lg:grid' : ''}`}>
           <ProgressionMomentum />

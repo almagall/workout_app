@@ -52,7 +52,7 @@ export default function DashboardLayout({
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex h-16 items-center px-6 border-b border-border">
-            <h1 className="text-xl font-bold text-foreground tracking-tight">Workout Planner</h1>
+            <h1 className="font-display text-xl font-semibold text-foreground tracking-tight">Workout Planner</h1>
           </div>
 
           {/* Navigation Links */}
@@ -60,13 +60,13 @@ export default function DashboardLayout({
             <div className="space-y-1">
               <Link
                 href="/dashboard"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === '/dashboard'
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname === '/dashboard' ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname === '/dashboard' ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
                 Dashboard
@@ -74,13 +74,13 @@ export default function DashboardLayout({
 
               <Link
                 href="/workout/log"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit')
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit') ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit') ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
                 Log Workout
@@ -88,13 +88,13 @@ export default function DashboardLayout({
 
               <Link
                 href="/workout/template"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === '/workout/template' || pathname === '/workout/template/create' || pathname?.startsWith('/workout/template/edit')
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname === '/workout/template' || pathname === '/workout/template/create' || pathname?.startsWith('/workout/template/edit') ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname === '/workout/template' || pathname === '/workout/template/create' || pathname?.startsWith('/workout/template/edit') ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                 </svg>
                 Template
@@ -102,13 +102,13 @@ export default function DashboardLayout({
 
               <Link
                 href="/workout/history"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === '/workout/history'
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname === '/workout/history' ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname === '/workout/history' ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 History
@@ -116,13 +116,13 @@ export default function DashboardLayout({
 
               <Link
                 href="/exercises"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === '/exercises'
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname === '/exercises' ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname === '/exercises' ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
                 Exercise Database
@@ -136,13 +136,13 @@ export default function DashboardLayout({
 
               <Link
                 href="/achievements"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === '/achievements'
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname === '/achievements' ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname === '/achievements' ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
                 Achievements
@@ -150,13 +150,13 @@ export default function DashboardLayout({
 
               <Link
                 href="/friends"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === '/friends'
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname === '/friends' ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname === '/friends' ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 Friends
@@ -164,13 +164,13 @@ export default function DashboardLayout({
 
               <Link
                 href="/leaderboards"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === '/leaderboards'
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname === '/leaderboards' ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname === '/leaderboards' ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 4v12l-4-2-4 2V4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 Leaderboards
@@ -184,13 +184,13 @@ export default function DashboardLayout({
 
               <Link
                 href="/weight"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === '/weight'
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname === '/weight' ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname === '/weight' ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                 </svg>
                 Weight
@@ -198,13 +198,13 @@ export default function DashboardLayout({
 
               <Link
                 href="/settings"
-                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                   pathname === '/settings'
-                    ? 'bg-white text-black shadow-lg'
+                    ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                     : 'text-muted hover:bg-elevated hover:text-foreground'
                 }`}
               >
-                <svg className={`w-5 h-5 ${pathname === '/settings' ? 'text-black' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-5 h-5 ${pathname === '/settings' ? 'text-accent' : 'text-muted group-hover:text-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -215,8 +215,8 @@ export default function DashboardLayout({
 
           {/* User Section */}
           <div className="border-t border-border p-4">
-            <div className="flex items-center gap-3 px-3 py-2 mb-2 bg-card rounded-lg">
-              <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-sm">
+            <div className="flex items-center gap-3 px-3 py-2 mb-2 bg-card rounded-lg border border-border">
+              <div className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold text-sm">
                 {user.username.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -238,15 +238,15 @@ export default function DashboardLayout({
 
       {/* Mobile Top Bar */}
       <div className="lg:hidden">
-        <div className="bg-card border-b border-border">
+        <div className="bg-card border-b border-border pt-[env(safe-area-inset-top,0px)]">
           <div className="flex items-center justify-between h-16 px-4">
-            <h1 className="text-xl font-bold text-foreground">Workout Planner</h1>
+            <h1 className="font-display text-xl font-semibold text-foreground tracking-tight">Workout Planner</h1>
             <div className="flex items-center gap-2">
               <NotificationBell />
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-muted hover:text-foreground hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-white"
-                aria-expanded="false"
+                className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] p-2 rounded-md text-muted hover:text-foreground hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-white"
+                aria-expanded={mobileMenuOpen}
               >
                 <span className="sr-only">Open main menu</span>
                 {!mobileMenuOpen ? (
@@ -269,13 +269,13 @@ export default function DashboardLayout({
                 <Link
                   href="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname === '/dashboard'
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/dashboard' ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/dashboard' ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                   </svg>
                   Dashboard
@@ -283,13 +283,13 @@ export default function DashboardLayout({
                 <Link
                   href="/workout/log"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit')
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit') ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit') ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                   Log Workout
@@ -297,13 +297,13 @@ export default function DashboardLayout({
                 <Link
                   href="/workout/template"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname === '/workout/template' || pathname === '/workout/template/create' || pathname?.startsWith('/workout/template/edit')
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/workout/template' || pathname === '/workout/template/create' || pathname?.startsWith('/workout/template/edit') ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/workout/template' || pathname === '/workout/template/create' || pathname?.startsWith('/workout/template/edit') ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                   </svg>
                   Template
@@ -311,13 +311,13 @@ export default function DashboardLayout({
                 <Link
                   href="/workout/history"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname === '/workout/history'
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/workout/history' ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/workout/history' ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   History
@@ -325,13 +325,13 @@ export default function DashboardLayout({
                 <Link
                   href="/exercises"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname === '/exercises'
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/exercises' ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/exercises' ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                   Exercise Database
@@ -346,13 +346,13 @@ export default function DashboardLayout({
                 <Link
                   href="/achievements"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname === '/achievements'
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/achievements' ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/achievements' ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                   </svg>
                   Achievements
@@ -360,13 +360,13 @@ export default function DashboardLayout({
                 <Link
                   href="/friends"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname === '/friends'
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/friends' ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/friends' ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                   Friends
@@ -374,13 +374,13 @@ export default function DashboardLayout({
                 <Link
                   href="/leaderboards"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname === '/leaderboards'
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/leaderboards' ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/leaderboards' ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 4v12l-4-2-4 2V4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   Leaderboards
@@ -395,13 +395,13 @@ export default function DashboardLayout({
                 <Link
                   href="/weight"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname === '/weight'
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/weight' ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/weight' ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                   </svg>
                   Weight
@@ -409,21 +409,21 @@ export default function DashboardLayout({
                 <Link
                   href="/settings"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-200 ${
                     pathname === '/settings'
-                      ? 'bg-white text-black shadow-lg'
+                      ? 'bg-elevated border border-border border-l-2 border-l-accent text-foreground'
                       : 'text-muted hover:bg-elevated hover:text-foreground'
                   }`}
                 >
-                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/settings' ? 'text-black' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 shrink-0 ${pathname === '/settings' ? 'text-accent' : 'text-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   Settings
                 </Link>
                 <div className="border-t border-border pt-3 mt-3">
-                  <div className="flex items-center gap-3 px-3 py-2 mb-2 bg-card rounded-lg">
-                    <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-sm shrink-0">
+                  <div className="flex items-center gap-3 px-3 py-2 mb-2 bg-card rounded-lg border border-border">
+                    <div className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold text-sm shrink-0">
                       {user.username.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -463,8 +463,65 @@ export default function DashboardLayout({
         </div>
       </div>
 
+      {/* Mobile Bottom Nav */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 lg:hidden flex items-end justify-around bg-card border-t border-border pt-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
+        aria-label="Mobile navigation"
+      >
+        <Link
+          href="/dashboard"
+          className={`flex flex-col items-center gap-0.5 py-2 px-3 min-h-[44px] justify-center rounded-lg transition-colors duration-200 ${
+            pathname === '/dashboard'
+              ? 'bg-elevated border border-border text-foreground'
+              : 'text-muted hover:bg-elevated hover:text-foreground'
+          }`}
+        >
+          <svg className={`w-6 h-6 shrink-0 ${pathname === '/dashboard' ? 'text-accent' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span className="text-xs font-medium">Dashboard</span>
+        </Link>
+        <Link
+          href="/workout/log"
+          className={`flex flex-col items-center gap-0.5 py-2 px-3 min-h-[44px] justify-center rounded-lg transition-colors duration-200 ${
+            pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit')
+              ? 'bg-elevated border border-border text-foreground'
+              : 'text-muted hover:bg-elevated hover:text-foreground'
+          }`}
+        >
+          <svg className={`w-6 h-6 shrink-0 ${pathname?.startsWith('/workout/log') || pathname?.startsWith('/workout/edit') ? 'text-accent' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          <span className="text-xs font-medium">Log</span>
+        </Link>
+        <Link
+          href="/workout/history"
+          className={`flex flex-col items-center gap-0.5 py-2 px-3 min-h-[44px] justify-center rounded-lg transition-colors duration-200 ${
+            pathname === '/workout/history'
+              ? 'bg-elevated border border-border text-foreground'
+              : 'text-muted hover:bg-elevated hover:text-foreground'
+          }`}
+        >
+          <svg className={`w-6 h-6 shrink-0 ${pathname === '/workout/history' ? 'text-accent' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-xs font-medium">History</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex flex-col items-center gap-0.5 py-2 px-3 min-h-[44px] justify-center rounded-lg text-muted hover:bg-elevated hover:text-foreground transition-colors"
+          aria-label="Open menu"
+        >
+          <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <span className="text-xs font-medium">More</span>
+        </button>
+      </nav>
+
       {/* Main Content */}
-      <main className="lg:pl-64">{children}</main>
+      <main className="lg:pl-64 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">{children}</main>
     </div>
   )
 }

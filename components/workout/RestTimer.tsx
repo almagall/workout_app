@@ -97,18 +97,18 @@ export default function RestTimer({
 
   return (
     <div
-      className={`bg-[#1a1a1a] border rounded-lg p-4 transition-all ${
+      className={`bg-elevated border border-border rounded-xl shadow-card p-4 transition-all ${
         isComplete
           ? 'border-green-500 shadow-lg shadow-green-500/20 animate-pulse'
-          : 'border-[#2a2a2a]'
+          : 'border-border'
       }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-[#888888] uppercase tracking-wide">Rest Timer</h3>
+        <h3 className="text-sm font-medium text-muted uppercase tracking-wide">Rest Timer</h3>
         <button
           onClick={onDismiss}
-          className="p-1 rounded text-[#888888] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded text-muted hover:text-foreground hover:bg-elevated transition-colors"
           aria-label="Dismiss timer"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +127,7 @@ export default function RestTimer({
               cy="64"
               r={radius}
               fill="none"
-              stroke="#2a2a2a"
+              stroke="currentColor"
               strokeWidth="8"
             />
             {/* Progress circle */}
@@ -189,7 +189,7 @@ export default function RestTimer({
         )}
         <button
           onClick={handleReset}
-          className="px-4 py-2 bg-[#2a2a2a] text-white rounded-md hover:bg-[#3a3a3a] transition-colors font-medium text-sm flex items-center gap-1.5"
+          className="px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow transition-colors font-medium text-sm flex items-center gap-1.5"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -199,15 +199,15 @@ export default function RestTimer({
       </div>
 
       {/* Preset buttons */}
-      <div className="flex flex-wrap justify-center gap-1.5">
+      <div className="flex flex-wrap justify-center gap-2">
         {PRESETS.map((preset) => (
           <button
             key={preset.seconds}
             onClick={() => handlePreset(preset.seconds)}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+            className={`min-h-[44px] px-4 py-2.5 rounded text-xs sm:text-sm font-medium transition-colors ${
               totalSeconds === preset.seconds && !isComplete
                 ? 'bg-amber-500 text-black'
-                : 'bg-[#2a2a2a] text-[#888888] hover:bg-[#3a3a3a] hover:text-white'
+                : 'bg-elevated text-muted hover:bg-elevated hover:text-foreground'
             }`}
           >
             {preset.label}

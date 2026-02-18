@@ -74,7 +74,7 @@ export default function WorkoutHistoryPage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-[#888888]">Loading...</div>
+        <div className="text-muted">Loading...</div>
       </div>
     )
   }
@@ -92,18 +92,18 @@ export default function WorkoutHistoryPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white">Workout History</h1>
+        <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Workout History</h1>
         <Link
           href="/workout/log"
-          className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
+          className="px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow transition-all duration-200 font-medium"
         >
           Log New Workout
         </Link>
       </div>
 
       {sessions.length === 0 ? (
-        <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-          <p className="text-[#a1a1a1] text-center">
+        <div className="bg-card rounded-xl border border-border shadow-card p-6">
+          <p className="text-secondary text-center">
             No workouts logged yet. Start logging workouts to see your history!
           </p>
         </div>
@@ -122,8 +122,8 @@ export default function WorkoutHistoryPage() {
               })
 
               return (
-                <div key={date} className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-                  <h2 className="text-xl font-semibold text-white mb-4">{formattedDate}</h2>
+                <div key={date} className="bg-card rounded-xl border border-border shadow-card p-6">
+                  <h2 className="text-xl font-semibold text-foreground mb-4">{formattedDate}</h2>
                   <div className="space-y-3">
                     {dateSessions.map((session) => {
                       const day = templateDays.get(session.template_day_id)
@@ -132,7 +132,7 @@ export default function WorkoutHistoryPage() {
                       return (
                         <div
                           key={session.id}
-                          className="bg-[#1a1a1a] rounded-lg p-4 hover:bg-[#222222] transition-colors border border-[#2a2a2a]"
+                          className="bg-elevated rounded-xl p-4 hover:bg-elevated transition-all duration-200 border border-border"
                         >
                           <div className="flex justify-between items-center">
                             <Link
@@ -140,23 +140,23 @@ export default function WorkoutHistoryPage() {
                               className="flex-1"
                             >
                               <div>
-                                <h3 className="text-lg font-semibold text-white">
+                                <h3 className="text-lg font-semibold text-foreground">
                                   {day?.day_label || 'Unknown Workout'}
                                 </h3>
                                 {template && (
-                                  <p className="text-sm text-[#888888]">{template.name}</p>
+                                  <p className="text-sm text-muted">{template.name}</p>
                                 )}
                               </div>
                             </Link>
                             <div className="flex items-center gap-2">
                               {session.overall_performance_rating != null && (
-                                <p className="text-white font-semibold mr-2">
+                                <p className="text-foreground font-semibold mr-2">
                                   Rating: {session.overall_performance_rating}/10
                                 </p>
                               )}
                               <Link
                                 href={`/share/workout/${session.id}`}
-                                className="p-2 text-[#888888] hover:text-amber-400 hover:bg-[#2a2a2a] rounded-md transition-colors"
+                                className="p-2 text-muted hover:text-amber-400 hover:bg-elevated rounded-md transition-colors"
                                 title="Share"
                               >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,14 +165,14 @@ export default function WorkoutHistoryPage() {
                               </Link>
                               <Link
                                 href={`/workout/edit/${session.id}`}
-                                className="px-3 py-1.5 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors text-sm font-medium"
+                                className="px-3 py-1.5 bg-accent text-background rounded-lg hover:shadow-glow border border-transparent transition-all duration-200 text-sm font-medium"
                               >
                                 Edit
                               </Link>
                               <button
                                 onClick={(e) => handleDelete(session.id, e)}
                                 disabled={deletingId === session.id}
-                                className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                                className="px-3 py-1.5 bg-red-600 text-foreground rounded-md hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                               >
                                 {deletingId === session.id ? 'Deleting...' : 'Delete'}
                               </button>

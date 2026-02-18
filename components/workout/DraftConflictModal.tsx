@@ -23,7 +23,7 @@ export default function DraftConflictModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg max-w-md w-full p-6">
+      <div className="bg-card border border-border rounded-2xl shadow-card max-w-md w-full p-6">
         <div className="flex items-start gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
             <svg className="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -31,9 +31,9 @@ export default function DraftConflictModal({
             </svg>
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-white mb-2">In-Progress Workout Detected</h2>
-            <p className="text-[#888888] text-sm">
-              You have an incomplete workout for <span className="text-white font-medium">{draftDayLabel}</span>. 
+            <h2 className="text-xl font-semibold text-foreground mb-2">In-Progress Workout Detected</h2>
+            <p className="text-muted text-sm">
+              You have an incomplete workout for <span className="text-foreground font-medium">{draftDayLabel}</span>. 
               You can only have one workout in progress at a time.
             </p>
           </div>
@@ -56,7 +56,7 @@ export default function DraftConflictModal({
 
           <button
             onClick={onClose}
-            className="w-full px-4 py-3 bg-[#2a2a2a] text-white rounded-md font-medium hover:bg-[#333333] transition-colors"
+            className="w-full px-4 py-3 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-colors"
           >
             Cancel
           </button>

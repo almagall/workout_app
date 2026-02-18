@@ -42,7 +42,7 @@ export default function AchievementsPage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-[#888888]">Loading...</div>
+        <div className="text-muted">Loading...</div>
       </div>
     )
   }
@@ -60,7 +60,7 @@ export default function AchievementsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-white mb-6">Achievements</h1>
+      <h1 className="font-display text-3xl font-bold text-foreground mb-6 tracking-tight">Achievements</h1>
       
       {/* Progress Header */}
       <div className="flex items-center justify-center mb-10">
@@ -71,7 +71,7 @@ export default function AchievementsPage() {
               cy="64"
               r="56"
               fill="none"
-              stroke="#2a2a2a"
+              stroke="var(--border)"
               strokeWidth="8"
             />
             <circle
@@ -88,13 +88,13 @@ export default function AchievementsPage() {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold text-white">{unlockedCount}</span>
-            <span className="text-xs text-[#888888]">of {totalCount}</span>
+            <span className="text-2xl font-bold text-foreground">{unlockedCount}</span>
+            <span className="text-xs text-muted">of {totalCount}</span>
           </div>
         </div>
         <div className="ml-6">
-          <p className="text-xl font-semibold text-white">{percentage}% Complete</p>
-          <p className="text-sm text-[#888888] mt-1">
+          <p className="text-xl font-semibold text-foreground">{percentage}% Complete</p>
+          <p className="text-sm text-muted mt-1">
             {unlockedCount === totalCount
               ? 'All achievements unlocked!'
               : `${totalCount - unlockedCount} more to unlock`}
@@ -104,10 +104,10 @@ export default function AchievementsPage() {
 
       {/* Your Trophies Section */}
       <div className="mb-10">
-        <h2 className="text-xl font-bold text-white mb-4">Your Trophies</h2>
+        <h2 className="text-xl font-bold text-foreground mb-4">Your Trophies</h2>
         {unlockedAchievements.length === 0 ? (
-          <div className="bg-[#111111] border border-[#2a2a2a] rounded-lg p-8 text-center">
-            <p className="text-[#888888]">No achievements unlocked yet. Start working out to unlock your first!</p>
+          <div className="bg-card border border-border rounded-xl shadow-card p-8 text-center">
+            <p className="text-muted">No achievements unlocked yet. Start working out to unlock your first!</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -124,7 +124,7 @@ export default function AchievementsPage() {
 
       {/* Locked Achievements Section */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-4">Locked Achievements</h2>
+        <h2 className="text-xl font-bold text-foreground mb-4">Locked Achievements</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {lockedAchievements.map((achievement) => (
             <AchievementCard
@@ -151,7 +151,7 @@ function AchievementCard({
       className={`rounded-lg border p-4 flex flex-col items-center text-center transition-all ${
         unlocked
           ? 'bg-amber-950/30 border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)] hover:scale-105 hover:border-amber-300'
-          : 'bg-[#111111] border-[#2a2a2a] opacity-70'
+          : 'bg-card border-border opacity-70'
       }`}
     >
       <div className="relative mb-2">
@@ -159,7 +159,7 @@ function AchievementCard({
           <TrophyIcon className="w-16 h-16" />
         ) : (
           <>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-[#2a2a2a]">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-elevated">
               <span className="text-3xl grayscale opacity-60" aria-hidden>
                 {achievement.icon}
               </span>
@@ -168,8 +168,8 @@ function AchievementCard({
           </>
         )}
       </div>
-      <h3 className="text-sm font-semibold text-white leading-tight mt-1">{achievement.name}</h3>
-      <p className="text-xs text-[#a1a1a1] mt-1.5 leading-snug">{achievement.description}</p>
+      <h3 className="text-sm font-semibold text-foreground leading-tight mt-1">{achievement.name}</h3>
+      <p className="text-xs text-secondary mt-1.5 leading-snug">{achievement.description}</p>
     </div>
   )
 }

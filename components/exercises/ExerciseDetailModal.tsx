@@ -37,12 +37,12 @@ const MUSCLE_GROUP_STYLES_SECONDARY: Record<string, string> = {
 }
 
 function getEquipmentStyle(equipment: string): string {
-  return EQUIPMENT_STYLES[equipment] ?? 'bg-[#2a2a2a] text-[#888888] border border-[#2a2a2a]'
+  return EQUIPMENT_STYLES[equipment] ?? 'bg-elevated text-muted border border-border'
 }
 
 function getMuscleGroupStyle(muscleGroup: string, isSecondary?: boolean): string {
   const styles = isSecondary ? MUSCLE_GROUP_STYLES_SECONDARY : MUSCLE_GROUP_STYLES
-  return styles[muscleGroup] ?? 'bg-[#2a2a2a] text-[#888888] border border-[#2a2a2a]'
+  return styles[muscleGroup] ?? 'bg-elevated text-muted border border-border'
 }
 
 interface ExerciseDetailModalProps {
@@ -61,15 +61,15 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
       onClick={onClose}
     >
       <div
-        className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        className="bg-elevated border border-border rounded-2xl shadow-card max-w-lg w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
           <div className="flex items-start justify-between gap-4 mb-4">
-            <h2 className="text-xl font-semibold text-white">{exercise.name}</h2>
+            <h2 className="text-xl font-semibold text-foreground">{exercise.name}</h2>
             <button
               onClick={onClose}
-              className="shrink-0 p-1 rounded text-[#888888] hover:text-white hover:bg-[#2a2a2a] transition-colors"
+              className="shrink-0 p-1 rounded text-muted hover:text-foreground hover:bg-elevated transition-colors"
               aria-label="Close"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,12 +117,12 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
               return acc
             }, {})
             return (
-              <div className="pt-4 border-t border-[#2a2a2a] mb-4">
-                <h3 className="text-sm font-medium text-white mb-2">Alternatives</h3>
+              <div className="pt-4 border-t border-border mb-4">
+                <h3 className="text-sm font-medium text-foreground mb-2">Alternatives</h3>
                 <p className="text-xs text-[#888888] mb-3 flex items-center gap-1">
                   Equipment taken? Swap to the same movement with different equipment.
                   <span
-                    className="inline-flex cursor-help text-[#666666] hover:text-[#888888]"
+                    className="inline-flex cursor-help text-muted/80 hover:text-muted"
                     title="Targets are based on each exercise's own history. Your first time with an alternative establishes a new baseline."
                   >
                     <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -200,8 +200,8 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
             )
           })()}
 
-          <div className="pt-4 border-t border-[#2a2a2a]">
-            <h3 className="text-sm font-medium text-white mb-3">Muscles worked</h3>
+          <div className="pt-4 border-t border-border">
+            <h3 className="text-sm font-medium text-foreground mb-3">Muscles worked</h3>
             <MuscleDiagram primaryMuscleGroup={exercise.muscleGroup} secondaryMuscleGroups={exercise.secondaryMuscleGroups} />
           </div>
         </div>

@@ -2141,7 +2141,7 @@ export default function WorkoutLogger({
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center text-[#888888]">Loading workout...</div>
+        <div className="text-center text-muted">Loading workout...</div>
       </div>
     )
   }
@@ -2149,10 +2149,10 @@ export default function WorkoutLogger({
   if (workoutComplete) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-          <h2 className="text-2xl font-bold mb-4 text-white">Workout Complete!</h2>
+        <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+          <h2 className="font-display text-2xl font-bold mb-4 text-foreground tracking-tight">Workout Complete!</h2>
           {completedWorkoutDurationSeconds != null && (
-            <p className="text-[#888888] mb-4">
+            <p className="text-muted mb-4">
               Workout time: {(() => {
                 const totalMins = Math.floor(completedWorkoutDurationSeconds / 60)
                 if (totalMins < 60) return `${totalMins}m`
@@ -2164,8 +2164,8 @@ export default function WorkoutLogger({
           )}
           {overallRating === null ? (
             <div className="mb-6">
-              <p className="text-lg font-semibold text-white mb-2">Baseline Recorded</p>
-              <p className="text-[#a1a1a1] mb-4">This was your first workout for this day. Targets and a rating will appear from your next workout for this day.</p>
+              <p className="text-lg font-semibold text-foreground mb-2">Baseline Recorded</p>
+              <p className="text-secondary mb-4">This was your first workout for this day. Targets and a rating will appear from your next workout for this day.</p>
               {workoutCompletePRs && workoutCompletePRs.length > 0 && (
                 <div className="text-amber-300 text-sm font-medium">
                   <p className="mb-2">You hit {workoutCompletePRs.length} PR(s) today:</p>
@@ -2184,11 +2184,11 @@ export default function WorkoutLogger({
           ) : (
             <>
               <div className="mb-4">
-                <p className="text-lg font-semibold text-white">Overall Rating: <span className="text-white font-bold">{overallRating}/10</span></p>
+                <p className="text-lg font-semibold text-foreground">Overall Rating: <span className="text-foreground font-bold">{overallRating}/10</span></p>
               </div>
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2 text-white">Overall Feedback:</h3>
-                <p className="text-[#a1a1a1] whitespace-pre-line">{overallFeedback}</p>
+                <h3 className="text-lg font-semibold mb-2 text-foreground">Overall Feedback:</h3>
+                <p className="text-secondary whitespace-pre-line">{overallFeedback}</p>
                 {workoutCompletePRs && workoutCompletePRs.length > 0 && (
                   <div className="mt-4 text-amber-300 text-sm font-medium">
                     <p className="mb-2">You hit {workoutCompletePRs.length} PR(s) today:</p>
@@ -2209,14 +2209,14 @@ export default function WorkoutLogger({
           <div className="flex flex-wrap items-center gap-3 mt-4">
             <button
               onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
+              className="px-4 py-2 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-all duration-200"
             >
               Back to Dashboard
             </button>
             {completedSessionId && (
               <Link
                 href={`/share/workout/${completedSessionId}`}
-                className="px-4 py-2 rounded-md border border-[#3a3a3a] text-white/90 hover:bg-[#2a2a2a] transition-colors font-medium"
+                className="px-4 py-2 rounded-md border border-border text-foreground/90 hover:bg-elevated transition-colors font-medium"
               >
                 View workout summary
               </Link>
@@ -2231,106 +2231,105 @@ export default function WorkoutLogger({
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">{dayLabel}</h1>
-          <p className="text-[#888888]">
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground mb-1 sm:mb-2 tracking-tight">{dayLabel}</h1>
+          <p className="text-muted text-sm">
             Exercise {currentExerciseIndex + 1} of {exercises.length}
           </p>
         </div>
-        <div className="relative" ref={exerciseSelectorRef}>
-          <button
-            onClick={() => setShowExerciseSelector(!showExerciseSelector)}
-            className="px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors flex items-center gap-1.5 sm:gap-2"
-          >
-            <span>Select Exercise</span>
-            <svg 
-              className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showExerciseSelector ? 'rotate-180' : ''}`}
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-auto" ref={exerciseSelectorRef}>
+            <button
+              onClick={() => setShowExerciseSelector(!showExerciseSelector)}
+              className="w-full sm:w-auto min-h-[44px] px-3 py-2.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-elevated text-foreground rounded-md hover:bg-elevated border border-border transition-colors flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          {showExerciseSelector && (
-            <div className="absolute right-0 mt-2 w-64 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md shadow-lg z-10 max-h-96 overflow-y-auto">
-              <div className="p-2">
-                {exercises.map((exerciseName, index) => {
-                  const isCompleted = completedExercises.has(index)
-                  const isCurrent = index === currentExerciseIndex
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setCurrentExerciseIndex(index)
-                        setShowExerciseSelector(false)
-                      }}
-                      className={`w-full text-left px-4 py-3 rounded-md mb-1 transition-colors ${
-                        isCurrent
-                          ? 'bg-white text-black font-semibold'
-                          : isCompleted
-                          ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
-                          : 'text-white hover:bg-[#2a2a2a]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>{exerciseName}</span>
-                        {isCompleted && (
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                    </button>
-                  )
-                })}
+              <span>Select Exercise</span>
+              <svg
+                className={`w-4 h-4 shrink-0 transition-transform ${showExerciseSelector ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showExerciseSelector && (
+              <div className="absolute left-0 right-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-64 max-w-[min(100vw-2rem,24rem)] bg-elevated border border-border rounded-md shadow-lg z-10 max-h-96 overflow-y-auto">
+                <div className="p-2">
+                  {exercises.map((exerciseName, index) => {
+                    const isCompleted = completedExercises.has(index)
+                    const isCurrent = index === currentExerciseIndex
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setCurrentExerciseIndex(index)
+                          setShowExerciseSelector(false)
+                        }}
+                        className={`w-full text-left px-4 min-h-[44px] flex items-center rounded-md mb-1 transition-colors ${
+                          isCurrent
+                            ? 'bg-elevated text-foreground font-semibold border-l-2 border-l-accent'
+                            : isCompleted
+                            ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
+                            : 'text-foreground hover:bg-elevated'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span>{exerciseName}</span>
+                          {isCompleted && (
+                            <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col items-end">
-          <label htmlFor="workout-date" className="block text-sm font-medium text-white mb-2">
-            Workout Date
-          </label>
-          <input
-            id="workout-date"
-            type="date"
-            value={workoutDate}
-            onChange={(e) => {
-              const newDate = e.target.value
-              const today = getTodayLocalYYYYMMDD()
-              if (newDate > today) {
-                setError('Cannot log workouts for future dates. Please select today or a past date.')
-                return
-              }
-              setWorkoutDate(newDate)
-              setError(null)
-              // Re-initialize workout data when date changes
-              setLoading(true)
-              setCurrentExerciseIndex(0)
-            }}
-            max={getTodayLocalYYYYMMDD()} // Prevent future dates
-            className="px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-            style={{ colorScheme: 'dark' }}
-          />
-          <p className="text-xs text-[#888888] mt-1">
-            {workoutDate === getTodayLocalYYYYMMDD() 
-              ? 'Logging today\'s workout' 
-              : (() => {
-                  // Parse date string directly to avoid timezone issues
-                  // workoutDate is in YYYY-MM-DD format
-                  const [year, month, day] = workoutDate.split('-').map(Number)
-                  const date = new Date(year, month - 1, day)
-                  return `Logging workout for ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                })()}
-          </p>
+            )}
+          </div>
+          <div className="flex flex-col sm:items-end">
+            <label htmlFor="workout-date" className="block text-sm font-medium text-foreground mb-1 sm:mb-2">
+              Workout Date
+            </label>
+            <input
+              id="workout-date"
+              type="date"
+              value={workoutDate}
+              onChange={(e) => {
+                const newDate = e.target.value
+                const today = getTodayLocalYYYYMMDD()
+                if (newDate > today) {
+                  setError('Cannot log workouts for future dates. Please select today or a past date.')
+                  return
+                }
+                setWorkoutDate(newDate)
+                setError(null)
+                setLoading(true)
+                setCurrentExerciseIndex(0)
+              }}
+              max={getTodayLocalYYYYMMDD()}
+              className="min-h-[44px] px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent w-full sm:w-auto"
+              style={{ colorScheme: 'dark' }}
+            />
+            <p className="text-xs text-muted mt-1">
+              {workoutDate === getTodayLocalYYYYMMDD()
+                ? 'Logging today\'s workout'
+                : (() => {
+                    const [year, month, day] = workoutDate.split('-').map(Number)
+                    const date = new Date(year, month - 1, day)
+                    return `Logging workout for ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                  })()}
+            </p>
+          </div>
         </div>
       </div>
 
       {currentExercise && isBarbellExercise(currentExercise.exerciseName) && (
-        <div className="flex flex-wrap items-center gap-2 mb-4 py-2 px-3 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
-          <span className="text-sm text-[#888888]">Plate calc:</span>
+        <div className="flex flex-wrap items-center gap-2 mb-4 py-2 px-3 rounded-lg bg-elevated border border-border">
+          <span className="text-sm text-muted">Plate calc:</span>
           <input
             type="number"
             min={0}
@@ -2347,7 +2346,7 @@ export default function WorkoutLogger({
               if (!Number.isNaN(n) && n < 0) return
               setPlateCalcWeight(v)
             }}
-            className="w-24 px-2.5 py-1.5 text-sm border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
+            className="w-24 px-2.5 py-1.5 text-sm border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
           />
           <span className="text-sm text-[#cccccc]">
             {(() => {
@@ -2370,7 +2369,7 @@ export default function WorkoutLogger({
       {isResumedDraft && !workoutComplete && (
         <div className="mb-4 p-4 bg-blue-500/20 border border-blue-500/50 rounded-lg">
           <div className="flex items-center justify-between">
-            <p className="text-white font-medium flex items-center gap-2">
+            <p className="text-foreground font-medium flex items-center gap-2">
               <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -2386,12 +2385,12 @@ export default function WorkoutLogger({
         </div>
       )}
 
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
+      <div className="bg-card rounded-xl border border-border p-6 mb-6 shadow-card">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
           <div>
             <div ref={swapPopoverRef} className="relative">
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-2xl font-semibold text-white">{currentExercise.exerciseName}</h2>
+                <h2 className="font-display text-2xl font-semibold text-foreground tracking-tight">{currentExercise.exerciseName}</h2>
                 {(() => {
                   const entry = getExerciseByName(currentExercise.exerciseName)
                   if (!entry) return null
@@ -2399,7 +2398,7 @@ export default function WorkoutLogger({
                     <button
                       type="button"
                       onClick={() => setExerciseInfoModal(entry)}
-                      className="shrink-0 p-1 -m-1 rounded-full text-white/70 hover:text-white/90 hover:bg-[#2a2a2a] transition-colors"
+                      className="shrink-0 p-1 -m-1 rounded-full text-foreground/70 hover:text-foreground/90 hover:bg-elevated transition-colors"
                       title="Exercise info"
                       aria-label="Exercise info"
                     >
@@ -2421,7 +2420,7 @@ export default function WorkoutLogger({
                         setShowExerciseSelector(false)
                         setShowSwapPopover((v) => !v)
                       }}
-                      className="shrink-0 px-2 py-1 rounded-md text-xs font-medium text-white/80 hover:text-white bg-[#2a2a2a] hover:bg-[#333333] border border-[#3a3a3a] transition-colors"
+                      className="shrink-0 px-2 py-1 rounded-md text-xs font-medium text-foreground/80 hover:text-foreground bg-elevated hover:bg-elevated border border-border transition-colors"
                       title="Swap exercise"
                       aria-label="Swap exercise"
                     >
@@ -2440,8 +2439,8 @@ export default function WorkoutLogger({
                   return acc
                 }, {})
                 return (
-                  <div className="absolute left-0 mt-1 z-20 w-72 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md shadow-lg p-3 max-h-[min(60vh,320px)] overflow-y-auto">
-                    <p className="text-xs text-[#888888] mb-3">Equipment taken? Choose an alternative.</p>
+                  <div className="absolute left-0 mt-1 z-20 w-72 bg-elevated border border-border rounded-md shadow-lg p-3 max-h-[min(60vh,320px)] overflow-y-auto">
+                    <p className="text-xs text-muted mb-3">Equipment taken? Choose an alternative.</p>
                     <div className="flex flex-col gap-3">
                       {EQUIPMENT_ORDER.filter((eq) => byEquipment[eq]?.length).map((equipment) => (
                         <div key={equipment}>
@@ -2457,7 +2456,7 @@ export default function WorkoutLogger({
                                   handleSelectAlternative(name)
                                   setShowSwapPopover(false)
                                 }}
-                                className="text-xs px-2.5 py-1 rounded-md border border-[#3a3a3a] bg-[#252525] text-white/90 hover:bg-[#2a2a2a] transition-colors text-left"
+                                className="text-xs px-2.5 py-1 rounded-md border border-border bg-elevated text-foreground/90 hover:bg-elevated transition-colors text-left"
                               >
                                 {name}
                               </button>
@@ -2481,7 +2480,7 @@ export default function WorkoutLogger({
                                     handleSelectAlternative(name)
                                     setShowSwapPopover(false)
                                   }}
-                                  className="text-xs px-2.5 py-1 rounded-md border border-[#3a3a3a] bg-[#252525] text-white/90 hover:bg-[#2a2a2a] transition-colors text-left"
+                                  className="text-xs px-2.5 py-1 rounded-md border border-border bg-elevated text-foreground/90 hover:bg-elevated transition-colors text-left"
                                 >
                                   {name}
                                 </button>
@@ -2500,14 +2499,14 @@ export default function WorkoutLogger({
               return (
                 <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5 text-xs">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[#888888]">Primary</span>
+                    <span className="text-muted">Primary</span>
                     <span className={`inline-block font-medium px-1.5 py-0.5 rounded border ${getMuscleGroupStyle(entry.muscleGroup)}`}>
                       {entry.muscleGroup}
                     </span>
                   </div>
                   {(entry.secondaryMuscleGroups ?? []).length > 0 && (
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[#888888]">Secondary</span>
+                      <span className="text-muted">Secondary</span>
                       {(entry.secondaryMuscleGroups ?? []).map((mg) => (
                         <span key={mg} className={`inline-block font-medium px-1.5 py-0.5 rounded border ${getMuscleGroupStyle(mg, true)}`}>
                           {mg}
@@ -2516,7 +2515,7 @@ export default function WorkoutLogger({
                     </div>
                   )}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[#888888]">Equipment</span>
+                    <span className="text-muted">Equipment</span>
                     <span className={`inline-block font-medium px-1.5 py-0.5 rounded border ${getEquipmentStyle(entry.equipment)}`}>
                       {entry.equipment}
                     </span>
@@ -2545,7 +2544,7 @@ export default function WorkoutLogger({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 restTimerEnabled
                   ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
-                  : 'bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]'
+                  : 'bg-elevated text-muted border border-border'
               }`}
               title={restTimerEnabled ? 'Rest timer enabled' : 'Rest timer disabled'}
             >
@@ -2555,7 +2554,7 @@ export default function WorkoutLogger({
               <span className="inline">Timer {restTimerEnabled ? 'On' : 'Off'}</span>
             </button>
             {!isEditMode && workoutStartedAt != null && !workoutComplete && (
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-[#2a2a2a] text-[#888888] border border-[#3a3a3a]">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-elevated text-muted border border-border">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -2568,9 +2567,9 @@ export default function WorkoutLogger({
         {presetId && (() => {
           const note = getPresetExerciseNotes(presetId, dayLabel, currentExercise.exerciseName)
           return note ? (
-            <div className="mb-4 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-3">
-              <p className="text-xs font-medium text-[#888888] uppercase tracking-wide mb-1.5">Program notes</p>
-              <p className="text-sm text-[#a1a1a1]">{note}</p>
+            <div className="mb-4 rounded-lg border border-border bg-elevated p-3">
+              <p className="text-xs font-medium text-muted uppercase tracking-wide mb-1.5">Program notes</p>
+              <p className="text-sm text-secondary">{note}</p>
             </div>
           ) : null
         })()}
@@ -2585,9 +2584,9 @@ export default function WorkoutLogger({
           const showSecond = warmupWeight > pc.barWeight
           if (!showEmptyBar && !showSecond) return null
           return (
-            <div className="mb-3 px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a]">
-              <p className="text-xs font-medium text-[#888888] uppercase tracking-wide mb-1">Suggested warm-up</p>
-              <p className="text-sm text-[#a1a1a1]">
+            <div className="mb-3 px-3 py-2 rounded-lg bg-elevated border border-border">
+              <p className="text-xs font-medium text-muted uppercase tracking-wide mb-1">Suggested warm-up</p>
+              <p className="text-sm text-secondary">
                 {showEmptyBar && `${pc.barWeight} lb (empty bar) × 5`}
                 {showEmptyBar && showSecond && ' → '}
                 {showSecond && `${warmupWeight} lb × 3`}
@@ -2612,10 +2611,10 @@ export default function WorkoutLogger({
             return (
             <Fragment key={setKey}>
             <div 
-              className={`relative bg-[#1a1a1a] rounded-lg p-2.5 ${
+              className={`relative bg-elevated rounded-xl p-2.5 shadow-card ${
                 isConfirmed 
-                  ? 'border-2 border-green-500' 
-                  : 'border border-[#2a2a2a]'
+                  ? 'border-2 border-success' 
+                  : 'border border-border'
               }`}
             >
               {currentExercise.sets.length > 1 && (
@@ -2623,11 +2622,11 @@ export default function WorkoutLogger({
                   <button
                     type="button"
                     onClick={() => removeSet(currentExerciseIndex, originalIndex)}
-                    className="p-1.5 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-colors"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-colors"
                     title="Remove set"
                     aria-label="Remove set"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                   </button>
@@ -2635,7 +2634,7 @@ export default function WorkoutLogger({
               )}
               <div className="mb-1.5 pr-9 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-y-0.5 gap-x-2 text-sm">
                 <div className="flex items-center gap-x-2 gap-y-0.5">
-                  <span className="font-semibold text-white">Set {set.setNumber}</span>
+                  <span className="font-semibold text-foreground">Set {set.setNumber}</span>
                   <span
                     className={`text-xs font-medium px-2 py-0.5 rounded ${
                       set.setType === 'warmup'
@@ -2649,19 +2648,19 @@ export default function WorkoutLogger({
                   </span>
                 </div>
                 {set.setType === 'working' && set.targetWeight != null && (
-                  <span className="text-[#888888]" title={set.targetExplanation ?? undefined}>
+                  <span className="text-muted" title={set.targetExplanation ?? undefined}>
                     Target: {set.targetWeight} lbs × {set.targetReps} reps
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-3 gap-1.5">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-white mb-0.5">
+                  <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
                     Weight (lbs)
                   </label>
                   {isBodyweightExercise(currentExercise.exerciseName) ? (
                     <div
-                      className="w-full px-2.5 py-1 text-sm border border-[#2a2a2a] bg-[#1a1a1a] rounded-md text-[#888888]"
+                      className="w-full px-2.5 py-1 text-sm border border-border bg-elevated rounded-md text-muted"
                       title="Bodyweight exercises use your logged weight from Profile > Weight"
                     >
                       {userBodyweightForDate
@@ -2678,13 +2677,13 @@ export default function WorkoutLogger({
                         onChange={(e) =>
                           updateSet(currentExerciseIndex, originalIndex, 'weight', parseFloat(e.target.value) || 0)
                         }
-                        className={`w-full px-2.5 py-1 text-sm border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
-                          (() => {
+                        className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-border bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
+                            (() => {
                             const key = `${currentExerciseIndex}-${originalIndex}`
                             const prePop = prePopulatedValues.get(key)
                             return prePop && set.weight === prePop.weight 
-                              ? 'text-[#888888]' 
-                              : 'text-white'
+                              ? 'text-muted' 
+                              : 'text-foreground'
                           })()
                         }`}
                       />
@@ -2692,7 +2691,7 @@ export default function WorkoutLogger({
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-white mb-0.5">
+                  <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
                     Reps
                   </label>
                   <input
@@ -2703,19 +2702,19 @@ export default function WorkoutLogger({
                     onChange={(e) =>
                       updateSet(currentExerciseIndex, originalIndex, 'reps', parseInt(e.target.value) || 0)
                     }
-                    className={`w-full px-2.5 py-1 text-sm border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
+                    className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-border bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
                       (() => {
                         const key = `${currentExerciseIndex}-${originalIndex}`
                         const prePop = prePopulatedValues.get(key)
                         return prePop && set.reps === prePop.reps 
-                          ? 'text-[#888888]' 
-                          : 'text-white'
+                          ? 'text-muted' 
+                          : 'text-foreground'
                       })()
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-white mb-0.5">
+                  <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
                     RPE
                   </label>
                   <input
@@ -2727,13 +2726,13 @@ export default function WorkoutLogger({
                     onChange={(e) =>
                       updateSet(currentExerciseIndex, originalIndex, 'rpe', parseFloat(e.target.value) || 0)
                     }
-                    className={`w-full px-2.5 py-1 text-sm border border-[#2a2a2a] bg-[#111111] rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white ${
+                    className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-border bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
                       (() => {
                         const key = `${currentExerciseIndex}-${originalIndex}`
                         const prePop = prePopulatedValues.get(key)
                         return prePop && set.rpe === prePop.rpe 
-                          ? 'text-[#888888]' 
-                          : 'text-white'
+                          ? 'text-muted' 
+                          : 'text-foreground'
                       })()
                     }`}
                   />
@@ -2746,7 +2745,7 @@ export default function WorkoutLogger({
                 {!isConfirmed ? (
                   <button
                     onClick={() => confirmSet(currentExerciseIndex, originalIndex)}
-                    className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-500 text-sm font-medium"
+                    className="min-h-[44px] px-4 py-3 sm:py-1.5 bg-accent text-background rounded-lg text-sm sm:text-base font-medium hover:shadow-glow transition-all duration-200"
                   >
                     Confirm Set
                   </button>
@@ -2810,38 +2809,40 @@ export default function WorkoutLogger({
           </button>
           <button
             onClick={() => completeExercise(currentExerciseIndex)}
-            className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
+            className="px-4 py-2 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-all duration-200"
           >
             Complete Exercise
           </button>
         </div>
 
         {currentExercise.exerciseFeedback && (
-          <div className="mt-4 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
+          <div className="mt-4 p-4 bg-elevated border border-border rounded-xl">
             {currentExercise.exerciseRating !== null && currentExercise.exerciseRating !== undefined && (
-              <div className="mb-3 pb-3 border-b border-[#2a2a2a]">
-                <p className="text-sm text-[#888888] mb-1">Exercise Rating</p>
-                <p className="text-2xl font-bold text-white">{currentExercise.exerciseRating}/10</p>
+              <div className="mb-3 pb-3 border-b border-border">
+                <p className="text-sm text-muted mb-1">Exercise Rating</p>
+                <p className="text-2xl font-bold text-foreground">{currentExercise.exerciseRating}/10</p>
               </div>
             )}
-            <h3 className="font-semibold mb-2 text-white">Feedback:</h3>
-            <p className="text-[#a1a1a1]">{currentExercise.exerciseFeedback}</p>
+            <h3 className="font-semibold mb-2 text-foreground">Feedback:</h3>
+            <p className="text-secondary">{currentExercise.exerciseFeedback}</p>
           </div>
         )}
       </div>
 
-      <div className="flex justify-between">
+      <div
+        className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-0 z-30 flex justify-between gap-3 py-3 px-1 -mx-1 mt-4 bg-background border-t border-border pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] lg:pb-0 lg:mt-4 lg:border-t-0 lg:bg-transparent lg:px-0 lg:-mx-0"
+      >
         <button
           onClick={() => setCurrentExerciseIndex(Math.max(0, currentExerciseIndex - 1))}
           disabled={currentExerciseIndex === 0}
-          className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="min-h-[44px] px-4 py-2.5 bg-elevated text-foreground rounded-md hover:bg-elevated border border-border disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
         >
           Previous
         </button>
         {currentExerciseIndex < exercises.length - 1 ? (
           <button
             onClick={() => setCurrentExerciseIndex(currentExerciseIndex + 1)}
-            className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
+            className="min-h-[44px] px-4 py-2.5 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-all duration-200"
           >
             Next Exercise
           </button>
@@ -2849,7 +2850,7 @@ export default function WorkoutLogger({
           <button
             onClick={saveWorkout}
             disabled={saving}
-            className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            className="min-h-[44px] px-4 py-2.5 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
           >
             {saving ? 'Saving...' : 'Complete Workout'}
           </button>

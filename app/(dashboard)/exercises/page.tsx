@@ -43,12 +43,12 @@ const MUSCLE_GROUP_STYLES_SECONDARY: Record<string, string> = {
 }
 
 function getEquipmentStyle(equipment: string): string {
-  return EQUIPMENT_STYLES[equipment] ?? 'bg-[#2a2a2a] text-[#888888] border border-[#2a2a2a]'
+  return EQUIPMENT_STYLES[equipment] ?? 'bg-elevated text-muted border border-border'
 }
 
 function getMuscleGroupStyle(muscleGroup: string, isSecondary?: boolean): string {
   const styles = isSecondary ? MUSCLE_GROUP_STYLES_SECONDARY : MUSCLE_GROUP_STYLES
-  return styles[muscleGroup] ?? 'bg-[#2a2a2a] text-[#888888] border border-[#2a2a2a]'
+  return styles[muscleGroup] ?? 'bg-elevated text-muted border border-border'
 }
 
 function groupByMuscleGroup(exercises: ExerciseEntry[]): Record<string, ExerciseEntry[]> {
@@ -85,10 +85,10 @@ function ExerciseCard({ exercise, onClick }: { exercise: ExerciseEntry; onClick?
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick?.()}
-      className="bg-[#1a1a1a] rounded-lg p-4 hover:bg-[#222222] transition-colors border border-[#2a2a2a] cursor-pointer"
+      className="bg-card rounded-xl p-4 hover:bg-elevated transition-all duration-200 border border-border shadow-card cursor-pointer"
     >
-      <h3 className="text-lg font-semibold text-white mb-2">{exercise.name}</h3>
-      <p className="text-sm text-[#888888] mb-3">
+      <h3 className="text-lg font-semibold text-foreground mb-2">{exercise.name}</h3>
+      <p className="text-sm text-muted mb-3">
         {exercise.description ?? `A ${exercise.equipment} exercise targeting ${exercise.muscleGroup}.`}
       </p>
       <div className="flex flex-col gap-1.5">
@@ -142,7 +142,7 @@ export default function ExerciseDatabasePage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-[#888888]">Loading...</div>
+        <div className="text-muted">Loading...</div>
       </div>
     )
   }
@@ -150,14 +150,14 @@ export default function ExerciseDatabasePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold text-white">Exercise Database</h1>
-        <div className="flex rounded-lg border border-[#2a2a2a] p-1 bg-[#0a0a0a]">
+        <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Exercise Database</h1>
+        <div className="flex rounded-lg border border-border p-1 bg-background">
           <button
             onClick={() => setViewMode('muscleGroup')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'muscleGroup'
                 ? 'bg-white text-black'
-                : 'text-[#888888] hover:text-white hover:bg-[#1a1a1a]'
+                : 'text-muted hover:text-foreground hover:bg-elevated'
             }`}
           >
             By Muscle Group
@@ -167,7 +167,7 @@ export default function ExerciseDatabasePage() {
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'equipment'
                 ? 'bg-white text-black'
-                : 'text-[#888888] hover:text-white hover:bg-[#1a1a1a]'
+                : 'text-muted hover:text-foreground hover:bg-elevated'
             }`}
           >
             By Equipment
@@ -183,7 +183,7 @@ export default function ExerciseDatabasePage() {
 
               return (
                 <section key={group}>
-                  <h2 className="text-xl font-semibold text-white mb-4">{group}</h2>
+                  <h2 className="text-xl font-semibold text-foreground mb-4">{group}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {exercises.map((exercise) => (
                       <ExerciseCard key={exercise.id} exercise={exercise} onClick={() => setSelectedExercise(exercise)} />
@@ -198,7 +198,7 @@ export default function ExerciseDatabasePage() {
 
               return (
                 <section key={group}>
-                  <h2 className="text-xl font-semibold text-white mb-4">
+                  <h2 className="text-xl font-semibold text-foreground mb-4">
                     <span className={`inline-block text-sm font-medium px-3 py-1 rounded border ${getEquipmentStyle(group)}`}>
                       {group}
                     </span>

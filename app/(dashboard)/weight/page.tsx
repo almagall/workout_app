@@ -117,8 +117,8 @@ export default function WeightPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <p className="text-[#888888]">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted">Loading...</p>
       </div>
     )
   }
@@ -126,16 +126,16 @@ export default function WeightPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Weight Tracking</h1>
-        <p className="text-[#888888] mt-2">Track your bodyweight over time</p>
+        <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Weight Tracking</h1>
+        <p className="text-muted mt-2">Track your bodyweight over time</p>
       </div>
 
       {/* Current Weight Card */}
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
+      <div className="bg-card rounded-xl border border-border shadow-card p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-[#888888] mb-1">Current Weight</p>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-sm text-muted mb-1">Current Weight</p>
+            <p className="text-3xl font-bold text-foreground">
               {currentWeight ? `${currentWeight.weight} ${currentWeight.unit}` : 'Not set'}
             </p>
           </div>
@@ -150,17 +150,17 @@ export default function WeightPage() {
 
       {/* Chart */}
       {history.length > 0 && (
-        <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6 mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Weight Over Time</h2>
+        <div className="bg-card rounded-xl border border-border shadow-card p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">Weight Over Time</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-              <XAxis dataKey="date" stroke="#888888" />
-              <YAxis stroke="#888888" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" stroke="var(--muted)" />
+              <YAxis stroke="var(--muted)" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1a1a1a',
-                  border: '1px solid #2a2a2a',
+                  backgroundColor: 'var(--elevated)',
+                  border: '1px solid var(--border)',
                   borderRadius: '8px',
                 }}
                 labelStyle={{ color: '#ffffff' }}
@@ -179,11 +179,11 @@ export default function WeightPage() {
       )}
 
       {/* Recent Logs */}
-      <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-        <h2 className="text-xl font-semibold text-white mb-4">Recent Logs</h2>
+      <div className="bg-card rounded-xl border border-border shadow-card p-6">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Recent Logs</h2>
         
         {history.length === 0 ? (
-          <p className="text-[#888888] text-center py-8">
+          <p className="text-muted text-center py-8">
             No weight logs yet. Click the Log Weight button to get started.
           </p>
         ) : (
@@ -191,13 +191,13 @@ export default function WeightPage() {
             {[...history].reverse().slice(0, 10).map(entry => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]"
+                className="flex items-center justify-between p-3 bg-elevated rounded-lg border border-border"
               >
                 <div className="flex-1">
-                  <p className="text-white font-medium">
+                  <p className="text-foreground font-medium">
                     {entry.weight} {entry.weight_unit}
                   </p>
-                  <p className="text-sm text-[#888888]">
+                  <p className="text-sm text-muted">
                     {new Date(entry.log_date).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -230,9 +230,9 @@ export default function WeightPage() {
 
       {/* Add/Edit Weight Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold text-white mb-4">
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-card">
+            <h3 className="text-xl font-semibold text-foreground mb-4">
               {editingEntry ? 'Edit Weight Entry' : 'Log New Weight'}
             </h3>
 
@@ -244,20 +244,20 @@ export default function WeightPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Date
                 </label>
                 <input
                   type="date"
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white"
+                  className="w-full px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Weight
                 </label>
                 <div className="flex gap-2">
@@ -267,13 +267,13 @@ export default function WeightPage() {
                     value={formWeight}
                     onChange={(e) => setFormWeight(e.target.value)}
                     placeholder="165"
-                    className="flex-1 px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white"
+                    className="flex-1 px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
                     required
                   />
                   <select
                     value={formUnit}
                     onChange={(e) => setFormUnit(e.target.value as 'lbs' | 'kg')}
-                    className="px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white"
+                    className="px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
                   >
                     <option value="lbs">lbs</option>
                     <option value="kg">kg</option>
@@ -282,7 +282,7 @@ export default function WeightPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Notes (optional)
                 </label>
                 <textarea
@@ -290,7 +290,7 @@ export default function WeightPage() {
                   onChange={(e) => setFormNotes(e.target.value)}
                   placeholder="e.g., Morning weight, after workout, etc."
                   rows={2}
-                  className="w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white resize-none"
+                  className="w-full px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent resize-none"
                 />
               </div>
 
@@ -304,7 +304,7 @@ export default function WeightPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-[#2a2a2a] text-white rounded-md font-medium hover:bg-[#333333] transition-colors"
+                  className="px-4 py-2 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-colors"
                 >
                   Cancel
                 </button>

@@ -17,9 +17,9 @@ export default function OnboardingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <p className="text-[#888888]">Loading...</p>
+        <p className="text-muted">Loading...</p>
       </div>
     </div>
   )

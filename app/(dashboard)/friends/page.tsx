@@ -237,15 +237,15 @@ export default function FriendsPage() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <p className="text-[#888888]">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted">Loading...</p>
       </div>
     )
   }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-      <h1 className="text-2xl font-bold text-white mb-6">Friends</h1>
+      <h1 className="font-display text-2xl font-bold text-foreground mb-6 tracking-tight">Friends</h1>
 
       {/* Add friend button */}
       <div className="mb-6">
@@ -261,38 +261,38 @@ export default function FriendsPage() {
 
       {/* Add friend modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => setShowAddModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80" onClick={() => setShowAddModal(false)}>
           <div
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-xl max-w-sm w-full"
+            className="bg-card border border-border rounded-xl shadow-card shadow-xl max-w-sm w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-[#2a2a2a] flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-white">Add Friend</h3>
+            <div className="p-4 border-b border-border flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-foreground">Add Friend</h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="p-1 rounded text-[#888888] hover:text-white hover:bg-[#2a2a2a]"
+                className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated"
                 aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             <form onSubmit={handleSendRequest} className="p-4">
-              <label className="block text-sm text-[#e5e5e5] mb-2">Enter username</label>
+              <label className="block text-sm text-foreground mb-2">Enter username</label>
               <input
                 type="text"
                 value={addUsername}
                 onChange={(e) => setAddUsername(e.target.value)}
                 placeholder="Username"
                 autoFocus
-                className="w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white mb-3"
+                className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 mb-3"
               />
               {addError && <p className="mb-3 text-sm text-red-400">{addError}</p>}
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded border border-[#2a2a2a] text-[#e5e5e5] text-sm hover:bg-[#2a2a2a]"
+                  className="px-4 py-2 rounded border border-border text-foreground text-sm hover:bg-elevated"
                 >
                   Cancel
                 </button>
@@ -310,15 +310,15 @@ export default function FriendsPage() {
 
       {/* Pending requests */}
       {pending.length > 0 && (
-        <section className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-3">Pending requests</h2>
+        <section className="bg-card rounded-lg border border-border p-4 mb-6">
+          <h2 className="text-lg font-semibold text-foreground mb-3">Pending requests</h2>
           <ul className="space-y-2">
             {pending.map((req) => (
               <li
                 key={req.id}
-                className="flex items-center justify-between py-2 border-b border-[#2a2a2a] last:border-0"
+                className="flex items-center justify-between py-2 border-b border-border last:border-0"
               >
-                <span className="text-white font-medium">{req.from_username}</span>
+                <span className="text-foreground font-medium">{req.from_username}</span>
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -332,7 +332,7 @@ export default function FriendsPage() {
                     type="button"
                     disabled={!!actingId}
                     onClick={() => handleDecline(req.id)}
-                    className="px-3 py-1 rounded border border-[#2a2a2a] text-[#e5e5e5] text-sm hover:bg-[#2a2a2a] disabled:opacity-50"
+                    className="px-3 py-1 rounded border border-border text-foreground text-sm hover:bg-elevated disabled:opacity-50"
                   >
                     Decline
                   </button>
@@ -344,22 +344,22 @@ export default function FriendsPage() {
       )}
 
       {/* Friends list */}
-      <section className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 mb-6">
-        <h2 className="text-lg font-semibold text-white mb-3">Your friends</h2>
+      <section className="bg-card rounded-lg border border-border p-4 mb-6">
+        <h2 className="text-lg font-semibold text-foreground mb-3">Your friends</h2>
         {friends.length === 0 ? (
-          <p className="text-[#888888] text-sm">No friends yet. Send a request by username above.</p>
+          <p className="text-muted text-sm">No friends yet. Send a request by username above.</p>
         ) : (
           <ul className="space-y-2">
             {friends.map((f) => (
               <li
                 key={f.user_id}
-                className="flex items-center justify-between py-2 border-b border-[#2a2a2a] last:border-0"
+                className="flex items-center justify-between py-2 border-b border-border last:border-0"
               >
-                <span className="text-white font-medium">{f.username}</span>
+                <span className="text-foreground font-medium">{f.username}</span>
                 <button
                   type="button"
                   onClick={() => loadFriendPRs(f)}
-                  className="text-sm text-[#888888] hover:text-white"
+                  className="text-sm text-muted hover:text-foreground"
                 >
                   View recent PRs
                 </button>
@@ -370,42 +370,42 @@ export default function FriendsPage() {
       </section>
 
       {/* Privacy: allow friends to see my PRs */}
-      <section className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-4 mb-6">
-        <h2 className="text-lg font-semibold text-white mb-3">Privacy</h2>
+      <section className="bg-card rounded-lg border border-border p-4 mb-6">
+        <h2 className="text-lg font-semibold text-foreground mb-3">Privacy</h2>
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={allowFriendsSeePRs}
             onChange={toggleAllowPRs}
-            className="rounded border-[#2a2a2a] bg-[#1a1a1a] text-white focus:ring-white"
+            className="rounded border-border bg-elevated text-foreground focus:ring-accent/50"
           />
-          <span className="text-[#e5e5e5] text-sm">Allow friends to see my recent PRs</span>
+          <span className="text-foreground text-sm">Allow friends to see my recent PRs</span>
         </label>
       </section>
 
       {/* Modal / panel: Friend's recent PRs */}
       {viewingFriend && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => setViewingFriend(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80" onClick={() => setViewingFriend(null)}>
           <div
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-hidden"
+            className="bg-card border border-border rounded-xl shadow-card shadow-xl max-w-md w-full max-h-[80vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-[#2a2a2a] flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-white">{viewingFriend.username}&apos;s recent PRs</h3>
+            <div className="p-4 border-b border-border flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-foreground">{viewingFriend.username}&apos;s recent PRs</h3>
               <button
                 type="button"
                 onClick={() => setViewingFriend(null)}
-                className="p-1 rounded text-[#888888] hover:text-white hover:bg-[#2a2a2a]"
+                className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated"
                 aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             <div className="p-4 overflow-auto max-h-[60vh]">
-              {friendPRsLoading && <p className="text-[#888888] text-sm">Loading...</p>}
+              {friendPRsLoading && <p className="text-muted text-sm">Loading...</p>}
               {friendPRsError && <p className="text-red-400 text-sm">{friendPRsError}</p>}
               {!friendPRsLoading && !friendPRsError && friendPRs.length === 0 && (
-                <p className="text-[#888888] text-sm">No recent PRs</p>
+                <p className="text-muted text-sm">No recent PRs</p>
               )}
               {!friendPRsLoading && friendPRs.length > 0 && (
                 <div className="space-y-3">
@@ -421,18 +421,18 @@ export default function FriendsPage() {
                     return (
                       <div
                         key={`${pr.exerciseName}-${pr.workoutDate}-${pr.prType}-${i}`}
-                        className="border-b border-[#2a2a2a] last:border-0 pb-3"
+                        className="border-b border-border last:border-0 pb-3"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-white font-medium">{pr.exerciseName}</p>
-                            <p className="text-xs text-[#888888]">
+                            <p className="text-foreground font-medium">{pr.exerciseName}</p>
+                            <p className="text-xs text-muted">
                               {friendPRsLabels[pr.templateDayId] ?? 'Workout'} · {formatDate(pr.workoutDate)}
                             </p>
                           </div>
                           <div className="text-right">
                             <span className="text-amber-300 font-semibold">{pr.value} lbs</span>
-                            <p className="text-xs text-[#888888]">
+                            <p className="text-xs text-muted">
                               {pr.prType === 'heaviestSet' ? 'Heaviest set' : 'Est. 1RM'}
                             </p>
                           </div>
@@ -442,7 +442,7 @@ export default function FriendsPage() {
                               type="button"
                               onClick={() => toggleComments(pr)}
                               className={`p-1.5 rounded-full transition-colors ${
-                                isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-[#888888] hover:text-blue-400 hover:bg-[#2a2a2a]'
+                                isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-muted hover:text-blue-400 hover:bg-elevated'
                               }`}
                               title="Comments"
                             >
@@ -464,7 +464,7 @@ export default function FriendsPage() {
                                   type="button"
                                   disabled={isSending}
                                   onClick={() => setShowReactionPicker(isPickerOpen ? null : key)}
-                                  className="p-1.5 rounded-full text-[#888888] hover:text-amber-400 hover:bg-[#2a2a2a] transition-colors disabled:opacity-60"
+                                  className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-elevated transition-colors disabled:opacity-60"
                                   title="React"
                                 >
                                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -472,7 +472,7 @@ export default function FriendsPage() {
                                   </svg>
                                 </button>
                                 {isPickerOpen && (
-                                  <div className="absolute right-0 top-full mt-1 flex gap-1 bg-[#2a2a2a] rounded-full p-1 shadow-lg z-10">
+                                  <div className="absolute right-0 top-full mt-1 flex gap-1 bg-elevated rounded-full p-1 shadow-lg z-10">
                                     {(['kudos', 'strong', 'fire'] as ReactionType[]).map((type) => (
                                       <button
                                         key={type}
@@ -492,19 +492,19 @@ export default function FriendsPage() {
                         </div>
                         {/* Comments section */}
                         {isCommentsOpen && (
-                          <div className="mt-2 pl-2 border-l-2 border-[#2a2a2a]">
+                          <div className="mt-2 pl-2 border-l-2 border-border">
                             {isLoadingComments && (
-                              <p className="text-xs text-[#888888]">Loading comments...</p>
+                              <p className="text-xs text-muted">Loading comments...</p>
                             )}
                             {!isLoadingComments && comments.length === 0 && (
-                              <p className="text-xs text-[#888888] mb-2">No comments yet</p>
+                              <p className="text-xs text-muted mb-2">No comments yet</p>
                             )}
                             {!isLoadingComments && comments.length > 0 && (
                               <div className="space-y-2 mb-2">
                                 {comments.map((c) => (
                                   <div key={c.id} className="text-sm">
-                                    <span className="font-medium text-white">{c.from_username}</span>
-                                    <span className="text-[#e5e5e5] ml-1">{c.comment}</span>
+                                    <span className="font-medium text-foreground">{c.from_username}</span>
+                                    <span className="text-foreground ml-1">{c.comment}</span>
                                   </div>
                                 ))}
                               </div>
@@ -517,13 +517,13 @@ export default function FriendsPage() {
                                 onKeyDown={(e) => e.key === 'Enter' && handlePostComment(pr)}
                                 placeholder="Add a comment..."
                                 maxLength={200}
-                                className="flex-1 text-sm px-2 py-1 rounded bg-[#2a2a2a] border border-[#3a3a3a] text-white placeholder-[#888888] focus:outline-none focus:border-blue-500"
+                                className="flex-1 text-sm px-2 py-1 rounded bg-elevated border border-border text-foreground placeholder-muted focus:outline-none focus:border-blue-500"
                               />
                               <button
                                 type="button"
                                 onClick={() => handlePostComment(pr)}
                                 disabled={postingComment || !newComment.trim()}
-                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1 text-sm bg-blue-600 text-foreground rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Post
                               </button>

@@ -126,7 +126,7 @@ export default function TemplatePage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-[#888888]">Loading...</div>
+        <div className="text-muted">Loading...</div>
       </div>
     )
   }
@@ -134,7 +134,7 @@ export default function TemplatePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 className="text-3xl font-bold text-white">Templates</h1>
+        <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Templates</h1>
         <div className="flex items-center gap-2">
           <Link
             href="/workout/template/create"
@@ -142,14 +142,14 @@ export default function TemplatePage() {
           >
             + Create custom
           </Link>
-          <div className="flex rounded-md border border-[#2a2a2a] overflow-hidden">
+          <div className="flex rounded-md border border-border overflow-hidden">
             <button
               type="button"
               onClick={() => setTab('my')}
               className={`px-3 py-2 text-sm font-medium transition-colors ${
                 tab === 'my'
-                  ? 'bg-[#2a2a2a] text-white'
-                  : 'bg-[#111111] text-[#888888] hover:text-white'
+                  ? 'bg-elevated text-foreground'
+                  : 'bg-card text-muted hover:text-foreground'
               }`}
             >
               My templates
@@ -159,8 +159,8 @@ export default function TemplatePage() {
               onClick={() => setTab('precreated')}
               className={`px-3 py-2 text-sm font-medium transition-colors ${
                 tab === 'precreated'
-                  ? 'bg-[#2a2a2a] text-white'
-                  : 'bg-[#111111] text-[#888888] hover:text-white'
+                  ? 'bg-elevated text-foreground'
+                  : 'bg-card text-muted hover:text-foreground'
               }`}
             >
               Pre-created
@@ -172,8 +172,8 @@ export default function TemplatePage() {
       {tab === 'my' && (
         <>
           {templates.length === 0 ? (
-            <div className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
-              <p className="text-[#a1a1a1] mb-4">
+            <div className="bg-card rounded-xl border border-border shadow-card p-6">
+              <p className="text-secondary mb-4">
                 You have not created any templates yet. Create a custom template or choose a pre-created one to get started.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -186,7 +186,7 @@ export default function TemplatePage() {
                 <button
                   type="button"
                   onClick={() => setTab('precreated')}
-                  className="inline-block px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors font-medium"
+                  className="inline-block px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow border border-transparent transition-all duration-200 font-medium"
                 >
                   Browse pre-created
                 </button>
@@ -197,12 +197,12 @@ export default function TemplatePage() {
               {templates.map(({ template, days }) => (
                 <div
                   key={template.id}
-                  className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6"
+                  className="bg-card rounded-xl border border-border shadow-card p-6"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h2 className="text-xl font-semibold text-white">{template.name}</h2>
+                        <h2 className="text-xl font-semibold text-foreground">{template.name}</h2>
                         <span
                           className={`text-xs font-medium px-2 py-0.5 rounded ${
                             template.plan_type === 'hypertrophy'
@@ -213,7 +213,7 @@ export default function TemplatePage() {
                           {template.plan_type === 'hypertrophy' ? 'Hypertrophy' : 'Strength'}
                         </span>
                       </div>
-                      <p className="text-sm text-[#888888]">
+                      <p className="text-sm text-muted">
                         {days.length} workout day{days.length !== 1 ? 's' : ''}
                       </p>
                       {days.length > 0 && (
@@ -221,7 +221,7 @@ export default function TemplatePage() {
                           {days.map((day) => (
                             <span
                               key={day.id}
-                              className="text-xs px-2 py-1 bg-[#1a1a1a] text-[#888888] rounded border border-[#2a2a2a]"
+                              className="text-xs px-2 py-1 bg-elevated text-muted rounded border border-border"
                             >
                               {day.day_label}
                             </span>
@@ -232,7 +232,7 @@ export default function TemplatePage() {
                     <div className="flex items-center gap-3">
                       <Link
                         href={`/workout/template/edit/${template.id}`}
-                        className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors text-sm font-medium"
+                        className="px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow border border-transparent transition-all duration-200 text-sm font-medium"
                       >
                         Edit
                       </Link>
@@ -240,7 +240,7 @@ export default function TemplatePage() {
                         type="button"
                         onClick={() => handleDeleteClick(template.id, template.name)}
                         disabled={deletingId === template.id}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        className="px-4 py-2 bg-red-600 text-foreground rounded-md hover:bg-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                       >
                         {deletingId === template.id ? 'Deleting...' : 'Delete'}
                       </button>
@@ -256,8 +256,8 @@ export default function TemplatePage() {
       {tab === 'precreated' && (
         <>
           <div className="mb-4 flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-[#888888]">Workout focus:</span>
-            <div className="flex rounded-md border border-[#2a2a2a] overflow-hidden">
+            <span className="text-sm text-muted">Workout focus:</span>
+            <div className="flex rounded-md border border-border overflow-hidden">
               {(['all', 'hypertrophy', 'strength'] as const).map((f) => (
                 <button
                   key={f}
@@ -265,8 +265,8 @@ export default function TemplatePage() {
                   onClick={() => setFocusFilter(f)}
                   className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                     focusFilter === f
-                      ? 'bg-[#2a2a2a] text-white'
-                      : 'bg-[#111111] text-[#888888] hover:text-white'
+                      ? 'bg-elevated text-foreground'
+                      : 'bg-card text-muted hover:text-foreground'
                   }`}
                 >
                   {f === 'all' ? 'All' : f === 'hypertrophy' ? 'Hypertrophy' : 'Strength'}
@@ -278,10 +278,10 @@ export default function TemplatePage() {
             {filteredPresets.map((preset) => (
               <div
                 key={preset.id}
-                className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-5 flex flex-col"
+                className="bg-card rounded-xl border border-border shadow-card p-5 flex flex-col"
               >
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <h2 className="text-lg font-semibold text-white">{preset.name}</h2>
+                  <h2 className="text-lg font-semibold text-foreground">{preset.name}</h2>
                   <span
                     className={`text-xs font-medium px-2 py-0.5 rounded shrink-0 ${
                       preset.planType === 'hypertrophy'
@@ -295,13 +295,13 @@ export default function TemplatePage() {
                 <div className="mb-3 flex-1">
                   {expandedPresetId === preset.id ? (
                     <>
-                      <p className="text-sm text-[#a1a1a1] mb-1">
+                      <p className="text-sm text-secondary mb-1">
                         {preset.description}
                       </p>
                       <button
                         type="button"
                         onClick={() => setExpandedPresetId(null)}
-                        className="inline-flex items-center gap-1 text-xs text-[#888888] hover:text-white transition-colors"
+                        className="inline-flex items-center gap-1 text-xs text-muted hover:text-foreground transition-colors"
                         aria-expanded="true"
                       >
                         <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -312,14 +312,14 @@ export default function TemplatePage() {
                     </>
                   ) : (
                     <>
-                      <p className="text-sm text-[#a1a1a1] line-clamp-3">
+                      <p className="text-sm text-secondary line-clamp-3">
                         {preset.description}
                       </p>
                       {preset.description.length > 100 && (
                         <button
                           type="button"
                           onClick={() => setExpandedPresetId(preset.id)}
-                          className="inline-flex items-center gap-1 mt-1 text-xs text-[#888888] hover:text-white transition-colors"
+                          className="inline-flex items-center gap-1 mt-1 text-xs text-muted hover:text-foreground transition-colors"
                           aria-expanded="false"
                         >
                           <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -331,14 +331,14 @@ export default function TemplatePage() {
                     </>
                   )}
                 </div>
-                <p className="text-xs text-[#888888] mb-2">
+                <p className="text-xs text-muted mb-2">
                   {preset.days.length} workout day{preset.days.length !== 1 ? 's' : ''}
                 </p>
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {preset.days.map((day) => (
                     <span
                       key={day.dayOrder}
-                      className="text-xs px-2 py-0.5 bg-[#1a1a1a] text-[#888888] rounded border border-[#2a2a2a]"
+                      className="text-xs px-2 py-0.5 bg-elevated text-muted rounded border border-border"
                     >
                       {day.dayLabel}
                     </span>
@@ -349,7 +349,7 @@ export default function TemplatePage() {
                     day.exercises.map((ex) => (
                       <span
                         key={`${day.dayOrder}-${ex}`}
-                        className="text-[10px] sm:text-xs px-1.5 py-0.5 bg-[#0d0d0d] text-[#a1a1a1] rounded border border-[#2a2a2a]"
+                        className="text-[10px] sm:text-xs px-1.5 py-0.5 bg-background text-secondary rounded border border-border"
                       >
                         {ex}
                       </span>

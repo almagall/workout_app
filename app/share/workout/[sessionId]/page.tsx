@@ -75,7 +75,7 @@ export default function ShareWorkoutPage({ params }: { params: { sessionId: stri
   const exitToHistory = (
     <Link
       href="/workout/history"
-      className="fixed top-4 right-4 z-10 p-2 rounded-full text-red-500 hover:text-red-400 hover:bg-[#2a2a2a] transition-colors"
+      className="fixed top-4 right-4 z-10 p-2 rounded-full text-red-500 hover:text-red-400 hover:bg-elevated transition-colors"
       aria-label="Back to workout history"
     >
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,16 +86,16 @@ export default function ShareWorkoutPage({ params }: { params: { sessionId: stri
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         {exitToHistory}
-        <p className="text-[#888888]">Loading workout...</p>
+        <p className="text-muted">Loading workout...</p>
       </div>
     )
   }
 
   if (error || !summary) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-black px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
         {exitToHistory}
         <p className="text-red-400 text-lg mb-4">{error || 'Workout not found'}</p>
         <Link href="/" className="text-amber-400 hover:text-amber-300">
@@ -106,13 +106,13 @@ export default function ShareWorkoutPage({ params }: { params: { sessionId: stri
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       {exitToHistory}
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Workout Summary</h1>
-          <p className="text-[#888888]">
+          <h1 className="font-display text-3xl font-bold text-foreground mb-2 tracking-tight">Workout Summary</h1>
+          <p className="text-muted">
             <Link
               href={`/profile/${encodeURIComponent(summary.username)}`}
               className="text-amber-400 hover:text-amber-300 font-medium"
@@ -124,51 +124,51 @@ export default function ShareWorkoutPage({ params }: { params: { sessionId: stri
         </div>
 
         {/* Summary Card */}
-        <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] overflow-hidden">
+        <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">
           {/* Workout Info */}
-          <div className="p-6 border-b border-[#2a2a2a] bg-gradient-to-r from-amber-500/10 to-transparent">
-            <h2 className="text-xl font-bold text-white">{summary.day_label}</h2>
-            <p className="text-[#888888] text-sm mt-1">{summary.template_name}</p>
+          <div className="p-6 border-b border-border bg-gradient-to-r from-amber-500/10 to-transparent">
+            <h2 className="text-xl font-bold text-foreground">{summary.day_label}</h2>
+            <p className="text-muted text-sm mt-1">{summary.template_name}</p>
             <p className="text-amber-400 mt-2">{formatDate(summary.workout_date)}</p>
           </div>
 
           {/* Stats */}
-          <div className={`grid border-b border-[#2a2a2a] ${summary.duration_seconds != null ? 'grid-cols-4' : 'grid-cols-3'}`}>
-            <div className="p-4 text-center border-r border-[#2a2a2a]">
-              <p className="text-2xl font-bold text-white">{summary.exercises.length}</p>
-              <p className="text-[#888888] text-xs">Exercises</p>
+          <div className={`grid border-b border-border ${summary.duration_seconds != null ? 'grid-cols-4' : 'grid-cols-3'}`}>
+            <div className="p-4 text-center border-r border-border">
+              <p className="text-2xl font-bold text-foreground">{summary.exercises.length}</p>
+              <p className="text-muted text-xs">Exercises</p>
             </div>
-            <div className="p-4 text-center border-r border-[#2a2a2a]">
-              <p className="text-2xl font-bold text-white">{summary.total_sets}</p>
-              <p className="text-[#888888] text-xs">Total Sets</p>
+            <div className="p-4 text-center border-r border-border">
+              <p className="text-2xl font-bold text-foreground">{summary.total_sets}</p>
+              <p className="text-muted text-xs">Total Sets</p>
             </div>
-            <div className="p-4 text-center border-r border-[#2a2a2a]">
+            <div className="p-4 text-center border-r border-border">
               <p className="text-2xl font-bold text-amber-400">{formatVolume(summary.total_volume)}</p>
-              <p className="text-[#888888] text-xs">Total Volume (lbs)</p>
+              <p className="text-muted text-xs">Total Volume (lbs)</p>
             </div>
             {summary.duration_seconds != null && (
               <div className="p-4 text-center">
-                <p className="text-2xl font-bold text-white">{formatDuration(summary.duration_seconds)}</p>
-                <p className="text-[#888888] text-xs">Duration</p>
+                <p className="text-2xl font-bold text-foreground">{formatDuration(summary.duration_seconds)}</p>
+                <p className="text-muted text-xs">Duration</p>
               </div>
             )}
           </div>
 
           {/* Exercises */}
           <div className="p-4">
-            <h3 className="text-sm font-semibold text-[#888888] uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">
               Exercises
             </h3>
             <div className="space-y-4">
               {summary.exercises.map((exercise, i) => (
                 <div
                   key={`${exercise.exercise_name}-${i}`}
-                  className="bg-[#111111] rounded-lg p-4"
+                  className="bg-elevated rounded-lg p-4"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-white">{exercise.exercise_name}</h4>
+                    <h4 className="font-medium text-foreground">{exercise.exercise_name}</h4>
                     <div className="text-right">
-                      <p className="text-xs text-[#888888]">Heaviest Weight</p>
+                      <p className="text-xs text-muted">Heaviest Weight</p>
                       <span className="text-amber-400 font-semibold">{exercise.top_set_weight} lbs</span>
                     </div>
                   </div>
@@ -191,7 +191,7 @@ export default function ShareWorkoutPage({ params }: { params: { sessionId: stri
           </div>
 
           {/* Share Button */}
-          <div className="p-4 border-t border-[#2a2a2a]">
+          <div className="p-4 border-t border-border">
             <button
               type="button"
               onClick={handleCopyLink}
@@ -218,7 +218,7 @@ export default function ShareWorkoutPage({ params }: { params: { sessionId: stri
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <p className="text-[#888888] text-sm mb-2">Track your workouts with</p>
+          <p className="text-muted text-sm mb-2">Track your workouts with</p>
           <Link href="/" className="text-amber-400 hover:text-amber-300 font-semibold text-lg">
             Workout Planner
           </Link>

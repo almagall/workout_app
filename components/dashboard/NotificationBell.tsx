@@ -108,14 +108,13 @@ export default function NotificationBell() {
           if (willOpen) {
             const list = await getNotifications(30)
             setNotifications(list)
-            // Mark all as read when user opens dropdown (they have viewed them)
             if (unreadCount > 0) {
               await markAllNotificationsRead()
               setUnreadCount(0)
             }
           }
         }}
-        className="relative p-2 rounded-md text-[#888888] hover:text-white hover:bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-white"
+        className="relative min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-md text-muted hover:text-foreground hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-accent/50"
         aria-label="Notifications"
       >
         <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -129,9 +128,9 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="fixed right-4 top-[4.5rem] z-50 w-[min(20rem,calc(100vw-2rem))] max-h-[min(24rem,70vh)] overflow-auto rounded-md border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg lg:absolute lg:right-0 lg:top-auto lg:mt-1 lg:w-80">
-          <div className="p-2 border-b border-[#2a2a2a] flex justify-between items-center gap-2">
-            <span className="font-semibold text-white text-sm">Notifications</span>
+        <div className="fixed right-4 top-[4.5rem] z-50 w-[min(20rem,calc(100vw-2rem))] max-h-[min(24rem,70vh)] overflow-auto rounded-xl border border-border bg-elevated shadow-card lg:absolute lg:right-0 lg:top-auto lg:mt-1 lg:w-80">
+          <div className="p-2 border-b border-border flex justify-between items-center gap-2">
+            <span className="font-semibold text-foreground text-sm">Notifications</span>
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -141,14 +140,14 @@ export default function NotificationBell() {
                   setUnreadCount(0)
                   refresh()
                 }}
-                className="text-xs text-[#888888] hover:text-white whitespace-nowrap"
+                className="min-h-[44px] px-3 py-2 text-xs text-muted hover:text-foreground whitespace-nowrap rounded-md hover:bg-elevated"
               >
                 Clear all
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="p-1.5 rounded-md text-[#888888] hover:text-white hover:bg-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-white"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-md text-muted hover:text-foreground hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-white"
                 aria-label="Close notifications"
               >
                 <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -157,7 +156,7 @@ export default function NotificationBell() {
               </button>
             </div>
           </div>
-          <div className="divide-y divide-[#2a2a2a]">
+          <div className="divide-y divide-border">
             {notifications.length === 0 && (
               <div className="p-4 text-sm text-[#888888]">No notifications</div>
             )}
@@ -168,7 +167,7 @@ export default function NotificationBell() {
               >
                 {n.type === 'friend_request' && (
                   <>
-                    <p className="text-white">
+                    <p className="text-foreground">
                       <span className="font-medium">{n.from_username}</span> sent you a friend request.
                     </p>
                     <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
@@ -178,7 +177,7 @@ export default function NotificationBell() {
                           type="button"
                           disabled={loading && actingId === n.reference_id}
                           onClick={() => handleAccept(n.reference_id)}
-                          className="px-2 py-1 rounded bg-white text-black text-xs font-medium hover:bg-[#e5e5e5] disabled:opacity-50"
+                          className="min-h-[44px] px-4 py-2.5 rounded bg-white text-black text-xs font-medium hover:bg-[#e5e5e5] disabled:opacity-50"
                         >
                           Accept
                         </button>
@@ -186,7 +185,7 @@ export default function NotificationBell() {
                           type="button"
                           disabled={loading && actingId === n.reference_id}
                           onClick={() => handleDecline(n.reference_id, n.id)}
-                          className="px-2 py-1 rounded border border-[#2a2a2a] text-[#e5e5e5] text-xs hover:bg-[#2a2a2a] disabled:opacity-50"
+                          className="min-h-[44px] px-4 py-2.5 rounded border border-border text-foreground text-xs hover:bg-elevated disabled:opacity-50"
                         >
                           Decline
                         </button>
@@ -196,14 +195,14 @@ export default function NotificationBell() {
                 )}
                 {n.type === 'friend_accepted' && (
                   <>
-                    <p className="text-white">
+                    <p className="text-foreground">
                       <span className="font-medium">{n.from_username}</span> accepted your friend request.
                     </p>
                     <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
                     <Link
                       href="/friends"
                       onClick={() => { markNotificationRead(n.id); setOpen(false); }}
-                      className="inline-block mt-1 text-xs text-white underline"
+                      className="inline-block mt-1 text-xs text-foreground underline"
                     >
                       View friends
                     </Link>
@@ -211,7 +210,7 @@ export default function NotificationBell() {
                 )}
                 {n.type === 'pr_kudos' && isPRKudosMetadata(n.metadata) && (
                   <>
-                    <p className="text-white">
+                    <p className="text-foreground">
                       <span className="font-medium">{n.from_username}</span> reacted {getReactionEmoji(n.metadata?.reaction_type)} to your{' '}
                       <span className="text-amber-300 font-medium">{n.metadata?.exercise_name ?? 'exercise'}</span> PR!
                     </p>
@@ -225,7 +224,7 @@ export default function NotificationBell() {
                 )}
                 {n.type === 'pr_comment' && isPRCommentMetadata(n.metadata) && (
                   <>
-                    <p className="text-white">
+                    <p className="text-foreground">
                       <span className="font-medium">{n.from_username}</span> commented on your{' '}
                       <span className="text-amber-300 font-medium">{n.metadata?.exercise_name ?? 'exercise'}</span> PR
                     </p>
@@ -237,7 +236,7 @@ export default function NotificationBell() {
                 )}
                 {n.type === 'achievement_unlocked' && n.metadata && 'achievement_name' in n.metadata && (
                   <>
-                    <p className="text-white">
+                    <p className="text-foreground">
                       <span className="font-medium text-amber-400">Achievement unlocked:</span>{' '}
                       {n.metadata.achievement_name}
                     </p>
@@ -245,7 +244,7 @@ export default function NotificationBell() {
                     <Link
                       href="/achievements"
                       onClick={() => { markNotificationRead(n.id); setOpen(false); }}
-                      className="inline-block mt-1 text-xs text-white underline"
+                      className="inline-block mt-1 text-xs text-foreground underline"
                     >
                       View achievements
                     </Link>

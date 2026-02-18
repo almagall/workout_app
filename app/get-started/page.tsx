@@ -66,33 +66,33 @@ export default function GetStartedPage() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <p className="text-[#888888]">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
-      <div className="max-w-md w-full space-y-8 p-8 bg-[#111111] rounded-lg border border-[#2a2a2a]">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-2xl border border-border shadow-card">
         <div>
-          <h1 className="text-center text-4xl font-extrabold text-white mb-2">
+          <h1 className="font-display text-center text-4xl font-extrabold text-foreground mb-2 tracking-tight">
             Workout Planner
           </h1>
-          <h2 className="mt-6 text-center text-2xl font-bold text-white">
+          <h2 className="font-display mt-6 text-center text-2xl font-bold text-foreground tracking-tight">
             Sign In
           </h2>
-          <p className="mt-2 text-center text-sm text-[#888888]">
+          <p className="mt-2 text-center text-sm text-muted">
             Enter your username and password. We will create an account if you do not have one.
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded">
+            <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div className="rounded-lg shadow-sm -space-y-px">
             <div>
               <label htmlFor="username" className="sr-only">
                 Username
@@ -103,7 +103,7 @@ export default function GetStartedPage() {
                 type="text"
                 autoComplete="username"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white placeholder-[#888888] rounded-t-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border bg-elevated text-foreground placeholder-muted rounded-t-lg focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent focus:z-10 sm:text-sm"
                 placeholder="Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -121,7 +121,7 @@ export default function GetStartedPage() {
                 autoComplete="current-password"
                 required
                 minLength={6}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white placeholder-[#888888] rounded-b-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border bg-elevated text-foreground placeholder-muted rounded-b-lg focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent focus:z-10 sm:text-sm"
                 placeholder="Password (min 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -134,7 +134,7 @@ export default function GetStartedPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-white hover:bg-[#e5e5e5] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#111111] focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-background bg-accent hover:shadow-glow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>

@@ -106,15 +106,15 @@ export default function ProfilePage({ params }: { params: { username: string } }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <p className="text-[#888888]">Loading profile...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted">Loading profile...</p>
       </div>
     )
   }
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-black px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
         <p className="text-red-400 text-lg mb-4">{error || 'Profile not found'}</p>
         <Link href="/dashboard" className="text-amber-400 hover:text-amber-300">
           Return to Dashboard
@@ -124,10 +124,10 @@ export default function ProfilePage({ params }: { params: { username: string } }
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Back link */}
-        <Link href="/dashboard" className="text-[#888888] hover:text-white text-sm mb-6 inline-flex items-center gap-1">
+        <Link href="/dashboard" className="text-muted hover:text-foreground text-sm mb-6 inline-flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -135,7 +135,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
         </Link>
 
         {/* Profile header */}
-        <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-6 mt-4">
+        <div className="bg-card rounded-xl border border-border shadow-card p-6 mt-4">
           <div className="flex items-start gap-4">
             {/* Avatar */}
             <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-2xl font-bold shrink-0">
@@ -145,8 +145,8 @@ export default function ProfilePage({ params }: { params: { username: string } }
             <div className="flex-1">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
-                  <h1 className="text-2xl font-bold text-white">{profile.username}</h1>
-                  <p className="text-[#888888] text-sm">Member since {formatMemberSince(profile.member_since)}</p>
+                  <h1 className="text-2xl font-bold text-foreground">{profile.username}</h1>
+                  <p className="text-muted text-sm">Member since {formatMemberSince(profile.member_since)}</p>
                 </div>
 
                 {/* Action button */}
@@ -180,12 +180,12 @@ export default function ProfilePage({ params }: { params: { username: string } }
               {/* Stats */}
               <div className="flex gap-6 mt-4">
                 <div>
-                  <p className="text-2xl font-bold text-white">{profile.total_workouts}</p>
-                  <p className="text-[#888888] text-sm">Workouts</p>
+                  <p className="text-2xl font-bold text-foreground">{profile.total_workouts}</p>
+                  <p className="text-muted text-sm">Workouts</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-amber-400">{profile.recent_prs.length}</p>
-                  <p className="text-[#888888] text-sm">Recent PRs</p>
+                  <p className="text-muted text-sm">Recent PRs</p>
                 </div>
               </div>
             </div>
@@ -193,9 +193,9 @@ export default function ProfilePage({ params }: { params: { username: string } }
         </div>
 
         {/* Recent PRs section */}
-        <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] mt-6">
-          <div className="p-4 border-b border-[#2a2a2a]">
-            <h2 className="text-lg font-semibold text-white">Recent PRs</h2>
+        <div className="bg-card rounded-xl border border-border shadow-card mt-6">
+          <div className="p-4 border-b border-border">
+            <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
           </div>
           <div className="p-4">
             {!profile.can_see_prs && (
@@ -203,7 +203,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
                 <svg className="w-12 h-12 mx-auto text-[#444444] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                <p className="text-[#888888]">
+                <p className="text-muted">
                   {profile.is_friend
                     ? 'This user has hidden their PRs from friends'
                     : 'Become friends to see their PRs'}
@@ -211,7 +211,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
               </div>
             )}
             {profile.can_see_prs && profile.recent_prs.length === 0 && (
-              <p className="text-[#888888] text-center py-8">No recent PRs</p>
+              <p className="text-muted text-center py-8">No recent PRs</p>
             )}
             {profile.can_see_prs && profile.recent_prs.length > 0 && (
               <div className="space-y-3">
@@ -226,17 +226,17 @@ export default function ProfilePage({ params }: { params: { username: string } }
                   return (
                     <div
                       key={`${pr.exerciseName}-${pr.workoutDate}-${pr.prType}-${i}`}
-                      className="flex items-center justify-between py-2 border-b border-[#2a2a2a] last:border-0 gap-2"
+                      className="flex items-center justify-between py-2 border-b border-border last:border-0 gap-2"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium">{pr.exerciseName}</p>
-                        <p className="text-xs text-[#888888]">
+                        <p className="text-foreground font-medium">{pr.exerciseName}</p>
+                        <p className="text-xs text-muted">
                           {profile.day_labels[pr.templateDayId] ?? 'Workout'} · {formatDate(pr.workoutDate)}
                         </p>
                       </div>
                       <div className="text-right">
                         <span className="text-amber-300 font-semibold">{pr.value} lbs</span>
-                        <p className="text-xs text-[#888888]">
+                        <p className="text-xs text-muted">
                           {pr.prType === 'heaviestSet' ? 'Heaviest set' : 'Est. 1RM'}
                         </p>
                       </div>
@@ -255,7 +255,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
                                 type="button"
                                 disabled={isSending}
                                 onClick={() => setShowReactionPicker(isPickerOpen ? null : key)}
-                                className="p-1.5 rounded-full text-[#888888] hover:text-amber-400 hover:bg-[#2a2a2a] transition-colors disabled:opacity-60"
+                                className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-elevated transition-colors disabled:opacity-60"
                                 title="React"
                               >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,7 +263,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
                                 </svg>
                               </button>
                               {isPickerOpen && (
-                                <div className="absolute right-0 top-full mt-1 flex gap-1 bg-[#2a2a2a] rounded-full p-1 shadow-lg z-10">
+                                <div className="absolute right-0 top-full mt-1 flex gap-1 bg-elevated rounded-full p-1 shadow-lg z-10">
                                   {(['kudos', 'strong', 'fire'] as ReactionType[]).map((type) => (
                                     <button
                                       key={type}

@@ -129,7 +129,7 @@ export default function LogWorkoutDayPage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-[#888888]">Loading...</div>
+        <div className="text-muted">Loading...</div>
       </div>
     )
   }

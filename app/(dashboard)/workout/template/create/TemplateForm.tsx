@@ -67,18 +67,18 @@ function ExerciseAutocompleteInline({
         onFocus={() => { if (query.trim().length > 0) setOpen(true) }}
         placeholder={placeholder}
         required
-        className="w-full px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
+        className="w-full px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
         autoComplete="off"
       />
       {open && query.trim().length > 0 && (
-        <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-md border border-[#2a2a2a] bg-[#1a1a1a] shadow-lg">
+        <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-md border border-border bg-elevated shadow-lg">
           {suggestions.length === 0 ? (
-            <li className="px-3 py-2 text-[#888888] text-sm">No matches. Use as custom exercise.</li>
+            <li className="px-3 py-2 text-muted text-sm">No matches. Use as custom exercise.</li>
           ) : (
             suggestions.map((entry) => (
               <li
                 key={entry.id}
-                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm hover:bg-[#2a2a2a] text-[#e5e5e5]"
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm hover:bg-elevated text-foreground"
                 onClick={() => {
                   onChange(entry.name)
                   setQuery(entry.name)
@@ -86,7 +86,7 @@ function ExerciseAutocompleteInline({
                 }}
               >
                 <span className="flex-1">{entry.name}</span>
-                <span className="text-[#888888] text-xs">{entry.muscleGroup} · {entry.equipment}</span>
+                <span className="text-muted text-xs">{entry.muscleGroup} · {entry.equipment}</span>
               </li>
             ))
           )}
@@ -298,17 +298,17 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
   }
 
   if (initialLoading) {
-    return <div className="p-8 text-[#888888]">Loading...</div>
+    return <div className="p-8 text-muted">Loading...</div>
   }
 
   // When editing we must have planType from template; when creating we allow null until user selects
   if (isEditMode && !planType) {
-    return <div className="p-8 text-[#888888]">Loading...</div>
+    return <div className="p-8 text-muted">Loading...</div>
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-white mb-8">Template</h1>
+      <h1 className="font-display text-3xl font-bold text-foreground mb-8 tracking-tight">Template</h1>
 
       {error && (
         <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded mb-6">
@@ -316,7 +316,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-[#111111] rounded-lg border border-[#2a2a2a] p-6">
+      <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-border shadow-card p-6">
         <div className="mb-6">
           <label htmlFor="templateName" className="block text-sm font-medium text-white mb-2">
             Template Name
@@ -326,7 +326,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
             id="templateName"
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
-            className="w-full px-3 py-2 border border-[#2a2a2a] bg-[#1a1a1a] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
+            className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
             placeholder="e.g., 6-Day Push/Pull/Legs"
             required
           />
@@ -334,7 +334,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
 
         <div className="mb-6">
           <label className="block text-sm font-medium text-white mb-2">Workout focus</label>
-          <p className="text-sm text-[#888888] mb-3">
+          <p className="text-sm text-muted mb-3">
             Choose whether this template is for building muscle size (hypertrophy) or strength. Targets and rep ranges will adjust accordingly.
           </p>
           <div className="flex gap-6">
@@ -348,7 +348,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
                 className="w-4 h-4 accent-white"
               />
               <span className="text-white">Hypertrophy</span>
-              <span className="text-[#888888] text-sm">(8–15 reps, volume focus)</span>
+              <span className="text-muted text-sm">(8–15 reps, volume focus)</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -360,7 +360,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
                 className="w-4 h-4 accent-white"
               />
               <span className="text-white">Strength</span>
-              <span className="text-[#888888] text-sm">(3–6 reps, weight focus)</span>
+              <span className="text-muted text-sm">(3–6 reps, weight focus)</span>
             </label>
           </div>
         </div>
@@ -379,13 +379,13 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
           )}
 
           {days.map((day, dayIndex) => (
-            <div key={dayIndex} className="mb-6 p-4 border border-[#2a2a2a] bg-[#1a1a1a] rounded-lg">
+            <div key={dayIndex} className="mb-6 p-4 border border-border bg-elevated rounded-lg">
               <div className="flex justify-between items-center mb-4">
                 <input
                   type="text"
                   value={day.dayLabel}
                   onChange={(e) => updateDay(dayIndex, 'dayLabel', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-[#2a2a2a] bg-[#111111] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
+                  className="flex-1 px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
                   placeholder="e.g., Push A, Pull B, Legs A"
                   required
                 />
@@ -419,7 +419,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
                             e.target.value === '' ? null : (e.target.value as PlanType)
                           )
                         }
-                        className="px-2 py-2 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] text-white text-sm focus:outline-none focus:ring-2 focus:ring-white flex-shrink-0 w-[120px]"
+                        className="px-2 py-2 rounded-md border border-border bg-elevated text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 flex-shrink-0 w-[120px]"
                         title="Focus for this exercise"
                       >
                         <option value="">Use template</option>
@@ -451,7 +451,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
                 <button
                   type="button"
                   onClick={() => addExercise(dayIndex)}
-                  className="mt-2 text-sm px-3 py-1 bg-[#1a1a1a] text-white rounded hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors"
+                  className="mt-2 text-sm px-3 py-1 bg-elevated text-foreground rounded hover:bg-elevated border border-border transition-colors"
                 >
                   + Add Exercise
                 </button>
@@ -483,7 +483,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
           <button
             type="button"
             onClick={() => router.push('/workout/template')}
-            className="px-4 py-2 bg-[#1a1a1a] text-white rounded-md hover:bg-[#2a2a2a] border border-[#2a2a2a] transition-colors"
+            className="px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow border border-transparent transition-all duration-200 transition-colors"
           >
             Cancel
           </button>

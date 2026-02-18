@@ -157,22 +157,22 @@ export default function WorkoutCalendar() {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-lg border border-border p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold mb-4 text-foreground">Workout Calendar</h2>
+      <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-card">
+        <h2 className="font-display text-lg sm:text-xl font-semibold mb-4 text-foreground tracking-tight">Workout Calendar</h2>
         <div className="text-muted text-sm">Loading…</div>
       </div>
     )
   }
 
   return (
-    <div className="bg-card rounded-lg border border-border p-4 sm:p-6">
-      <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground">Workout Calendar</h2>
+    <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-card">
+      <h2 className="font-display text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground tracking-tight">Workout Calendar</h2>
 
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <button
           type="button"
           onClick={prevMonth}
-          className="p-1.5 sm:p-2 rounded-md text-foreground hover:bg-elevated transition-colors"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-md text-foreground hover:bg-elevated transition-colors"
           aria-label="Previous month"
         >
           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,7 +206,7 @@ export default function WorkoutCalendar() {
         <button
           type="button"
           onClick={nextMonth}
-          className="p-1.5 sm:p-2 rounded-md text-foreground hover:bg-elevated transition-colors"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-md text-foreground hover:bg-elevated transition-colors"
           aria-label="Next month"
         >
           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
