@@ -83,7 +83,6 @@ export default function CompareModal({ friend, onClose }: CompareModalProps) {
       .finally(() => setLoadingExercise(false))
   }, [selectedExercise, friend.user_id])
 
-  // Merge histories for the chart
   const chartData = (() => {
     if (!data?.user || !data?.friend) return []
     const dateMap = new Map<string, { date: string; you?: number; friend?: number }>()
@@ -103,35 +102,47 @@ export default function CompareModal({ friend, onClose }: CompareModalProps) {
   })()
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm" onClick={onClose}>
       <div
         className="modal-glass max-w-2xl w-full max-h-[85vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <div className="p-4 border-b border-white/[0.06] flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-foreground">Compare with {friend.username}</h3>
-          <button type="button" onClick={onClose} className="p-1 rounded text-muted hover:text-foreground hover:bg-white/[0.04]" aria-label="Close">
+        <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #2563eb, #06b6d4, #2563eb)' }} />
+        <div className="p-5 border-b border-white/[0.06] flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-accent/10 border border-accent/15 flex items-center justify-center text-xs font-semibold text-accent-light flex-shrink-0">
+            {friend.username.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-foreground">Compare with {friend.username}</h3>
+            <p className="text-xs text-muted">Head-to-head lift comparison</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors" aria-label="Close">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <div className="p-4 overflow-auto max-h-[calc(85vh-4rem)]">
-          {loading && <p className="text-muted text-sm">Loading...</p>}
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+        <div className="p-5 overflow-auto max-h-[calc(85vh-5rem)]">
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+            </div>
+          )}
+          {error && <p className="text-red-400 text-sm text-center py-8">{error}</p>}
 
           {!loading && !error && data && (
             <>
               {data.commonExercises.length === 0 ? (
-                <p className="text-muted text-sm">No exercises in common to compare.</p>
+                <div className="text-center py-12">
+                  <p className="text-muted text-sm">No exercises in common to compare</p>
+                </div>
               ) : (
                 <>
-                  {/* Exercise picker */}
                   <div className="mb-5">
-                    <label className="block text-sm text-foreground mb-1">Exercise</label>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted mb-2">Exercise</label>
                     <select
                       value={selectedExercise}
                       onChange={e => setSelectedExercise(e.target.value)}
-                      className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+                      className="w-full px-3 py-2.5 border border-white/[0.06] bg-white/[0.03] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all"
                     >
                       {data.commonExercises.map(ex => (
                         <option key={ex} value={ex}>{ex}</option>
@@ -139,62 +150,65 @@ export default function CompareModal({ friend, onClose }: CompareModalProps) {
                     </select>
                   </div>
 
-                  {loadingExercise && <p className="text-muted text-sm mb-4">Loading stats...</p>}
+                  {loadingExercise && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+                    </div>
+                  )}
 
                   {!loadingExercise && data.user && data.friend && (
                     <>
-                      {/* Side-by-side stat cards */}
                       <div className="grid grid-cols-2 gap-3 mb-5">
-                        <StatCard label="You" stats={data.user} />
+                        <StatCard label="You" stats={data.user} isUser />
                         <StatCard label={friend.username} stats={data.friend} />
                       </div>
 
-                      {/* Chart */}
                       {chartData.length > 1 ? (
-                        <div className="bg-white/[0.04] rounded-lg p-3 border border-white/[0.06]">
-                          <p className="text-sm text-foreground font-medium mb-3">e1RM Over Time</p>
+                        <div className="rounded-xl p-4 bg-white/[0.02] border border-white/[0.04]">
+                          <p className="text-xs font-medium text-foreground mb-3">e1RM Over Time</p>
                           <ResponsiveContainer width="100%" height={250}>
                             <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                               <XAxis
                                 dataKey="date"
                                 tickFormatter={formatChartDate}
-                                stroke="#888888"
-                                tick={{ fontSize: 11, fill: '#888888' }}
+                                stroke="rgba(255,255,255,0.1)"
+                                tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }}
                               />
                               <YAxis
-                                stroke="#888888"
-                                tick={{ fontSize: 11, fill: '#888888' }}
+                                stroke="rgba(255,255,255,0.1)"
+                                tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }}
                                 domain={['auto', 'auto']}
                                 unit=" lb"
                               />
                               <Tooltip
                                 contentStyle={{
-                                  backgroundColor: 'rgba(255,255,255,0.02)',
-                                  border: '1px solid #2a2a2a',
-                                  borderRadius: '8px',
+                                  backgroundColor: 'rgba(17,17,19,0.96)',
+                                  border: '1px solid rgba(255,255,255,0.06)',
+                                  borderRadius: '10px',
                                   fontSize: '12px',
+                                  backdropFilter: 'blur(12px)',
                                 }}
                                 labelFormatter={formatChartDate}
                                 formatter={(value: number, name: string) => [`${value} lbs`, name === 'you' ? 'You' : friend.username]}
                               />
-                              <Line type="monotone" dataKey="you" stroke="#ffffff" strokeWidth={2} dot={false} connectNulls />
+                              <Line type="monotone" dataKey="you" stroke="#2563eb" strokeWidth={2} dot={false} connectNulls />
                               <Line type="monotone" dataKey="friend" stroke="#fbbf24" strokeWidth={2} dot={false} connectNulls />
                             </LineChart>
                           </ResponsiveContainer>
                           <div className="flex justify-center gap-6 mt-2">
                             <div className="flex items-center gap-1.5">
-                              <span className="w-3 h-0.5 bg-white rounded-full inline-block" />
-                              <span className="text-xs text-muted">You</span>
+                              <span className="w-3 h-0.5 bg-accent rounded-full inline-block" />
+                              <span className="text-[10px] text-muted">You</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <span className="w-3 h-0.5 bg-amber-400 rounded-full inline-block" />
-                              <span className="text-xs text-muted">{friend.username}</span>
+                              <span className="text-[10px] text-muted">{friend.username}</span>
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <p className="text-muted text-sm text-center">Not enough data to chart yet.</p>
+                        <p className="text-muted text-sm text-center py-4">Not enough data to chart yet.</p>
                       )}
                     </>
                   )}
@@ -208,30 +222,30 @@ export default function CompareModal({ friend, onClose }: CompareModalProps) {
   )
 }
 
-function StatCard({ label, stats }: { label: string; stats: UserStats }) {
+function StatCard({ label, stats, isUser }: { label: string; stats: UserStats; isUser?: boolean }) {
   return (
-    <div className="bg-white/[0.04] rounded-lg p-3 border border-white/[0.06]">
-      <p className="text-sm font-medium text-foreground mb-2 truncate">{label}</p>
-      <div className="space-y-1.5">
+    <div className={`rounded-xl p-4 border ${isUser ? 'bg-accent/[0.03] border-accent/10' : 'bg-white/[0.02] border-white/[0.04]'}`}>
+      <p className={`text-sm font-semibold mb-3 truncate ${isUser ? 'text-accent-light' : 'text-foreground'}`}>{label}</p>
+      <div className="space-y-2.5">
         <div className="flex justify-between text-xs">
           <span className="text-muted">Current e1RM</span>
-          <span className="text-foreground font-medium">{stats.currentE1rm || '—'} lbs</span>
+          <span className="text-foreground font-bold tabular-nums">{stats.currentE1rm || '—'} lbs</span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-muted">Best e1RM</span>
-          <span className="text-amber-300 font-medium">{stats.bestE1rm || '—'} lbs</span>
+          <span className="text-amber-400 font-bold tabular-nums">{stats.bestE1rm || '—'} lbs</span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-muted">Best Weight</span>
-          <span className="text-foreground">{stats.bestWeight || '—'} lbs</span>
+          <span className="text-foreground tabular-nums">{stats.bestWeight || '—'} lbs</span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-muted">Sessions</span>
-          <span className="text-foreground">{stats.totalSessions}</span>
+          <span className="text-foreground tabular-nums">{stats.totalSessions}</span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-muted">Trend</span>
-          <span className={`font-medium ${trendColor(stats.trend)}`}>{trendArrow(stats.trend)} {stats.trend}</span>
+          <span className={`font-bold ${trendColor(stats.trend)}`}>{trendArrow(stats.trend)} {stats.trend}</span>
         </div>
       </div>
     </div>

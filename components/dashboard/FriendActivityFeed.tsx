@@ -18,7 +18,6 @@ function formatDate(dateStr: string): string {
   const dateOnly = dateStr.slice(0, 10)
   const [y, m, d] = dateOnly.split('-').map(Number)
 
-  // Compare in the user's local timezone so "yesterday" matches their wall clock
   const date = new Date(y, m - 1, d)
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -28,7 +27,7 @@ function formatDate(dateStr: string): string {
   if (diffDays < 0) return ''
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays < 7) return `${diffDays}d ago`
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
@@ -40,12 +39,22 @@ function getReactionEmoji(type: ReactionType): string {
   }
 }
 
+function AvatarCircle({ name, variant }: { name: string; variant: 'pr' | 'workout' | 'achievement' }) {
+  const colors = {
+    pr: 'bg-amber-500/15 text-amber-400 border-amber-500/15',
+    workout: 'bg-accent/10 text-accent-light border-accent/15',
+    achievement: 'bg-amber-500/15 text-amber-400 border-amber-500/15',
+  }
+  return (
+    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 border ${colors[variant]}`}>
+      {name.charAt(0).toUpperCase()}
+    </div>
+  )
+}
+
 export interface FriendActivityFeedProps {
-  /** Max number of feed items to show (default 5). */
   maxItems?: number
-  /** Whether to show "View all" link (default true). Set false when embedded on Friends page. */
   showViewAllLink?: boolean
-  /** Optional fixed height for the scroll area (e.g. "400px"). Omit for auto height. */
   scrollHeight?: string
 }
 
@@ -72,7 +81,6 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
       if (!res.ok) throw new Error('Failed to load feed')
       const data = await res.json()
       
-      // Filter out any items with future dates (timezone issues can cause this)
       const now = new Date()
       const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const validFeed = (data.feed ?? []).filter((item: FeedItem) => {
@@ -94,7 +102,6 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
       
       setFeed(validFeed)
 
-      // Load reactions only for PR items (workout and achievement items have no reactions)
       const prItems = (data.feed ?? []).filter((x: FeedItem) => x.type === 'pr') as FeedPR[]
       const friendIds = [...new Set(prItems.map((p) => p.user_id))] as string[]
       const allReacted = new Map<string, ReactionInfo>()
@@ -121,15 +128,11 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
     }
   }, [loadFeed])
 
-  // Auto-refresh feed every 5 minutes
   useEffect(() => {
     if (!user) return
-    
     const intervalId = setInterval(() => {
       loadFeed(user.id)
-    }, 300000) // 5 minutes
-    
-    // Cleanup interval on unmount
+    }, 300000)
     return () => clearInterval(intervalId)
   }, [user, loadFeed])
 
@@ -216,53 +219,59 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
   if (!user) return null
 
   return (
-    <div className="card-glass card-accent-top overflow-hidden relative">
-      <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
-      <div className="p-4 border-b border-white/[0.06] bg-white/[0.015] flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Friend Activity</h2>
+    <div className="rounded-2xl border border-white/[0.06] overflow-hidden relative" style={{ background: 'linear-gradient(180deg, rgba(19,19,22,0.95), rgba(13,13,16,0.98))', boxShadow: '0 8px 32px -8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)' }}>
+      <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.05), transparent 70%)' }} />
+      <div className="px-4 py-3.5 border-b border-white/[0.04] flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-0.5 h-4 rounded-full bg-accent/50" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Activity</h2>
+        </div>
         {showViewAllLink && (
-          <Link href="/friends" className="text-sm text-amber-400 hover:text-amber-300">
+          <Link href="/friends" className="text-xs font-medium text-accent-light/70 hover:text-accent-light transition-colors">
             View all
           </Link>
         )}
       </div>
-      <div className="p-4 overflow-y-auto" style={scrollHeight ? { height: scrollHeight } : undefined}>
+      <div className="overflow-y-auto" style={scrollHeight ? { height: scrollHeight } : undefined}>
         {loading && (
-          <p className="text-muted text-sm text-center py-4">Loading...</p>
+          <div className="flex items-center justify-center py-12">
+            <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+          </div>
         )}
         {error && (
-          <p className="text-red-400 text-sm text-center py-4">{error}</p>
+          <p className="text-red-400 text-sm text-center py-8">{error}</p>
         )}
         {actionError && (
-          <p className="text-red-400 text-sm text-center py-2 px-2">{actionError}</p>
+          <p className="text-red-400 text-xs text-center py-2 px-4">{actionError}</p>
         )}
         {!loading && !error && feed.length === 0 && (
-          <div className="text-center py-4">
-            <p className="text-muted text-sm mb-2">No recent friend activity</p>
-            <Link href="/friends" className="text-sm text-amber-400 hover:text-amber-300">
-              Add friends to see their PRs
+          <div className="text-center py-12 px-4">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+              <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <p className="text-muted text-sm mb-1">No recent activity</p>
+            <Link href="/friends" className="text-xs text-accent-light/70 hover:text-accent-light transition-colors">
+              Add friends to see their updates
             </Link>
           </div>
         )}
         {!loading && feed.length > 0 && (
-          <div className="space-y-3">
+          <div className="divide-y divide-white/[0.03]">
             {feed.slice(0, maxItems).map((item, i) => {
               if (item.type === 'achievement') {
                 return (
                   <div
                     key={`${item.user_id}-achievement-${item.achievement_id}-${item.unlocked_at}-${i}`}
-                    className="flex items-start gap-3 py-2 border-b border-white/[0.06] last:border-0"
+                    className="flex items-start gap-3 px-4 py-3.5 hover:bg-white/[0.015] transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-sm font-medium shrink-0">
-                      {item.username.charAt(0).toUpperCase()}
-                    </div>
+                    <AvatarCircle name={item.username} variant="achievement" />
                     <div className="flex-1 min-w-0">
                       <p className="text-foreground text-sm">
                         <span className="font-medium">{item.username}</span>
                         <span className="text-muted"> unlocked </span>
                         <span className="text-amber-400 font-medium">{item.achievement_name}</span>
                       </p>
-                      <p className="text-muted text-xs mt-0.5">{formatDate(item.unlocked_at)}</p>
+                      <p className="text-muted text-[11px] mt-0.5">{formatDate(item.unlocked_at)}</p>
                     </div>
                   </div>
                 )
@@ -271,28 +280,26 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                 return (
                   <div
                     key={`${item.user_id}-workout-${item.workoutDate}-${item.templateDayId}-${i}`}
-                    className="flex items-start gap-3 py-2 border-b border-white/[0.06] last:border-0"
+                    className="flex items-start gap-3 px-4 py-3.5 hover:bg-white/[0.015] transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-sm font-medium shrink-0">
-                      {item.username.charAt(0).toUpperCase()}
-                    </div>
+                    <AvatarCircle name={item.username} variant="workout" />
                     <div className="flex-1 min-w-0">
                       <p className="text-foreground text-sm">
                         <span className="font-medium">{item.username}</span>
                         <span className="text-muted"> completed </span>
                         <span className="text-foreground font-medium">{item.dayLabel || 'Workout'}</span>
                         {item.hasPRs && (
-                          <span className="ml-1.5 text-xs font-medium px-1.5 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
-                            PR!
+                          <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/10">
+                            PR
                           </span>
                         )}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-muted text-xs">
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-muted text-[11px]">
                           {item.exerciseCount} exercise{item.exerciseCount !== 1 ? 's' : ''}
                         </span>
-                        <span className="text-secondary text-xs">·</span>
-                        <span className="text-muted text-xs">{formatDate(item.workoutDate)}</span>
+                        <span className="text-white/10 text-[11px]">·</span>
+                        <span className="text-muted text-[11px]">{formatDate(item.workoutDate)}</span>
                       </div>
                     </div>
                   </div>
@@ -310,43 +317,42 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
               return (
                 <div
                   key={`${pr.user_id}-${pr.exerciseName}-${pr.workoutDate}-${pr.prType}-${i}`}
-                  className="py-2 border-b border-white/[0.06] last:border-0"
+                  className="px-4 py-3.5 hover:bg-white/[0.015] transition-colors"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-sm font-medium shrink-0">
-                      {pr.username.charAt(0).toUpperCase()}
-                    </div>
+                    <AvatarCircle name={pr.username} variant="pr" />
                     <div className="flex-1 min-w-0">
                       <p className="text-foreground text-sm">
                         <span className="font-medium">{pr.username}</span>
-                        <span className="text-muted"> hit a new PR!</span>
+                        <span className="text-muted"> hit a new PR</span>
                       </p>
-                      <p className="text-foreground font-medium mt-0.5">{pr.exerciseName}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-amber-300 font-semibold text-sm">{pr.value} lbs</span>
-                        <span className="text-muted text-xs">
+                      <p className="text-foreground font-medium text-sm mt-0.5">{pr.exerciseName}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-accent-light font-bold text-sm tabular-nums">{pr.value} lbs</span>
+                        <span className="text-white/10 text-[11px]">·</span>
+                        <span className="text-muted text-[11px]">
                           {pr.prType === 'heaviestSet' ? 'Heaviest' : 'Est. 1RM'}
                         </span>
-                        <span className="text-secondary text-xs">·</span>
-                        <span className="text-muted text-xs">{formatDate(pr.workoutDate)}</span>
+                        <span className="text-white/10 text-[11px]">·</span>
+                        <span className="text-muted text-[11px]">{formatDate(pr.workoutDate)}</span>
                       </div>
                     </div>
                     <div className="relative shrink-0 flex items-center gap-0.5">
                       <button
                         type="button"
                         onClick={() => toggleComments(pr)}
-                        className={`p-1.5 rounded-full transition-colors ${
-                          isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-muted hover:text-blue-400 hover:bg-white/[0.04]'
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          isCommentsOpen ? 'text-accent-light bg-accent/10' : 'text-muted hover:text-accent-light hover:bg-white/[0.04]'
                         }`}
                         title="Comment"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                       </button>
                       {hasReacted ? (
                         <span
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 text-lg"
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-sm"
                           title={`Reacted: ${reaction.reaction_type}`}
                         >
                           {getReactionEmoji(reaction.reaction_type)}
@@ -357,21 +363,21 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                             type="button"
                             disabled={isSending}
                             onClick={() => setShowReactionPicker(isPickerOpen ? null : key)}
-                            className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-white/[0.04] transition-colors disabled:opacity-60"
+                            className="p-1.5 rounded-lg text-muted hover:text-amber-400 hover:bg-white/[0.04] transition-colors disabled:opacity-60"
                             title="React"
                           >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
                             </svg>
                           </button>
                           {isPickerOpen && (
-                            <div className="absolute right-0 top-full mt-1 flex gap-1 bg-white/[0.04] rounded-full p-1 shadow-lg z-10">
+                            <div className="absolute right-0 top-full mt-1 flex gap-1 rounded-lg p-1.5 shadow-lg z-10 border border-white/[0.06]" style={{ background: 'rgba(17,17,19,0.96)', backdropFilter: 'blur(12px)' }}>
                               {(['kudos', 'strong', 'fire'] as ReactionType[]).map((type) => (
                                 <button
                                   key={type}
                                   type="button"
                                   onClick={() => handleSendReaction(pr, type)}
-                                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-border text-lg transition-colors"
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.08] text-lg transition-colors"
                                   title={type}
                                 >
                                   {getReactionEmoji(type)}
@@ -384,7 +390,7 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                     </div>
                   </div>
                   {isCommentsOpen && (
-                    <div className="mt-2 ml-11 pl-2 border-l-2 border-white/[0.06]">
+                    <div className="mt-3 ml-11 pt-3 border-t border-white/[0.04]">
                       {isLoadingComments && (
                         <p className="text-xs text-muted">Loading comments...</p>
                       )}
@@ -392,16 +398,21 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                         <p className="text-xs text-muted mb-2">No comments yet</p>
                       )}
                       {!isLoadingComments && comments.length > 0 && (
-                        <div className="space-y-1.5 mb-2">
+                        <div className="space-y-2 mb-3">
                           {comments.map((c) => (
-                            <div key={c.id} className="text-xs">
-                              <span className="font-medium text-foreground">{c.from_username}</span>
-                              <span className="text-secondary ml-1">{c.comment}</span>
+                            <div key={c.id} className="flex items-start gap-2">
+                              <div className="w-5 h-5 rounded-full bg-white/[0.06] flex items-center justify-center text-[9px] font-semibold text-foreground/60 flex-shrink-0 mt-0.5">
+                                {c.from_username.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="text-xs">
+                                <span className="font-medium text-foreground">{c.from_username}</span>
+                                <span className="text-foreground/60 ml-1">{c.comment}</span>
+                              </div>
                             </div>
                           ))}
                         </div>
                       )}
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex gap-2">
                         <input
                           type="text"
                           value={newComment}
@@ -409,13 +420,13 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                           onKeyDown={(e) => e.key === 'Enter' && handlePostComment(pr)}
                           placeholder="Add a comment..."
                           maxLength={200}
-                          className="flex-1 text-xs px-2 py-1.5 rounded bg-white/[0.04] border border-[#3a3a3a] text-foreground placeholder-[#888888] focus:outline-none focus:border-blue-500"
+                          className="flex-1 text-xs px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent/20 transition-all"
                         />
                         <button
                           type="button"
                           onClick={() => handlePostComment(pr)}
                           disabled={postingComment || !newComment.trim()}
-                          className="px-2 py-1.5 text-xs bg-blue-600 text-foreground rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-2 text-xs font-medium rounded-lg bg-accent/20 text-accent-light hover:bg-accent/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           Post
                         </button>

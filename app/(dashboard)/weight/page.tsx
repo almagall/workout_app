@@ -233,34 +233,53 @@ export default function WeightPage() {
 
       {/* Add/Edit Weight Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50 p-4">
-          <div className="modal-glass max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold text-foreground mb-4">
-              {editingEntry ? 'Edit Weight Entry' : 'Log New Weight'}
-            </h3>
+        <div className="fixed inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="modal-glass max-w-md w-full overflow-hidden">
+            <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #2563eb, #06b6d4, #2563eb)' }} />
+            <div className="p-5 border-b border-white/[0.06] flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-accent/10 border border-accent/15 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-foreground">
+                  {editingEntry ? 'Edit Weight Entry' : 'Log New Weight'}
+                </h3>
+                <p className="text-xs text-muted">{editingEntry ? 'Update your recorded weight' : 'Track your body weight'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors flex-shrink-0"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
 
+            <div className="p-5">
             {formError && (
-              <div className="mb-4 bg-red-900/20 border border-red-800 text-red-300 px-3 py-2 rounded text-sm">
+              <div className="mb-4 bg-red-500/10 border border-red-500/15 text-red-400 px-3 py-2 rounded-lg text-sm flex items-center gap-2">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="block text-xs font-medium uppercase tracking-wider text-muted mb-2">
                   Date
                 </label>
                 <input
                   type="date"
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
+                  className="w-full px-3 py-2.5 border border-white/[0.06] bg-white/[0.03] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="block text-xs font-medium uppercase tracking-wider text-muted mb-2">
                   Weight
                 </label>
                 <div className="flex gap-2">
@@ -270,13 +289,13 @@ export default function WeightPage() {
                     value={formWeight}
                     onChange={(e) => setFormWeight(e.target.value)}
                     placeholder="165"
-                    className="flex-1 px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
+                    className="flex-1 px-3 py-2.5 border border-white/[0.06] bg-white/[0.03] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all"
                     required
                   />
                   <select
                     value={formUnit}
                     onChange={(e) => setFormUnit(e.target.value as 'lbs' | 'kg')}
-                    className="px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
+                    className="px-3 py-2.5 border border-white/[0.06] bg-white/[0.03] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all"
                   >
                     <option value="lbs">lbs</option>
                     <option value="kg">kg</option>
@@ -285,7 +304,7 @@ export default function WeightPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="block text-xs font-medium uppercase tracking-wider text-muted mb-2">
                   Notes (optional)
                 </label>
                 <textarea
@@ -293,26 +312,27 @@ export default function WeightPage() {
                   onChange={(e) => setFormNotes(e.target.value)}
                   placeholder="e.g., Morning weight, after workout, etc."
                   rows={2}
-                  className="w-full px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40 resize-none"
+                  className="w-full px-3 py-2.5 border border-white/[0.06] bg-white/[0.03] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all resize-none placeholder:text-muted/50"
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  className="flex-1 btn-primary"
-                >
-                  {editingEntry ? 'Update' : 'Save'}
-                </button>
+              <div className="flex justify-end gap-2 pt-1">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="btn-primary hover:shadow-glow"
+                  className="px-4 py-2 rounded-lg border border-white/[0.06] text-foreground text-sm hover:bg-white/[0.04] transition-colors"
                 >
                   Cancel
                 </button>
+                <button
+                  type="submit"
+                  className="btn-primary text-sm"
+                >
+                  {editingEntry ? 'Update' : 'Save'}
+                </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

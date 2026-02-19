@@ -57,19 +57,16 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [tab, setTab] = useState<'1v1' | 'group'>('1v1')
 
-  // 1v1
   const [challenges, setChallenges] = useState<ChallengeWithUsers[]>([])
   const [progress, setProgress] = useState<Map<string, ChallengeProgress>>(new Map())
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [actingId, setActingId] = useState<string | null>(null)
 
-  // Group
   const [groupChallenges, setGroupChallenges] = useState<GroupChallengeWithMembers[]>([])
   const [groupProgress, setGroupProgress] = useState<Map<string, MemberProgress[]>>(new Map())
   const [showGroupCreate, setShowGroupCreate] = useState(false)
 
-  // Create form state
   const [selectedFriend, setSelectedFriend] = useState('')
   const [selectedFriends, setSelectedFriends] = useState<string[]>([])
   const [challengeType, setChallengeType] = useState<ChallengeType>('workout_count')
@@ -210,19 +207,22 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
   const completedGroup = groupChallenges.filter(c => c.status === 'completed').slice(0, 5)
 
   const renderCreateModal = (isGroup: boolean) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80" onClick={() => isGroup ? setShowGroupCreate(false) : setShowCreate(false)}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm" onClick={() => isGroup ? setShowGroupCreate(false) : setShowCreate(false)}>
       <div className="modal-glass max-w-md w-full" onClick={e => e.stopPropagation()}>
-        <div className="p-4 border-b border-white/[0.06] flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-foreground">{isGroup ? 'New Group Challenge' : 'New Challenge'}</h3>
-          <button type="button" onClick={() => isGroup ? setShowGroupCreate(false) : setShowCreate(false)} className="p-1 rounded text-muted hover:text-foreground" aria-label="Close">
+        <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #2563eb, #06b6d4, #2563eb)' }} />
+        <div className="p-5 border-b border-white/[0.06] flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">{isGroup ? 'New Group Challenge' : 'New Challenge'}</h3>
+            <p className="text-xs text-muted mt-0.5">{isGroup ? 'Compete with multiple friends' : 'Challenge a friend head-to-head'}</p>
+          </div>
+          <button type="button" onClick={() => isGroup ? setShowGroupCreate(false) : setShowCreate(false)} className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors" aria-label="Close">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        {/* Quick-start templates */}
         {!isGroup && friends.length > 0 && (
-          <div className="p-4 border-b border-white/[0.06]">
-            <p className="text-xs text-muted uppercase tracking-wider mb-2">Quick Start</p>
+          <div className="p-5 border-b border-white/[0.04]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-3">Quick Start</p>
             <div className="grid grid-cols-2 gap-2">
               {CHALLENGE_TEMPLATES.slice(0, 4).map(t => (
                 <button
@@ -230,24 +230,24 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                   type="button"
                   disabled={creating || !selectedFriend}
                   onClick={() => selectedFriend && handleQuickStart(t, selectedFriend)}
-                  className="text-left p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-colors disabled:opacity-40"
+                  className="text-left p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] hover:border-accent/15 transition-all disabled:opacity-30 group"
                 >
-                  <p className="text-xs font-medium text-foreground">{t.name}</p>
-                  <p className="text-[10px] text-muted mt-0.5">{t.description}</p>
+                  <p className="text-xs font-medium text-foreground group-hover:text-accent-light transition-colors">{t.name}</p>
+                  <p className="text-[10px] text-muted mt-0.5 leading-relaxed">{t.description}</p>
                 </button>
               ))}
             </div>
-            {!selectedFriend && <p className="text-[10px] text-muted mt-1">Select a friend below to use quick-start</p>}
+            {!selectedFriend && <p className="text-[10px] text-muted mt-2">Select a friend below to use quick-start</p>}
           </div>
         )}
 
-        <form onSubmit={isGroup ? handleCreateGroup : handleCreate1v1} className="p-4 space-y-4">
+        <form onSubmit={isGroup ? handleCreateGroup : handleCreate1v1} className="p-5 space-y-4">
           {isGroup ? (
             <div>
-              <label className="block text-sm text-foreground mb-1">Friends (select 2+)</label>
-              <div className="space-y-1 max-h-40 overflow-y-auto">
+              <label className="block text-xs font-medium uppercase tracking-wider text-muted mb-2">Friends (select 2+)</label>
+              <div className="space-y-1 max-h-40 overflow-y-auto rounded-xl border border-white/[0.06] p-1">
                 {friends.map(f => (
-                  <label key={f.user_id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/[0.04] cursor-pointer">
+                  <label key={f.user_id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/[0.03] cursor-pointer transition-colors">
                     <input
                       type="checkbox"
                       checked={selectedFriends.includes(f.user_id)}
@@ -255,7 +255,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                         if (e.target.checked) setSelectedFriends(prev => [...prev, f.user_id])
                         else setSelectedFriends(prev => prev.filter(id => id !== f.user_id))
                       }}
-                      className="accent-blue-500"
+                      className="accent-blue-500 rounded"
                     />
                     <span className="text-sm text-foreground">{f.username}</span>
                   </label>
@@ -264,11 +264,11 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
             </div>
           ) : (
             <div>
-              <label className="block text-sm text-foreground mb-1">Friend</label>
+              <label className="block text-xs font-medium uppercase tracking-wider text-muted mb-2">Friend</label>
               <select
                 value={selectedFriend}
                 onChange={e => setSelectedFriend(e.target.value)}
-                className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full px-3 py-2.5 border border-white/[0.06] bg-white/[0.03] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all"
               >
                 <option value="">Select a friend</option>
                 {friends.map(f => (
@@ -279,11 +279,11 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
           )}
 
           <div>
-            <label className="block text-sm text-foreground mb-1">Type</label>
+            <label className="block text-xs font-medium uppercase tracking-wider text-muted mb-2">Type</label>
             <select
               value={challengeType}
               onChange={e => setChallengeType(e.target.value as ChallengeType)}
-              className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="w-full px-3 py-2.5 border border-white/[0.06] bg-white/[0.03] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all"
             >
               <option value="workout_count">Most Workouts</option>
               <option value="e1rm">Highest e1RM</option>
@@ -294,23 +294,23 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
 
           {challengeType === 'e1rm' && (
             <div>
-              <label className="block text-sm text-foreground mb-1">Exercise</label>
+              <label className="block text-xs font-medium uppercase tracking-wider text-muted mb-2">Exercise</label>
               <input
                 type="text"
                 value={exerciseName}
                 onChange={e => setExerciseName(e.target.value)}
                 placeholder="e.g. Barbell Bench Press"
-                className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full px-3 py-2.5 border border-white/[0.06] bg-white/[0.03] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all placeholder:text-muted/50"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm text-foreground mb-1">Duration</label>
+            <label className="block text-xs font-medium uppercase tracking-wider text-muted mb-2">Duration</label>
             <select
               value={durationDays}
               onChange={e => setDurationDays(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="w-full px-3 py-2.5 border border-white/[0.06] bg-white/[0.03] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all"
             >
               <option value={7}>7 days</option>
               <option value={14}>14 days</option>
@@ -318,13 +318,18 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
             </select>
           </div>
 
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
+          {createError && (
+            <p className="text-sm text-red-400 flex items-center gap-1.5">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {createError}
+            </p>
+          )}
 
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => { isGroup ? setShowGroupCreate(false) : setShowCreate(false); resetForm() }} className="px-4 py-2 rounded border border-white/[0.06] text-foreground text-sm hover:bg-white/[0.04]">
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={() => { isGroup ? setShowGroupCreate(false) : setShowCreate(false); resetForm() }} className="px-4 py-2 rounded-lg border border-white/[0.06] text-foreground text-sm hover:bg-white/[0.04] transition-colors">
               Cancel
             </button>
-            <button type="submit" disabled={creating} className="px-4 py-2 btn-primary disabled:opacity-50">
+            <button type="submit" disabled={creating} className="btn-primary text-sm disabled:opacity-50">
               {creating ? 'Sending...' : 'Send Challenge'}
             </button>
           </div>
@@ -334,251 +339,290 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
   )
 
   return (
-    <section className="card-glass card-accent-top shadow-card p-5 mb-6 relative overflow-hidden">
-      <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
-
-      {/* Header with tabs */}
+    <section className="mb-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-foreground">Challenges</h2>
-          <div className="flex bg-white/[0.04] rounded-lg p-0.5">
-            <button onClick={() => setTab('1v1')} className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${tab === '1v1' ? 'bg-accent/20 text-accent-light' : 'text-muted hover:text-foreground'}`}>1v1</button>
-            <button onClick={() => setTab('group')} className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${tab === 'group' ? 'bg-accent/20 text-accent-light' : 'text-muted hover:text-foreground'}`}>Group</button>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-0.5 h-4 rounded-full bg-accent/50" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Challenges</h2>
         </div>
         <button
           type="button"
           onClick={() => tab === 'group' ? setShowGroupCreate(true) : setShowCreate(true)}
-          className="px-3 py-1.5 text-sm btn-primary"
+          className="btn-primary text-xs px-3 py-1.5"
         >
-          {tab === 'group' ? 'Group Challenge' : 'Challenge a Friend'}
+          {tab === 'group' ? 'Group Challenge' : 'Challenge'}
         </button>
       </div>
 
-      {loading && <p className="text-muted text-sm">Loading challenges...</p>}
+      <div className="rounded-2xl border border-white/[0.06] overflow-hidden relative" style={{ background: 'linear-gradient(180deg, rgba(19,19,22,0.95), rgba(13,13,16,0.98))', boxShadow: '0 8px 32px -8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)' }}>
+        <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.05), transparent 70%)' }} />
 
-      {showCreate && renderCreateModal(false)}
-      {showGroupCreate && renderCreateModal(true)}
+        {/* Tab bar */}
+        <div className="px-4 py-3 border-b border-white/[0.04] flex items-center gap-1">
+          <button
+            onClick={() => setTab('1v1')}
+            className={`px-4 py-1.5 text-xs rounded-lg font-medium transition-all ${tab === '1v1' ? 'bg-accent/15 text-accent-light border border-accent/20' : 'text-muted hover:text-foreground hover:bg-white/[0.03]'}`}
+          >
+            1v1
+          </button>
+          <button
+            onClick={() => setTab('group')}
+            className={`px-4 py-1.5 text-xs rounded-lg font-medium transition-all ${tab === 'group' ? 'bg-accent/15 text-accent-light border border-accent/20' : 'text-muted hover:text-foreground hover:bg-white/[0.03]'}`}
+          >
+            Group
+          </button>
+        </div>
 
-      {/* 1v1 tab */}
-      {tab === '1v1' && (
-        <>
-          {pendingReceived.length > 0 && (
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-muted mb-2">Incoming</h3>
-              <div className="space-y-2">
-                {pendingReceived.map(c => (
-                  <div key={c.id} className="flex items-center justify-between bg-white/[0.04] rounded-lg p-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-foreground text-sm font-medium">{c.challenger_username}</p>
-                      <p className="text-xs text-muted">{typeLabel(c)} · {c.duration_days} days</p>
-                    </div>
-                    <div className="flex gap-2 ml-2">
-                      <button type="button" disabled={!!actingId} onClick={() => handleAccept(c.id)} className="px-3 py-1 rounded btn-primary text-xs disabled:opacity-50">Accept</button>
-                      <button type="button" disabled={!!actingId} onClick={() => handleDecline(c.id)} className="px-3 py-1 rounded border border-white/[0.06] text-foreground text-xs hover:bg-white/[0.04] disabled:opacity-50">Decline</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <div className="p-4">
+          {loading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
             </div>
           )}
 
-          {pendingSent.length > 0 && (
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-muted mb-2">Sent</h3>
-              <div className="space-y-2">
-                {pendingSent.map(c => (
-                  <div key={c.id} className="flex items-center justify-between bg-white/[0.04] rounded-lg p-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-foreground text-sm font-medium">{c.challenged_username}</p>
-                      <p className="text-xs text-muted">{typeLabel(c)} · {c.duration_days} days</p>
-                    </div>
-                    <span className="text-xs text-muted ml-2">Waiting...</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {showCreate && renderCreateModal(false)}
+          {showGroupCreate && renderCreateModal(true)}
 
-          {active.length > 0 && (
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-muted mb-2">Active</h3>
-              <div className="space-y-3">
-                {active.map(c => {
-                  const p = progress.get(c.id)
-                  const isChallenger = c.challenger_id === user.id
-                  const yourScore = isChallenger ? (p?.challengerValue ?? 0) : (p?.challengedValue ?? 0)
-                  const theirScore = isChallenger ? (p?.challengedValue ?? 0) : (p?.challengerValue ?? 0)
-                  const maxScore = Math.max(yourScore, theirScore, 1)
-                  const daysLeft = Math.max(0, Math.ceil((new Date(c.end_date).getTime() - Date.now()) / 86400000))
-                  const unit = TYPE_UNITS[c.challenge_type] ?? ''
-
-                  return (
-                    <div key={c.id} className="bg-white/[0.04] rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-foreground text-sm font-medium">vs {opponentName(c)}</p>
-                        <span className="text-xs text-muted">{daysLeft}d left</span>
-                      </div>
-                      <p className="text-xs text-muted mb-3">{typeLabel(c)}</p>
-                      <div className="space-y-2">
-                        <div>
-                          <div className="flex justify-between text-xs mb-0.5">
-                            <span className="text-foreground">You</span>
-                            <span className="text-foreground font-medium">{yourScore.toLocaleString()} {unit}</span>
-                          </div>
-                          <div className="h-2 bg-[#252525] rounded-full overflow-hidden">
-                            <div className="h-full bg-white rounded-full transition-all" style={{ width: `${(yourScore / maxScore) * 100}%` }} />
-                          </div>
+          {/* 1v1 tab */}
+          {tab === '1v1' && !loading && (
+            <>
+              {pendingReceived.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Incoming</p>
+                  <div className="space-y-2">
+                    {pendingReceived.map(c => (
+                      <div key={c.id} className="flex items-center justify-between rounded-xl p-3.5 bg-accent/[0.03] border border-accent/10">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-foreground text-sm font-medium">{c.challenger_username}</p>
+                          <p className="text-[11px] text-muted">{typeLabel(c)} · {c.duration_days} days</p>
                         </div>
-                        <div>
-                          <div className="flex justify-between text-xs mb-0.5">
-                            <span className="text-muted">{opponentName(c)}</span>
-                            <span className="text-muted font-medium">{theirScore.toLocaleString()} {unit}</span>
-                          </div>
-                          <div className="h-2 bg-[#252525] rounded-full overflow-hidden">
-                            <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${(theirScore / maxScore) * 100}%` }} />
-                          </div>
+                        <div className="flex gap-2 ml-2">
+                          <button type="button" disabled={!!actingId} onClick={() => handleAccept(c.id)} className="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">Accept</button>
+                          <button type="button" disabled={!!actingId} onClick={() => handleDecline(c.id)} className="px-3 py-1.5 rounded-lg border border-white/[0.06] text-muted text-xs hover:text-foreground hover:bg-white/[0.04] transition-colors disabled:opacity-50">Decline</button>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {completed.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-muted mb-2">Recent Results</h3>
-              <div className="space-y-2">
-                {completed.map(c => {
-                  const isWinner = c.winner_id === user.id
-                  const isTie = !c.winner_id
-                  return (
-                    <div key={c.id} className="flex items-center justify-between bg-white/[0.04] rounded-lg p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-foreground text-sm">vs {opponentName(c)} <span className="text-muted">· {typeLabel(c)}</span></p>
-                      </div>
-                      <span className={`text-xs font-semibold ml-2 ${isTie ? 'text-muted' : isWinner ? 'text-green-400' : 'text-red-400'}`}>
-                        {isTie ? 'Tie' : isWinner ? 'Won' : 'Lost'}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {!loading && challenges.length === 0 && (
-            <p className="text-muted text-sm">No challenges yet. Challenge a friend to get started!</p>
-          )}
-        </>
-      )}
-
-      {/* Group tab */}
-      {tab === 'group' && (
-        <>
-          {pendingGroupReceived.length > 0 && (
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-muted mb-2">Invitations</h3>
-              <div className="space-y-2">
-                {pendingGroupReceived.map(c => (
-                  <div key={c.id} className="bg-white/[0.04] rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-foreground text-sm font-medium">From {c.creator_username}</p>
-                        <p className="text-xs text-muted">{typeLabel(c)} · {c.duration_days} days · {c.members.length} members</p>
-                      </div>
-                      <div className="flex gap-2 ml-2">
-                        <button type="button" disabled={!!actingId} onClick={() => handleGroupAccept(c.id)} className="px-3 py-1 rounded btn-primary text-xs disabled:opacity-50">Join</button>
-                        <button type="button" disabled={!!actingId} onClick={() => handleGroupDecline(c.id)} className="px-3 py-1 rounded border border-white/[0.06] text-foreground text-xs hover:bg-white/[0.04] disabled:opacity-50">Decline</button>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
+              )}
 
-          {activeGroup.length > 0 && (
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-muted mb-2">Active Group Challenges</h3>
-              <div className="space-y-3">
-                {activeGroup.map(c => {
-                  const members = groupProgress.get(c.id) ?? []
-                  const maxVal = Math.max(...members.map(m => m.value), 1)
-                  const daysLeft = Math.max(0, Math.ceil((new Date(c.end_date).getTime() - Date.now()) / 86400000))
-                  const unit = TYPE_UNITS[c.challenge_type] ?? ''
-
-                  return (
-                    <div key={c.id} className="bg-white/[0.04] rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-foreground text-sm font-medium">{typeLabel(c)}</p>
-                        <span className="text-xs text-muted">{daysLeft}d left</span>
+              {pendingSent.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Sent</p>
+                  <div className="space-y-2">
+                    {pendingSent.map(c => (
+                      <div key={c.id} className="flex items-center justify-between rounded-xl p-3.5 bg-white/[0.02] border border-white/[0.04]">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-foreground text-sm font-medium">{c.challenged_username}</p>
+                          <p className="text-[11px] text-muted">{typeLabel(c)} · {c.duration_days} days</p>
+                        </div>
+                        <span className="text-[11px] text-muted/60 ml-2">Waiting...</span>
                       </div>
-                      <p className="text-xs text-muted mb-3">{c.members.filter(m => m.status === 'accepted').length} participants</p>
-                      <div className="space-y-2">
-                        {members.map((m, i) => (
-                          <div key={m.user_id}>
-                            <div className="flex justify-between text-xs mb-0.5">
-                              <span className={m.user_id === user.id ? 'text-foreground font-medium' : 'text-muted'}>
-                                {i + 1}. {m.user_id === user.id ? 'You' : m.username}
-                              </span>
-                              <span className={m.user_id === user.id ? 'text-foreground font-medium' : 'text-muted'}>
-                                {m.value.toLocaleString()} {unit}
-                              </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {active.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Active</p>
+                  <div className="space-y-3">
+                    {active.map(c => {
+                      const p = progress.get(c.id)
+                      const isChallenger = c.challenger_id === user.id
+                      const yourScore = isChallenger ? (p?.challengerValue ?? 0) : (p?.challengedValue ?? 0)
+                      const theirScore = isChallenger ? (p?.challengedValue ?? 0) : (p?.challengerValue ?? 0)
+                      const maxScore = Math.max(yourScore, theirScore, 1)
+                      const daysLeft = Math.max(0, Math.ceil((new Date(c.end_date).getTime() - Date.now()) / 86400000))
+                      const unit = TYPE_UNITS[c.challenge_type] ?? ''
+                      const isWinning = yourScore > theirScore
+
+                      return (
+                        <div key={c.id} className="rounded-xl p-4 bg-white/[0.02] border border-white/[0.04]">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-foreground text-sm font-medium">vs {opponentName(c)}</p>
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.04] text-muted tabular-nums">{daysLeft}d left</span>
+                          </div>
+                          <p className="text-[11px] text-muted mb-3.5">{typeLabel(c)}</p>
+                          <div className="space-y-2.5">
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-foreground font-medium">You</span>
+                                <span className={`font-bold tabular-nums ${isWinning ? 'text-accent-light' : 'text-foreground'}`}>{yourScore.toLocaleString()} {unit}</span>
+                              </div>
+                              <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full transition-all duration-500 ${isWinning ? 'bg-accent' : 'bg-white/60'}`} style={{ width: `${(yourScore / maxScore) * 100}%` }} />
+                              </div>
                             </div>
-                            <div className="h-1.5 bg-[#252525] rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all ${i === 0 ? 'bg-amber-400' : m.user_id === user.id ? 'bg-white' : 'bg-white/40'}`}
-                                style={{ width: `${(m.value / maxVal) * 100}%` }}
-                              />
+                            <div>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-muted">{opponentName(c)}</span>
+                                <span className={`font-bold tabular-nums ${!isWinning && theirScore > yourScore ? 'text-amber-400' : 'text-muted'}`}>{theirScore.toLocaleString()} {unit}</span>
+                              </div>
+                              <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-400/70 rounded-full transition-all duration-500" style={{ width: `${(theirScore / maxScore) * 100}%` }} />
+                              </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
-          {completedGroup.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-muted mb-2">Recent Group Results</h3>
-              <div className="space-y-2">
-                {completedGroup.map(c => {
-                  const winner = c.members.find(m => m.rank === 1)
-                  const userMember = c.members.find(m => m.user_id === user.id)
-                  return (
-                    <div key={c.id} className="flex items-center justify-between bg-white/[0.04] rounded-lg p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-foreground text-sm">{typeLabel(c)}</p>
-                        <p className="text-xs text-muted">{c.members.length} members</p>
-                      </div>
-                      <div className="text-right ml-2">
-                        {winner && (
-                          <span className={`text-xs font-semibold ${winner.user_id === user.id ? 'text-amber-400' : 'text-muted'}`}>
-                            {winner.user_id === user.id ? '1st Place' : `Winner: ${winner.username}`}
+              {completed.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Recent Results</p>
+                  <div className="space-y-1.5">
+                    {completed.map(c => {
+                      const isWinner = c.winner_id === user.id
+                      const isTie = !c.winner_id
+                      return (
+                        <div key={c.id} className="flex items-center justify-between rounded-xl p-3 hover:bg-white/[0.015] transition-colors">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-foreground text-sm">vs {opponentName(c)} <span className="text-muted text-[11px]">· {typeLabel(c)}</span></p>
+                          </div>
+                          <span className={`text-xs font-bold ml-2 px-2 py-0.5 rounded-md ${isTie ? 'text-muted bg-white/[0.04]' : isWinner ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10'}`}>
+                            {isTie ? 'Tie' : isWinner ? 'Won' : 'Lost'}
                           </span>
-                        )}
-                        {userMember && userMember.rank && userMember.rank > 1 && (
-                          <p className="text-[10px] text-muted">You: #{userMember.rank}</p>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {!loading && challenges.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+                    <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  </div>
+                  <p className="text-muted text-sm">No challenges yet</p>
+                  <p className="text-muted/60 text-xs mt-0.5">Challenge a friend to get started</p>
+                </div>
+              )}
+            </>
           )}
 
-          {!loading && groupChallenges.length === 0 && (
-            <p className="text-muted text-sm">No group challenges yet. Create one to compete with multiple friends!</p>
+          {/* Group tab */}
+          {tab === 'group' && !loading && (
+            <>
+              {pendingGroupReceived.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Invitations</p>
+                  <div className="space-y-2">
+                    {pendingGroupReceived.map(c => (
+                      <div key={c.id} className="rounded-xl p-3.5 bg-accent/[0.03] border border-accent/10">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-foreground text-sm font-medium">From {c.creator_username}</p>
+                            <p className="text-[11px] text-muted">{typeLabel(c)} · {c.duration_days} days · {c.members.length} members</p>
+                          </div>
+                          <div className="flex gap-2 ml-2">
+                            <button type="button" disabled={!!actingId} onClick={() => handleGroupAccept(c.id)} className="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">Join</button>
+                            <button type="button" disabled={!!actingId} onClick={() => handleGroupDecline(c.id)} className="px-3 py-1.5 rounded-lg border border-white/[0.06] text-muted text-xs hover:text-foreground hover:bg-white/[0.04] transition-colors disabled:opacity-50">Decline</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeGroup.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Active Group Challenges</p>
+                  <div className="space-y-3">
+                    {activeGroup.map(c => {
+                      const members = groupProgress.get(c.id) ?? []
+                      const maxVal = Math.max(...members.map(m => m.value), 1)
+                      const daysLeft = Math.max(0, Math.ceil((new Date(c.end_date).getTime() - Date.now()) / 86400000))
+                      const unit = TYPE_UNITS[c.challenge_type] ?? ''
+
+                      return (
+                        <div key={c.id} className="rounded-xl p-4 bg-white/[0.02] border border-white/[0.04]">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-foreground text-sm font-medium">{typeLabel(c)}</p>
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.04] text-muted tabular-nums">{daysLeft}d left</span>
+                          </div>
+                          <p className="text-[11px] text-muted mb-3.5">{c.members.filter(m => m.status === 'accepted').length} participants</p>
+                          <div className="space-y-2.5">
+                            {members.map((m, idx) => {
+                              const isYou = m.user_id === user.id
+                              const isFirst = idx === 0
+                              return (
+                                <div key={m.user_id}>
+                                  <div className="flex justify-between text-xs mb-1">
+                                    <span className={isYou ? 'text-foreground font-medium' : 'text-muted'}>
+                                      <span className="tabular-nums text-muted/40 mr-1.5">{idx + 1}.</span>
+                                      {isYou ? 'You' : m.username}
+                                    </span>
+                                    <span className={`font-bold tabular-nums ${isFirst ? 'text-amber-400' : isYou ? 'text-foreground' : 'text-muted'}`}>
+                                      {m.value.toLocaleString()} {unit}
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all duration-500 ${isFirst ? 'bg-amber-400' : isYou ? 'bg-accent' : 'bg-white/30'}`}
+                                      style={{ width: `${(m.value / maxVal) * 100}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {completedGroup.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Recent Group Results</p>
+                  <div className="space-y-1.5">
+                    {completedGroup.map(c => {
+                      const winner = c.members.find(m => m.rank === 1)
+                      const userMember = c.members.find(m => m.user_id === user.id)
+                      return (
+                        <div key={c.id} className="flex items-center justify-between rounded-xl p-3 hover:bg-white/[0.015] transition-colors">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-foreground text-sm">{typeLabel(c)}</p>
+                            <p className="text-[11px] text-muted">{c.members.length} members</p>
+                          </div>
+                          <div className="text-right ml-2">
+                            {winner && (
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${winner.user_id === user.id ? 'text-amber-400 bg-amber-500/10' : 'text-muted bg-white/[0.04]'}`}>
+                                {winner.user_id === user.id ? '1st Place' : `Winner: ${winner.username}`}
+                              </span>
+                            )}
+                            {userMember && userMember.rank && userMember.rank > 1 && (
+                              <p className="text-[10px] text-muted mt-0.5">You: #{userMember.rank}</p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {!loading && groupChallenges.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+                    <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                  </div>
+                  <p className="text-muted text-sm">No group challenges yet</p>
+                  <p className="text-muted/60 text-xs mt-0.5">Create one to compete with multiple friends</p>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+      </div>
     </section>
   )
 }

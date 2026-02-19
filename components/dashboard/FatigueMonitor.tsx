@@ -157,10 +157,13 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
       <div className="relative">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
-        <span className={`text-lg font-bold ${zoneColors[zone].text}`}>{data.fatigueScore}</span>
+        <div className="text-right">
+          <p className="text-[10px] uppercase tracking-wider text-muted">Fatigue score</p>
+          <span className={`text-lg font-bold ${zoneColors[zone].text}`}>{data.fatigueScore}</span>
+        </div>
       </div>
       <p className="text-xs text-muted mb-3">
-        {data.weeksTrained} week{data.weeksTrained !== 1 ? 's' : ''} of training
+        {data.weeksTrained} week{data.weeksTrained !== 1 ? 's' : ''} of training in the last 12 weeks
       </p>
 
       <div className="h-2.5 bg-white/[0.08] rounded-full overflow-hidden mb-3">
@@ -187,8 +190,12 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
       )}
 
       {data.inDeloadPeriod && (
-        <p className="text-xs text-amber-400">Deload week active</p>
+        <p className="text-xs text-amber-400 mb-3">Deload week active</p>
       )}
+
+      <p className="text-[11px] text-muted border-t border-white/[0.06] pt-3 mt-3">
+        Fatigue score (0–100) reflects accumulated training load from consecutive weeks, recent hit-rate trends, and low performance streaks. Green: fresh; yellow: moderate load; red: consider a deload week to recover.
+      </p>
       </div>
     </div>
   )

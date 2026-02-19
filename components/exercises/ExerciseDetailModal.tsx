@@ -57,31 +57,34 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
-        className="modal-glass max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        className="modal-glass max-w-lg w-full max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <h2 className="text-xl font-semibold text-foreground">{exercise.name}</h2>
-            <button
-              onClick={onClose}
-              className="shrink-0 p-1 rounded text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors"
-              aria-label="Close"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+        <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #2563eb, #06b6d4, #2563eb)' }} />
+        <div className="p-5 border-b border-white/[0.06] flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-accent/10 border border-accent/15 flex items-center justify-center flex-shrink-0">
+            <svg className="w-4 h-4 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-semibold text-foreground truncate">{exercise.name}</h2>
+            <p className="text-xs text-muted">{exercise.description ?? `A ${exercise.equipment} exercise targeting ${exercise.muscleGroup}.`}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="shrink-0 p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-          <p className="text-sm text-[#888888] mb-4">
-            {exercise.description ?? `A ${exercise.equipment} exercise targeting ${exercise.muscleGroup}.`}
-          </p>
-
+        <div className="p-5 overflow-y-auto max-h-[calc(90vh-5rem)]">
           <div className="flex flex-col gap-1.5 mb-6">
             <div className="flex items-center gap-1.5">
               <span className="w-[4.5rem] shrink-0 text-[10px] uppercase tracking-wider text-[#999]">Equipment</span>

@@ -269,7 +269,7 @@ export default function WorkoutCalendar() {
       {/* Completion notes modal */}
       {modalDate && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/70 backdrop-blur-sm"
           onClick={() => setModalDate(null)}
           role="dialog"
           aria-modal="true"
@@ -279,22 +279,26 @@ export default function WorkoutCalendar() {
             className="modal-glass max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-white/[0.06] bg-white/[0.015] flex justify-between items-center">
-              <h3 className="text-base font-semibold text-foreground">
-                Workout Completion Log
+            <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #2563eb, #06b6d4, #2563eb)' }} />
+            <div className="p-5 border-b border-white/[0.06] flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-accent/10 border border-accent/15 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-foreground">Workout Log</h3>
                 {modalDate && (
-                  <span className="block text-sm font-normal text-muted mt-0.5">
+                  <p className="text-xs text-muted">
                     {(() => {
                       const [y, m, d] = modalDate.split('-').map(Number)
                       return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
                     })()}
-                  </span>
+                  </p>
                 )}
-              </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setModalDate(null)}
-                className="p-1.5 rounded text-muted hover:text-foreground hover:bg-elevated transition-colors"
+                className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors flex-shrink-0"
                 aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,7 +306,7 @@ export default function WorkoutCalendar() {
                 </svg>
               </button>
             </div>
-            <div className="p-4 overflow-auto flex-1">
+            <div className="p-5 overflow-auto flex-1">
               {loadingCompletion && (
                 <p className="text-muted text-sm text-center py-6">Loading…</p>
               )}

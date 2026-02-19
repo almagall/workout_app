@@ -102,7 +102,7 @@ export default function WorkoutHistoryPage() {
               try { await exportWorkoutHistoryCSV() } finally { setExporting(false) }
             }}
             disabled={exporting || sessions.length === 0}
-            className="px-3 py-1.5 text-sm rounded-md border border-white/[0.08] text-foreground/80 hover:bg-white/[0.04] disabled:opacity-50 transition-colors font-medium"
+            className="px-4 py-2 text-sm rounded-md border border-white/[0.08] text-foreground/80 hover:bg-white/[0.04] disabled:opacity-50 transition-colors font-medium min-h-[2.25rem]"
           >
             {exporting ? 'Exporting...' : 'Export CSV'}
           </button>
@@ -200,7 +200,7 @@ export default function WorkoutHistoryPage() {
                               <button
                                 onClick={(e) => handleDelete(session.id, e)}
                                 disabled={deletingId === session.id}
-                                className="px-3 py-1.5 bg-red-600 text-foreground rounded-md hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                                className="px-4 py-2 bg-red-600 text-foreground rounded-md hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors min-h-[2.25rem]"
                               >
                                 {deletingId === session.id ? 'Deleting...' : 'Delete'}
                               </button>

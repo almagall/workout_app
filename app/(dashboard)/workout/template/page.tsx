@@ -138,7 +138,7 @@ export default function TemplatePage() {
         <div className="flex items-center gap-2">
           <Link
             href="/workout/template/create"
-            className="btn-primary text-sm sm:text-base"
+            className="btn-primary text-sm sm:text-base px-5 py-2.5"
           >
             + Create custom
           </Link>
@@ -243,7 +243,7 @@ export default function TemplatePage() {
                       </Link>
                       <Link
                         href={`/workout/template/edit/${template.id}`}
-                        className="btn-primary text-sm"
+                        className="btn-primary text-sm px-4 py-2"
                       >
                         Edit
                       </Link>
