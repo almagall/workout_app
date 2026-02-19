@@ -247,7 +247,7 @@ export default function DashboardLayout({
 
       {/* Mobile Bottom Nav */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 lg:hidden flex items-end justify-around bg-sidebar/90 backdrop-blur-xl border-t border-white/[0.04] pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
+        className="fixed bottom-0 left-0 right-0 z-40 lg:hidden flex items-center justify-around bg-sidebar/90 backdrop-blur-xl border-t border-white/[0.04] px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom,0px))]"
         aria-label="Mobile navigation"
       >
         {BOTTOM_NAV.map(item => {
@@ -256,23 +256,22 @@ export default function DashboardLayout({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 py-1.5 px-3 min-h-[44px] justify-center rounded-lg transition-all duration-200 ${
+              className={`flex flex-col items-center gap-0.5 py-1 px-2 transition-colors ${
                 active ? 'text-accent' : 'text-muted hover:text-foreground'
               }`}
             >
-              <NavIcon d={item.icon} className={`w-6 h-6 shrink-0 ${active ? 'text-accent' : ''} transition-colors`} />
-              <span className="text-[10px] font-medium">{item.label}</span>
-              {active && <div className="w-1 h-1 rounded-full bg-accent mt-0.5" />}
+              <NavIcon d={item.icon} className={`w-5 h-5 shrink-0 transition-colors`} />
+              <span className={`text-[10px] font-medium ${active ? 'text-accent' : ''}`}>{item.label}</span>
             </Link>
           )
         })}
         <button
           type="button"
           onClick={() => setMobileMenuOpen(true)}
-          className="flex flex-col items-center gap-0.5 py-1.5 px-3 min-h-[44px] justify-center rounded-lg text-muted hover:text-foreground transition-colors"
+          className="flex flex-col items-center gap-0.5 py-1 px-2 text-muted hover:text-foreground transition-colors"
           aria-label="Open menu"
         >
-          <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
           <span className="text-[10px] font-medium">More</span>
@@ -280,7 +279,7 @@ export default function DashboardLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="lg:pl-64 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">{children}</main>
+      <main className="lg:pl-64 pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">{children}</main>
     </div>
   )
 }
