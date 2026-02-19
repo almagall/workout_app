@@ -32,7 +32,10 @@ export interface FriendRow {
   username: string
 }
 
-export type NotificationType = 'friend_request' | 'friend_accepted' | 'pr_kudos' | 'pr_comment' | 'achievement_unlocked'
+export type NotificationType =
+  | 'friend_request' | 'friend_accepted' | 'pr_kudos' | 'pr_comment' | 'achievement_unlocked'
+  | 'challenge_received' | 'challenge_accepted' | 'challenge_completed'
+  | 'accountability_request' | 'accountability_accepted' | 'accountability_nudge'
 
 export type ReactionType = 'kudos' | 'strong' | 'fire'
 
@@ -309,7 +312,7 @@ export async function getNotifications(limit = 50): Promise<NotificationWithFrom
 
   return list.map((n) => {
     let metadata: PRKudosMetadata | PRCommentMetadata | AchievementUnlockedMetadata | null = null
-    if ((n.type === 'pr_kudos' || n.type === 'pr_comment' || n.type === 'achievement_unlocked') && n.metadata) {
+    if (n.metadata) {
       try {
         metadata = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata
       } catch { /* ignore */ }

@@ -179,9 +179,9 @@ export default function ExerciseSparklines() {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-lg border border-border p-6 h-[400px]">
+      <div className="bg-card rounded-lg border border-border p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4">Exercise Progression</h2>
-        <div className="flex items-center justify-center h-[300px]">
+        <div className="flex items-center justify-center py-12">
           <p className="text-muted">Loading...</p>
         </div>
       </div>
@@ -190,9 +190,9 @@ export default function ExerciseSparklines() {
 
   if (allExercises.length === 0) {
     return (
-      <div className="bg-card rounded-lg border border-border p-6 h-[400px]">
+      <div className="bg-card rounded-lg border border-border p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4">Exercise Progression</h2>
-        <div className="flex flex-col items-center justify-center h-[300px] text-center">
+        <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-muted mb-2">Not enough data yet</p>
           <p className="text-sm text-secondary">Log at least 2 workouts per exercise to see trends</p>
         </div>
@@ -201,12 +201,11 @@ export default function ExerciseSparklines() {
   }
 
   return (
-    <div className="bg-card rounded-lg border border-border overflow-hidden h-[400px] flex flex-col">
-      <div className="p-4 border-b border-border">
+    <div className="bg-card rounded-lg border border-border overflow-hidden h-[320px] sm:h-[420px] flex flex-col">
+      <div className="p-4 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-foreground">Exercise Progression</h2>
         </div>
-        {/* Workout Day Filter */}
         <select
           value={selectedDayId}
           onChange={(e) => setSelectedDayId(e.target.value)}

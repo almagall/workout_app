@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth-simple'
 import { createClient } from '@/lib/supabase/client'
 import type { UserProfile } from '@/types/profile'
 import { getPlateConfig, savePlateConfig, STANDARD_PLATES } from '@/lib/plate-calculator'
+import { getAllowFriendsSeePRs, setAllowFriendsSeePRs } from '@/lib/friends'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -30,6 +31,9 @@ export default function SettingsPage() {
   // Plate calculator
   const [barWeight, setBarWeight] = useState('45')
   const [selectedPlates, setSelectedPlates] = useState<number[]>(STANDARD_PLATES)
+
+  // Privacy: allow friends to see my PRs
+  const [allowFriendsSeePRs, setAllowFriendsSeePRsState] = useState(true)
 
   useEffect(() => {
     async function loadProfile() {
@@ -77,6 +81,9 @@ export default function SettingsPage() {
       const plateConfig = getPlateConfig(user.id)
       setBarWeight(plateConfig.barWeight.toString())
       setSelectedPlates(plateConfig.plates)
+
+      const allowPRs = await getAllowFriendsSeePRs(user.id)
+      setAllowFriendsSeePRsState(allowPRs)
 
       setLoading(false)
     }
@@ -422,6 +429,24 @@ export default function SettingsPage() {
               </select>
             </div>
           </div>
+        </div>
+
+        {/* Privacy */}
+        <div className="bg-card rounded-xl border border-border shadow-card p-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">Privacy</h2>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={allowFriendsSeePRs}
+              onChange={async () => {
+                const next = !allowFriendsSeePRs
+                await setAllowFriendsSeePRs(next)
+                setAllowFriendsSeePRsState(next)
+              }}
+              className="rounded border-border bg-elevated text-foreground focus:ring-accent/50"
+            />
+            <span className="text-foreground text-sm">Allow friends to see my recent PRs</span>
+          </label>
         </div>
 
         {/* Plate Calculator */}

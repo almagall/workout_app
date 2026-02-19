@@ -250,6 +250,70 @@ export default function NotificationBell() {
                     </Link>
                   </>
                 )}
+                {n.type === 'challenge_received' && (
+                  <>
+                    <p className="text-foreground">
+                      <span className="font-medium">{n.from_username}</span> challenged you!{' '}
+                      {n.metadata && typeof n.metadata === 'object' && 'challenge_type' in n.metadata && (
+                        <span className="text-muted">
+                          ({(n.metadata as Record<string, unknown>).challenge_type === 'workout_count' ? 'Most Workouts' : `e1RM — ${(n.metadata as Record<string, unknown>).exercise_name}`}{' '}
+                          · {String((n.metadata as Record<string, unknown>).duration_days)}d)
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                    <Link href="/friends" onClick={() => { markNotificationRead(n.id); setOpen(false); }} className="inline-block mt-1 text-xs text-foreground underline">View challenges</Link>
+                  </>
+                )}
+                {n.type === 'challenge_accepted' && (
+                  <>
+                    <p className="text-foreground">
+                      <span className="font-medium">{n.from_username}</span> accepted your challenge!
+                    </p>
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                    <Link href="/friends" onClick={() => { markNotificationRead(n.id); setOpen(false); }} className="inline-block mt-1 text-xs text-foreground underline">View challenges</Link>
+                  </>
+                )}
+                {n.type === 'challenge_completed' && (
+                  <>
+                    <p className="text-foreground">
+                      Challenge complete!{' '}
+                      {n.metadata && typeof n.metadata === 'object' && 'winner_id' in n.metadata
+                        ? (n.metadata as Record<string, unknown>).winner_id
+                          ? 'Check results'
+                          : "It's a tie!"
+                        : ''}
+                    </p>
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                    <Link href="/friends" onClick={() => { markNotificationRead(n.id); setOpen(false); }} className="inline-block mt-1 text-xs text-foreground underline">View results</Link>
+                  </>
+                )}
+                {n.type === 'accountability_request' && (
+                  <>
+                    <p className="text-foreground">
+                      <span className="font-medium">{n.from_username}</span> wants to be accountability partners
+                    </p>
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                    <Link href="/friends" onClick={() => { markNotificationRead(n.id); setOpen(false); }} className="inline-block mt-1 text-xs text-foreground underline">View request</Link>
+                  </>
+                )}
+                {n.type === 'accountability_accepted' && (
+                  <>
+                    <p className="text-foreground">
+                      <span className="font-medium">{n.from_username}</span> is now your accountability partner!
+                    </p>
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                    <Link href="/friends" onClick={() => { markNotificationRead(n.id); setOpen(false); }} className="inline-block mt-1 text-xs text-foreground underline">View partners</Link>
+                  </>
+                )}
+                {n.type === 'accountability_nudge' && (
+                  <>
+                    <p className="text-foreground">
+                      <span className="font-medium">{n.from_username}</span> is nudging you to train this week!
+                    </p>
+                    <p className="text-xs text-[#888888] mt-0.5">{formatTime(n.created_at)}</p>
+                  </>
+                )}
               </div>
             ))}
           </div>

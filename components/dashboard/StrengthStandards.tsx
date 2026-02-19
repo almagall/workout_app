@@ -55,7 +55,7 @@ export default function StrengthStandards() {
         <div className="p-4 sm:p-5 border-b border-[#252525] bg-gradient-to-b from-[#141414] to-transparent">
           <h2 className="text-lg font-semibold text-white tracking-tight">Strength Standards</h2>
         </div>
-        <div className="flex items-center justify-center h-[400px]">
+        <div className="flex items-center justify-center py-12">
           <p className="text-[#666]">Loading...</p>
         </div>
       </div>
@@ -68,7 +68,7 @@ export default function StrengthStandards() {
         <div className="p-4 sm:p-5 border-b border-[#252525] bg-gradient-to-b from-[#141414] to-transparent">
           <h2 className="text-lg font-semibold text-white tracking-tight">Strength Standards</h2>
         </div>
-        <div className="flex flex-col items-center justify-center h-[400px] text-center px-6">
+        <div className="flex flex-col items-center justify-center py-12 text-center px-6">
           <p className="text-[#888] mb-5">
             Set your bodyweight and gender in Settings to see how you compare to strength standards
           </p>
@@ -89,7 +89,7 @@ export default function StrengthStandards() {
         <div className="p-4 sm:p-5 border-b border-[#252525] bg-gradient-to-b from-[#141414] to-transparent">
           <h2 className="text-lg font-semibold text-white tracking-tight">Strength Standards</h2>
         </div>
-        <div className="flex flex-col items-center justify-center h-[400px] text-center px-6">
+        <div className="flex flex-col items-center justify-center py-12 text-center px-6">
           <p className="text-[#888] mb-2">No main lifts logged yet</p>
           <p className="text-sm text-[#666]">Log Bench Press, Squat, Deadlift, or Overhead Press to see standards</p>
         </div>
@@ -110,7 +110,7 @@ export default function StrengthStandards() {
       : { text: 'Keep pushing!', color: '#8b5cf6', icon: '▲' }
 
   return (
-    <div className="bg-[#0d0d0d] rounded-xl border border-[#252525] overflow-hidden flex flex-col shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+    <div className="bg-[#0d0d0d] rounded-xl border border-[#252525] overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
       <div className="p-4 border-b border-[#252525] bg-gradient-to-b from-[#141414] to-transparent">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white tracking-tight">Strength Standards</h2>
@@ -128,15 +128,15 @@ export default function StrengthStandards() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 sm:p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="p-4 sm:p-6">
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide lg:grid lg:grid-cols-4 lg:gap-4 lg:overflow-visible lg:pb-0 lg:mx-0 lg:px-0">
           {standards.map((standard, index) => {
             const tier = getTier(standard.tier)
             const nextTier = getTier(standard.nextTierName)
             return (
               <div
                 key={index}
-                className="relative rounded-lg border border-[#252525] bg-[#141414] p-5 min-w-0 overflow-hidden group hover:border-[#333] transition-colors duration-200"
+                className="relative rounded-lg border border-[#252525] bg-[#141414] p-4 sm:p-5 min-w-[240px] sm:min-w-0 flex-shrink-0 lg:flex-shrink lg:min-w-0 overflow-hidden group hover:border-[#333] transition-colors duration-200"
               >
                 {/* Subtle tier glow */}
                 <div

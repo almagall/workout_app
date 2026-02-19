@@ -38,6 +38,8 @@ export interface FeedbackContext {
   hitStreakMap?: Map<string, number>
   /** Days since last time user did this workout day. Used for "First time back in 2 weeks." */
   daysSinceLastSession?: number | null
+  /** Optional one-liner for overall hit rate (e.g. "You're hitting targets 72% of the time over the last 4 weeks."). */
+  recentHitRateSummary?: string | null
 }
 
 /** Helper: avg RPE of working sets */
@@ -393,6 +395,22 @@ export function generateWorkoutFeedback(
   const deload = deloadCue(maxUnderperformance, programType)
   if (deload) {
     parts.push(` ${deload}`)
+  }
+
+  // e1RM trend one-liners (up to 2 exercises: prefer "up" then "down")
+  const e1rmTrends = exercises
+    .map((e) => context?.e1rmTrendMap?.get(e.exerciseName))
+    .filter((t): t is NonNullable<typeof t> => t != null && t.message.length > 0)
+  const upTrends = e1rmTrends.filter((t) => t.trend === 'up')
+  const downTrends = e1rmTrends.filter((t) => t.trend === 'down')
+  const trendMessages = [...upTrends, ...downTrends].slice(0, 2).map((t) => t.message)
+  if (trendMessages.length > 0) {
+    parts.push(` ${trendMessages.join(' ')}`)
+  }
+
+  // Hit-rate one-liner when available
+  if (context?.recentHitRateSummary) {
+    parts.push(` ${context.recentHitRateSummary}`)
   }
 
   return parts.join('')

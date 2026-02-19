@@ -9,8 +9,6 @@ import {
   acceptFriendRequest,
   declineFriendRequest,
   getFriends,
-  getAllowFriendsSeePRs,
-  setAllowFriendsSeePRs,
   sendPRReaction,
   getReactedPRs,
   addPRComment,
@@ -23,6 +21,10 @@ import {
 } from '@/lib/friends'
 import { checkAndUnlockAchievements } from '@/lib/achievements'
 import type { RecentPR } from '@/lib/pr-helper'
+import { FriendActivityFeed } from '@/components/dashboard/FriendActivityFeed'
+import ChallengesSection from '@/components/friends/ChallengesSection'
+import AccountabilitySection from '@/components/friends/AccountabilitySection'
+import CompareModal from '@/components/friends/CompareModal'
 
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -38,7 +40,6 @@ export default function FriendsPage() {
   const [addSuccess, setAddSuccess] = useState('')
   const [loading, setLoading] = useState(true)
   const [actingId, setActingId] = useState<string | null>(null)
-  const [allowFriendsSeePRs, setAllowFriendsSeePRsState] = useState(true)
   const [viewingFriend, setViewingFriend] = useState<FriendRow | null>(null)
   const [friendPRs, setFriendPRs] = useState<RecentPR[]>([])
   const [friendPRsLabels, setFriendPRsLabels] = useState<Record<string, string>>({})
@@ -54,6 +55,7 @@ export default function FriendsPage() {
   const [loadingComments, setLoadingComments] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
   const [postingComment, setPostingComment] = useState(false)
+  const [comparingFriend, setComparingFriend] = useState<FriendRow | null>(null)
 
   const refresh = () => {
     getFriends().then(setFriends)
@@ -67,7 +69,6 @@ export default function FriendsPage() {
       return
     }
     setUser(currentUser)
-    getAllowFriendsSeePRs(currentUser.id).then(setAllowFriendsSeePRsState)
     refresh()
     setLoading(false)
   }, [])
@@ -229,12 +230,6 @@ export default function FriendsPage() {
     setPostingComment(false)
   }
 
-  const toggleAllowPRs = async () => {
-    const next = !allowFriendsSeePRs
-    await setAllowFriendsSeePRs(next)
-    setAllowFriendsSeePRsState(next)
-  }
-
   if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -245,10 +240,8 @@ export default function FriendsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-      <h1 className="font-display text-2xl font-bold text-foreground mb-6 tracking-tight">Friends</h1>
-
-      {/* Add friend button */}
-      <div className="mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">Friends</h1>
         <button
           type="button"
           onClick={openAddModal}
@@ -256,8 +249,8 @@ export default function FriendsPage() {
         >
           Add Friend
         </button>
-        {addSuccess && <p className="mt-2 text-sm text-green-400">{addSuccess}</p>}
       </div>
+      {addSuccess && <p className="mb-6 text-sm text-green-400">{addSuccess}</p>}
 
       {/* Add friend modal */}
       {showAddModal && (
@@ -356,32 +349,47 @@ export default function FriendsPage() {
                 className="flex items-center justify-between py-2 border-b border-border last:border-0"
               >
                 <span className="text-foreground font-medium">{f.username}</span>
-                <button
-                  type="button"
-                  onClick={() => loadFriendPRs(f)}
-                  className="text-sm text-muted hover:text-foreground"
-                >
-                  View recent PRs
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setComparingFriend(f)}
+                    className="text-sm text-muted hover:text-foreground"
+                  >
+                    Compare
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => loadFriendPRs(f)}
+                    className="text-sm text-muted hover:text-foreground"
+                  >
+                    View PRs
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      {/* Privacy: allow friends to see my PRs */}
-      <section className="bg-card rounded-lg border border-border p-4 mb-6">
-        <h2 className="text-lg font-semibold text-foreground mb-3">Privacy</h2>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={allowFriendsSeePRs}
-            onChange={toggleAllowPRs}
-            className="rounded border-border bg-elevated text-foreground focus:ring-accent/50"
-          />
-          <span className="text-foreground text-sm">Allow friends to see my recent PRs</span>
-        </label>
+      {/* Challenges */}
+      <ChallengesSection friends={friends} />
+
+      {/* Accountability Partners */}
+      <AccountabilitySection friends={friends} />
+
+      {/* Friend Activity: feed with comments and reactions */}
+      <section className="mb-6">
+        <FriendActivityFeed
+          maxItems={20}
+          showViewAllLink={false}
+          scrollHeight="600px"
+        />
       </section>
+
+      {/* Compare modal */}
+      {comparingFriend && (
+        <CompareModal friend={comparingFriend} onClose={() => setComparingFriend(null)} />
+      )}
 
       {/* Modal / panel: Friend's recent PRs */}
       {viewingFriend && (

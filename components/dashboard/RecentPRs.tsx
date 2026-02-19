@@ -74,7 +74,7 @@ export default function RecentPRs() {
       <div className="p-4 border-b border-border">
         <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
       </div>
-      <div className="p-4 max-h-[220px] overflow-y-auto">
+      <div className="p-4">
         <div className="space-y-3">
           {workoutDays.map((day) => {
           const dayKey = `${day.workoutDate}|${day.templateDayId}`

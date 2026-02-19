@@ -17,15 +17,14 @@ import type { FeedPR, FeedWorkout, FeedItem } from '@/app/api/friends/feed/route
 function formatDate(dateStr: string): string {
   const dateOnly = dateStr.slice(0, 10)
   const [y, m, d] = dateOnly.split('-').map(Number)
-  
-  // Use UTC to avoid timezone issues
-  const date = new Date(Date.UTC(y, m - 1, d))
+
+  // Compare in the user's local timezone so "yesterday" matches their wall clock
+  const date = new Date(y, m - 1, d)
   const now = new Date()
-  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-  
-  const diffDays = Math.floor((todayUTC.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-  
-  // Filter out future dates (negative days)
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  const diffDays = Math.round((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+
   if (diffDays < 0) return ''
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
@@ -41,7 +40,16 @@ function getReactionEmoji(type: ReactionType): string {
   }
 }
 
-export function FriendActivityFeed() {
+export interface FriendActivityFeedProps {
+  /** Max number of feed items to show (default 5). */
+  maxItems?: number
+  /** Whether to show "View all" link (default true). Set false when embedded on Friends page. */
+  showViewAllLink?: boolean
+  /** Optional fixed height for the scroll area (e.g. "400px"). Omit for auto height. */
+  scrollHeight?: string
+}
+
+export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrollHeight = '400px' }: FriendActivityFeedProps = {}) {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
   const [feed, setFeed] = useState<FeedItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,6 +62,7 @@ export function FriendActivityFeed() {
   const [loadingComments, setLoadingComments] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
   const [postingComment, setPostingComment] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const loadFeed = useCallback(async (userId: string) => {
     setLoading(true)
@@ -65,7 +74,7 @@ export function FriendActivityFeed() {
       
       // Filter out any items with future dates (timezone issues can cause this)
       const now = new Date()
-      const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+      const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const validFeed = (data.feed ?? []).filter((item: FeedItem) => {
         let dateStr = ''
         if (item.type === 'workout') {
@@ -79,8 +88,8 @@ export function FriendActivityFeed() {
         if (!dateStr) return false
         
         const [y, m, d] = dateStr.split('-').map(Number)
-        const itemDate = new Date(Date.UTC(y, m - 1, d))
-        return itemDate.getTime() <= todayUTC.getTime()
+        const itemDate = new Date(y, m - 1, d)
+        return itemDate.getTime() <= todayLocal.getTime()
       })
       
       setFeed(validFeed)
@@ -129,6 +138,7 @@ export function FriendActivityFeed() {
     const key = `${pr.user_id}|${pr.exerciseName}|${pr.templateDayId}|${pr.workoutDate}|${pr.prType}`
     if (reactedPRs.has(key)) return
     
+    setActionError(null)
     setSendingReaction(key)
     setShowReactionPicker(null)
     
@@ -143,6 +153,8 @@ export function FriendActivityFeed() {
     
     if (result.ok) {
       setReactedPRs((prev) => new Map(prev).set(key, { reaction_type: reactionType }))
+    } else {
+      setActionError(result.error ?? 'Could not send reaction')
     }
     setSendingReaction(null)
   }
@@ -172,6 +184,7 @@ export function FriendActivityFeed() {
   const handlePostComment = async (pr: FeedPR) => {
     if (!user || postingComment || !newComment.trim()) return
     const key = `${pr.user_id}|${pr.exerciseName}|${pr.templateDayId}|${pr.workoutDate}|${pr.prType}`
+    setActionError(null)
     setPostingComment(true)
     const result = await addPRComment(
       {
@@ -194,6 +207,8 @@ export function FriendActivityFeed() {
       )
       setPRComments((prev) => new Map(prev).set(key, comments))
       setNewComment('')
+    } else {
+      setActionError(result.error ?? 'Could not post comment')
     }
     setPostingComment(false)
   }
@@ -204,16 +219,21 @@ export function FriendActivityFeed() {
     <div className="bg-card rounded-lg border border-border overflow-hidden">
       <div className="p-4 border-b border-border flex items-center justify-between">
         <h2 className="text-lg font-semibold text-foreground">Friend Activity</h2>
-        <Link href="/friends" className="text-sm text-amber-400 hover:text-amber-300">
-          View all
-        </Link>
+        {showViewAllLink && (
+          <Link href="/friends" className="text-sm text-amber-400 hover:text-amber-300">
+            View all
+          </Link>
+        )}
       </div>
-      <div className="p-4 h-[400px] overflow-y-auto">
+      <div className="p-4 overflow-y-auto" style={scrollHeight ? { height: scrollHeight } : undefined}>
         {loading && (
           <p className="text-muted text-sm text-center py-4">Loading...</p>
         )}
         {error && (
           <p className="text-red-400 text-sm text-center py-4">{error}</p>
+        )}
+        {actionError && (
+          <p className="text-red-400 text-sm text-center py-2 px-2">{actionError}</p>
         )}
         {!loading && !error && feed.length === 0 && (
           <div className="text-center py-4">
@@ -225,7 +245,7 @@ export function FriendActivityFeed() {
         )}
         {!loading && feed.length > 0 && (
           <div className="space-y-3">
-            {feed.slice(0, 5).map((item, i) => {
+            {feed.slice(0, maxItems).map((item, i) => {
               if (item.type === 'achievement') {
                 return (
                   <div

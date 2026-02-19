@@ -10,14 +10,18 @@ import ProgressSelectors from '@/components/dashboard/ProgressSelectors'
 import PerformanceMetrics from '@/components/dashboard/PerformanceMetrics'
 import WorkoutCalendar from '@/components/dashboard/WorkoutCalendar'
 import RecentPRs from '@/components/dashboard/RecentPRs'
-import { FriendActivityFeed } from '@/components/dashboard/FriendActivityFeed'
 import ProgressionMomentum from '@/components/dashboard/ProgressionMomentum'
 import ConsistencyScore from '@/components/dashboard/ConsistencyScore'
 import ExerciseSparklines from '@/components/dashboard/ExerciseSparklines'
 import StrengthStandards from '@/components/dashboard/StrengthStandards'
 import MuscleBalanceWidget from '@/components/dashboard/MuscleBalanceWidget'
 import FatigueMonitor from '@/components/dashboard/FatigueMonitor'
+import WeeklyVolumeChart from '@/components/dashboard/WeeklyVolumeChart'
+import WeeklySummaryCard from '@/components/dashboard/WeeklySummaryCard'
+import PRCelebration from '@/components/dashboard/PRCelebration'
 import { setDeloadWeek } from '@/lib/deload-detection'
+import { getNextWorkout } from '@/lib/next-workout'
+import Link from 'next/link'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null)
@@ -27,7 +31,8 @@ export default function DashboardPage() {
   const [deloadSuggestion, setDeloadSuggestion] = useState<{ reason: string } | null>(null)
   const [deloadDismissed, setDeloadDismissed] = useState(false)
   const [planType, setPlanType] = useState<PlanType>('hypertrophy')
-  const [insightsExpanded, setInsightsExpanded] = useState(false)
+  const [nextDayLabel, setNextDayLabel] = useState<string | null>(null)
+  const [showAllAnalytics, setShowAllAnalytics] = useState(false)
 
   useEffect(() => {
     async function checkAuthAndTemplates() {
@@ -54,15 +59,46 @@ export default function DashboardPage() {
         }
       }
       setLoading(false)
+
+      getNextWorkout().then(nw => {
+        if (nw) setNextDayLabel(nw.dayLabel)
+      })
     }
     checkAuthAndTemplates()
   }, [])
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <p className="text-muted">Loading...</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Skeleton: greeting */}
+        <div className="mb-4 sm:mb-6 flex items-center justify-between">
+          <div className="h-8 w-48 bg-elevated rounded-lg animate-pulse" />
+          <div className="h-9 w-28 bg-elevated rounded-lg animate-pulse" />
+        </div>
+        {/* Skeleton: weekly summary */}
+        <div className="bg-card rounded-xl border border-border h-[80px] animate-pulse mb-4 sm:mb-6" />
+        {/* Skeleton: stats strip */}
+        <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex-1 min-w-[6.5rem] bg-card rounded-xl border border-border p-3 sm:p-4 animate-pulse">
+              <div className="h-3 w-14 bg-elevated rounded mb-2" />
+              <div className="h-6 w-10 bg-elevated rounded" />
+            </div>
+          ))}
+        </div>
+        {/* Skeleton: next workout */}
+        <div className="bg-card rounded-xl border border-border h-[72px] animate-pulse mb-4 sm:mb-6" />
+        {/* Skeleton: strength standards */}
+        <div className="bg-card rounded-xl border border-border h-[160px] animate-pulse mb-4 sm:mb-6" />
+        {/* Skeleton: chart + calendar */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-6">
+          <div className="lg:col-span-2 bg-card rounded-xl border border-border h-[340px] animate-pulse" />
+          <div className="bg-card rounded-xl border border-border h-[340px] animate-pulse" />
+        </div>
+        {/* Skeleton: analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
+          <div className="bg-card rounded-xl border border-border h-[240px] animate-pulse" />
+          <div className="bg-card rounded-xl border border-border h-[240px] animate-pulse" />
         </div>
       </div>
     )
@@ -92,10 +128,27 @@ export default function DashboardPage() {
     window.dispatchEvent(new CustomEvent('deload-started'))
   }
 
+  const greetingHour = new Date().getHours()
+  const greeting = greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening'
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <div className="mb-3 sm:mb-8">
-        <h1 className="font-display text-xl sm:text-3xl font-semibold text-foreground tracking-tight">Workout Dashboard</h1>
+      {/* Header: personalized greeting + CTA */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="font-display text-xl sm:text-3xl font-semibold text-foreground tracking-tight">
+          {greeting}, {user.username}
+        </h1>
+        <Link
+          href="/workout/log"
+          className="px-4 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-[#e5e5e5] transition-colors"
+        >
+          {nextDayLabel ? `Start ${nextDayLabel}` : 'Log Workout'}
+        </Link>
+      </div>
+
+      {/* Stats strip */}
+      <div className="mb-4 sm:mb-6">
+        <PerformanceMetrics />
       </div>
 
       {deloadSuggestion && !deloadDismissed && (
@@ -123,12 +176,23 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-      
-      {/* Row 1: Progress Chart + Calendar - equal height on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-8 lg:items-stretch">
-        <div className="lg:col-span-2 lg:min-h-0">
-          <div className="bg-card rounded-xl border border-border overflow-hidden h-full flex flex-col shadow-card transition-shadow duration-200 hover:shadow-card-hover">
-            <div className="p-3 sm:p-6 border-b border-border flex-shrink-0">
+
+      {/* Weekly Summary + Strength Standards side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-6 lg:items-start">
+        <div className="flex flex-col gap-3">
+          <WeeklySummaryCard />
+          <PRCelebration />
+        </div>
+        <div className="lg:col-span-2">
+          <StrengthStandards />
+        </div>
+      </div>
+
+      {/* Progress Chart + Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-6">
+        <div className="lg:col-span-2">
+          <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card transition-shadow duration-200 hover:shadow-card-hover">
+            <div className="p-3 sm:p-6 border-b border-border">
               <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground">Progress Over Time</h2>
               <ProgressSelectors
                 selectedTemplateDayId={selectedTemplateDayId}
@@ -138,7 +202,7 @@ export default function DashboardPage() {
                 embedded
               />
             </div>
-            <div className="p-3 sm:p-6 flex-1 min-h-[280px] sm:min-h-0 flex flex-col">
+            <div className="p-3 sm:p-6 min-h-[220px] sm:min-h-0">
               <ProgressChart
                 selectedTemplateDayId={selectedTemplateDayId}
                 selectedExercise={selectedExercise}
@@ -146,55 +210,47 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        <div className="lg:h-full flex flex-col gap-3 sm:gap-6 min-h-0">
-          <div className="flex-1 min-h-0 [&>div]:h-full">
-            <WorkoutCalendar />
-          </div>
-          <div className="flex-shrink-0">
-            <RecentPRs />
-          </div>
+        <div>
+          <WorkoutCalendar />
         </div>
       </div>
 
-      {/* Insights: collapsible on mobile, always visible on desktop */}
-      <section className="mb-4 sm:mb-8">
-        <button
-          type="button"
-          onClick={() => setInsightsExpanded((e) => !e)}
-          className="lg:hidden w-full flex items-center justify-between gap-2 py-3 px-0 text-left border-b border-border"
-          aria-expanded={insightsExpanded}
-        >
-          <h2 className="font-display text-lg font-semibold text-foreground tracking-tight">Insights</h2>
-          <span className="text-sm text-muted">{insightsExpanded ? 'Hide' : 'Show insights'}</span>
-          <svg className={`w-5 h-5 text-muted shrink-0 transition-transform ${insightsExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        <h2 className="hidden lg:block font-display text-lg font-semibold text-foreground mb-4 tracking-tight">Insights</h2>
-        {/* One grid: on mobile visible when expanded; on desktop always visible */}
-        <div className={`grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mt-4 ${!insightsExpanded ? 'hidden lg:grid' : ''}`}>
-          <ProgressionMomentum />
-          <ConsistencyScore />
+      {/* Analytics Section -- collapsible on mobile */}
+      <section className="mb-4 sm:mb-6">
+        {/* Always visible: Consistency + Volume | Muscle Balance */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6 mb-3 sm:mb-6">
+          <div className="flex flex-col gap-3 sm:gap-6">
+            <ConsistencyScore />
+            <WeeklyVolumeChart />
+          </div>
           <MuscleBalanceWidget />
-          <FatigueMonitor planType={planType} />
-          <div className="lg:col-span-3">
-            <StrengthStandards />
+        </div>
+
+        {/* Collapsible on mobile, always visible on desktop */}
+        <div className={`${showAllAnalytics ? 'block' : 'hidden'} lg:block`}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
+            <div className="lg:col-span-2">
+              <ExerciseSparklines />
+            </div>
+            <div className="flex flex-col gap-3 sm:gap-6">
+              <RecentPRs />
+              <FatigueMonitor planType={planType} />
+              <ProgressionMomentum />
+            </div>
           </div>
         </div>
+
+        {/* Mobile-only toggle */}
+        {!showAllAnalytics && (
+          <button
+            type="button"
+            onClick={() => setShowAllAnalytics(true)}
+            className="lg:hidden w-full mt-3 px-4 py-2.5 text-sm font-medium text-muted bg-elevated border border-border rounded-xl hover:text-foreground hover:bg-card transition-colors"
+          >
+            Show more analytics
+          </button>
+        )}
       </section>
-
-      {/* Row 3: Exercise Sparklines */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-8">
-        <div className="lg:col-span-2">
-          <ExerciseSparklines />
-        </div>
-      </div>
-
-      {/* Row 4: Existing Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-8">
-        <PerformanceMetrics />
-        <FriendActivityFeed />
-      </div>
     </div>
   )
 }

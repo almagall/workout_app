@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/auth-simple'
 import { getPreviousWorkoutSessionExcludingDeload, getMostRecentSessionWithExercise, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions, saveDraftWorkoutSession, completeWorkoutSession, deleteWorkoutSession } from '@/lib/storage'
 import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
-import { getE1RMTrendForExercises, getHitStreakForExercises } from '@/lib/performance-analytics'
+import { getE1RMTrendForExercises, getHitStreakForExercises, getWeeklyHitRates } from '@/lib/performance-analytics'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
 import { getTargetExplanation } from '@/lib/target-explanation'
 import { getPlateBreakdown, getPlateConfig, roundToLoadableWeight, isBarbellExercise } from '@/lib/plate-calculator'
@@ -1785,6 +1785,14 @@ export default function WorkoutLogger({
 
         const rating = calculateWorkoutRating(workoutPerformance)
         workoutPerformance.overallRating = rating
+        const draftWeeklyData = await getWeeklyHitRates(4)
+        const draftHitRates = draftWeeklyData
+          .map((d) => d.hitRate)
+          .filter((r): r is number => r !== null && r > 0)
+        const draftHitRateSummary =
+          draftHitRates.length >= 2
+            ? `You're hitting targets ${Math.round(draftHitRates.reduce((a, b) => a + b, 0) / draftHitRates.length)}% of the time over the last ${draftHitRates.length} weeks.`
+            : null
         let feedback = generateWorkoutFeedback(workoutPerformance, planType, {
           underperformanceMap: feedbackContext.underperformanceMap,
           lastSessionRpeMap: feedbackContext.lastSessionRpeMap,
@@ -1792,6 +1800,7 @@ export default function WorkoutLogger({
           e1rmTrendMap: feedbackContext.e1rmTrendMap,
           hitStreakMap: feedbackContext.hitStreakMap,
           daysSinceLastSession: feedbackContext.daysSinceLastSession,
+          recentHitRateSummary: draftHitRateSummary,
         })
 
         const draftPrs = await getPRsForSession(
@@ -1904,6 +1913,14 @@ export default function WorkoutLogger({
 
         const rating = calculateWorkoutRating(workoutPerformance)
         workoutPerformance.overallRating = rating
+        const editWeeklyData = await getWeeklyHitRates(4)
+        const editHitRates = editWeeklyData
+          .map((d) => d.hitRate)
+          .filter((r): r is number => r !== null && r > 0)
+        const editHitRateSummary =
+          editHitRates.length >= 2
+            ? `You're hitting targets ${Math.round(editHitRates.reduce((a, b) => a + b, 0) / editHitRates.length)}% of the time over the last ${editHitRates.length} weeks.`
+            : null
         let feedback = generateWorkoutFeedback(workoutPerformance, planType, {
           underperformanceMap: feedbackContext.underperformanceMap,
           lastSessionRpeMap: feedbackContext.lastSessionRpeMap,
@@ -1911,6 +1928,7 @@ export default function WorkoutLogger({
           e1rmTrendMap: feedbackContext.e1rmTrendMap,
           hitStreakMap: feedbackContext.hitStreakMap,
           daysSinceLastSession: feedbackContext.daysSinceLastSession,
+          recentHitRateSummary: editHitRateSummary,
         })
 
         const editPrs = await getPRsForSession(
@@ -2069,6 +2087,14 @@ export default function WorkoutLogger({
 
       const rating = calculateWorkoutRating(workoutPerformance)
       workoutPerformance.overallRating = rating
+      const weeklyData = await getWeeklyHitRates(4)
+      const hitRates = weeklyData
+        .map((d) => d.hitRate)
+        .filter((r): r is number => r !== null && r > 0)
+      const recentHitRateSummary =
+        hitRates.length >= 2
+          ? `You're hitting targets ${Math.round(hitRates.reduce((a, b) => a + b, 0) / hitRates.length)}% of the time over the last ${hitRates.length} weeks.`
+          : null
       let feedback = generateWorkoutFeedback(workoutPerformance, planType, {
         underperformanceMap: feedbackContext.underperformanceMap,
         lastSessionRpeMap: feedbackContext.lastSessionRpeMap,
@@ -2076,6 +2102,7 @@ export default function WorkoutLogger({
         e1rmTrendMap: feedbackContext.e1rmTrendMap,
         hitStreakMap: feedbackContext.hitStreakMap,
         daysSinceLastSession: feedbackContext.daysSinceLastSession,
+        recentHitRateSummary,
       })
 
       const prs = await getPRsForSession(dayId, exerciseData.map((e) => ({
@@ -2647,6 +2674,14 @@ export default function WorkoutLogger({
         </div>
       )}
 
+      {!workoutComplete && feedbackContext.daysSinceLastSession != null && feedbackContext.daysSinceLastSession >= 14 && (
+        <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <p className="text-sm text-foreground">
+            First time back in 2+ weeks—targets are conservative so you can ease back in.
+          </p>
+        </div>
+      )}
+
       <div className="bg-card rounded-xl border border-border p-6 mb-6 shadow-card">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
           <div>
@@ -2849,9 +2884,9 @@ export default function WorkoutLogger({
             <div className="mb-3 px-3 py-2 rounded-lg bg-elevated border border-border">
               <p className="text-xs font-medium text-muted uppercase tracking-wide mb-1">Suggested warm-up</p>
               <p className="text-sm text-secondary">
-                {showEmptyBar && `${pc.barWeight} lb (empty bar) × 5`}
+                {showEmptyBar && `${pc.barWeight} lb (empty bar) × 10`}
                 {showEmptyBar && showSecond && ' → '}
-                {showSecond && `${warmupWeight} lb × 3`}
+                {showSecond && `${warmupWeight} lb × 5`}
               </p>
             </div>
           )

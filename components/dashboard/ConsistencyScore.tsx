@@ -22,9 +22,9 @@ export default function ConsistencyScore() {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-lg border border-border p-6 h-[400px]">
+      <div className="bg-card rounded-lg border border-border p-6">
         <h2 className="text-lg font-semibold text-white mb-4">Performance Consistency</h2>
-        <div className="flex items-center justify-center h-[300px]">
+        <div className="flex items-center justify-center py-12">
           <p className="text-muted">Loading...</p>
         </div>
       </div>
@@ -33,9 +33,9 @@ export default function ConsistencyScore() {
 
   if (!metrics || metrics.weeklyData.length === 0) {
     return (
-      <div className="bg-card rounded-lg border border-border p-6 h-[400px]">
+      <div className="bg-card rounded-lg border border-border p-6">
         <h2 className="text-lg font-semibold text-white mb-4">Performance Consistency</h2>
-        <div className="flex flex-col items-center justify-center h-[300px] text-center">
+        <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-muted mb-2">Not enough data yet</p>
           <p className="text-sm text-secondary">Log workouts with targets to see consistency metrics</p>
         </div>
@@ -54,14 +54,14 @@ export default function ConsistencyScore() {
     metrics.score >= 85 ? '#22c55e' : metrics.score >= 70 ? '#eab308' : '#ef4444'
 
   return (
-    <div className="bg-card rounded-lg border border-border overflow-hidden h-[400px] flex flex-col">
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
       <div className="p-4 border-b border-border">
         <h2 className="text-lg font-semibold text-white">Performance Consistency</h2>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="p-4">
         {/* Score Display */}
-        <div className="mb-4">
+        <div className="mb-3">
           <div className="flex items-baseline gap-2 mb-2">
             <span className="text-3xl font-bold" style={{ color: scoreColor }}>
               {metrics.score}
@@ -75,8 +75,7 @@ export default function ConsistencyScore() {
             </span>
           </div>
 
-          {/* Visual Progress Bar */}
-          <div className="w-full bg-border rounded-full h-2 mb-4">
+          <div className="w-full bg-border rounded-full h-2">
             <div
               className="h-2 rounded-full transition-all duration-300"
               style={{
@@ -88,9 +87,9 @@ export default function ConsistencyScore() {
         </div>
 
         {/* Chart */}
-        <div className="mb-4">
+        <div className="mb-3">
           <p className="text-sm text-muted mb-2">Weekly Target Hit Rate</p>
-          <ResponsiveContainer width="100%" height={150}>
+          <ResponsiveContainer width="100%" height={130}>
             <LineChart data={chartData} margin={{ top: 5, right: 20, left: 5, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
               <XAxis
