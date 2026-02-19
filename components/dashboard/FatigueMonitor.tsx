@@ -124,7 +124,7 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
 
   if (loading) {
     return (
-      <div className="card-glass p-6">
+      <div className="card-glass card-accent-top p-6">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
         <p className="text-sm text-secondary">Loading...</p>
       </div>
@@ -133,7 +133,7 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
 
   if (!data) {
     return (
-      <div className="card-glass p-6">
+      <div className="card-glass card-accent-top p-6">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
         <p className="text-sm text-secondary">Not enough data yet.</p>
       </div>
@@ -143,22 +143,33 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
   const zone =
     data.fatigueScore < 50 ? 'green' : data.fatigueScore < 75 ? 'yellow' : 'red'
   const zoneColors = {
-    green: 'bg-emerald-500',
-    yellow: 'bg-amber-500',
-    red: 'bg-red-500',
+    green: { bar: 'bg-emerald-500', glow: 'rgba(16,185,129,0.3)', text: 'text-emerald-400' },
+    yellow: { bar: 'bg-amber-500', glow: 'rgba(245,158,11,0.3)', text: 'text-amber-400' },
+    red: { bar: 'bg-red-500', glow: 'rgba(239,68,68,0.3)', text: 'text-red-400' },
   }
 
   return (
-    <div className="card-glass p-6">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
+    <div className="card-glass card-accent-top p-6">
+      <div
+        className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }}
+      />
+      <div className="relative">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
+        <span className={`text-lg font-bold ${zoneColors[zone].text}`}>{data.fatigueScore}</span>
+      </div>
       <p className="text-xs text-muted mb-3">
         {data.weeksTrained} week{data.weeksTrained !== 1 ? 's' : ''} of training
       </p>
 
-      <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden mb-3">
+      <div className="h-2.5 bg-white/[0.08] rounded-full overflow-hidden mb-3">
         <div
-          className={`h-full rounded-full transition-all ${zoneColors[zone]}`}
-          style={{ width: `${Math.min(100, data.fatigueScore)}%` }}
+          className={`h-full rounded-full transition-all duration-500 ${zoneColors[zone].bar}`}
+          style={{
+            width: `${Math.min(100, data.fatigueScore)}%`,
+            boxShadow: `0 0 10px ${zoneColors[zone].glow}`,
+          }}
         />
       </div>
 
@@ -178,6 +189,7 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
       {data.inDeloadPeriod && (
         <p className="text-xs text-amber-400">Deload week active</p>
       )}
+      </div>
     </div>
   )
 }

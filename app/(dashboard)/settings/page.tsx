@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth-simple'
+import { getCurrentUser, signOut } from '@/lib/auth-simple'
 import { createClient } from '@/lib/supabase/client'
 import type { UserProfile } from '@/types/profile'
 import { getPlateConfig, savePlateConfig, STANDARD_PLATES } from '@/lib/plate-calculator'
@@ -17,7 +17,7 @@ export default function SettingsPage() {
 
   // Form state
   const [dateOfBirth, setDateOfBirth] = useState('')
-  const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('')
+  const [gender, setGender] = useState<'male' | 'female' | ''>('')
   const [heightCm, setHeightCm] = useState('')
   const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('ft')
   const [heightFeet, setHeightFeet] = useState('')
@@ -34,6 +34,11 @@ export default function SettingsPage() {
 
   // Privacy: allow friends to see my PRs
   const [allowFriendsSeePRs, setAllowFriendsSeePRsState] = useState(true)
+
+  // Delete account
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
@@ -191,6 +196,41 @@ export default function SettingsPage() {
     }
   }
 
+  const handleDeleteAccount = async () => {
+    const user = getCurrentUser()
+    if (!user || deleteConfirmText !== 'DELETE') return
+
+    setDeleting(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to delete account')
+      }
+
+      // Clear all local data
+      signOut()
+      localStorage.removeItem('workout_app_users')
+      localStorage.removeItem(`plate_config_${user.id}`)
+      localStorage.removeItem(`deload_${user.id}`)
+      localStorage.removeItem(`workout_settings_${user.id}`)
+      localStorage.removeItem('deload_banner_dismissed')
+      localStorage.removeItem('pr_celebration_dismissed')
+
+      window.location.href = '/get-started'
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete account')
+      setDeleting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -220,8 +260,9 @@ export default function SettingsPage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Information */}
-        <div className="card-glass p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Personal Information</h2>
+        <div className="card-glass card-accent-top p-6">
+          <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+          <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Personal Information</h2>
           
           <div className="space-y-4">
             <div>
@@ -238,17 +279,16 @@ export default function SettingsPage() {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Gender
+                Sex
               </label>
               <select
                 value={gender}
-                onChange={(e) => setGender(e.target.value as 'male' | 'female' | 'other')}
+                onChange={(e) => setGender(e.target.value as 'male' | 'female')}
                 className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
               >
-                <option value="">Select gender</option>
+                <option value="">Select sex</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
-                <option value="other">Prefer not to say</option>
               </select>
               <p className="text-xs text-muted mt-1">Used for strength standards comparison</p>
             </div>
@@ -369,8 +409,9 @@ export default function SettingsPage() {
         </div>
 
         {/* Bodyweight */}
-        <div className="card-glass p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Bodyweight</h2>
+        <div className="card-glass card-accent-top p-6">
+          <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+          <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Bodyweight</h2>
           
           <div className="space-y-4">
             <div>
@@ -409,8 +450,9 @@ export default function SettingsPage() {
         </div>
 
         {/* Training Profile */}
-        <div className="card-glass p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Training Profile</h2>
+        <div className="card-glass card-accent-top p-6">
+          <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+          <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training Profile</h2>
           
           <div className="space-y-4">
             <div>
@@ -432,8 +474,9 @@ export default function SettingsPage() {
         </div>
 
         {/* Privacy */}
-        <div className="card-glass p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Privacy</h2>
+        <div className="card-glass card-accent-top p-6">
+          <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+          <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Privacy</h2>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -450,8 +493,9 @@ export default function SettingsPage() {
         </div>
 
         {/* Plate Calculator */}
-        <div className="card-glass p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Plate Calculator</h2>
+        <div className="card-glass card-accent-top p-6">
+          <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+          <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Plate Calculator</h2>
           <p className="text-sm text-muted mb-4">
             Target weights and plate breakdowns will use only the plates you select. Choose which plates your gym has.
           </p>
@@ -501,8 +545,9 @@ export default function SettingsPage() {
         </div>
 
         {/* Account Information */}
-        <div className="card-glass p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Account</h2>
+        <div className="card-glass card-accent-top p-6">
+          <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+          <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Account</h2>
           
           <div className="space-y-4">
             <div>
@@ -549,6 +594,60 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* Danger Zone */}
+      <div className="mt-12 rounded-xl border border-red-500/20 bg-red-500/[0.03] p-6 relative overflow-hidden">
+        <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.06), transparent 70%)' }} />
+        <div className="relative">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-red-400/80 mb-1 flex items-center gap-2">
+            <span className="w-0.5 h-3.5 rounded-full bg-red-500/40 flex-shrink-0" />Danger Zone
+          </h2>
+          <p className="text-sm text-muted mb-4">
+            Permanently delete your account and all associated data. This action cannot be undone.
+          </p>
+
+          {!showDeleteConfirm ? (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors"
+            >
+              Delete Account
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-red-300">
+                Type <span className="font-mono font-bold text-red-400">DELETE</span> to confirm account deletion:
+              </p>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Type DELETE"
+                className="w-full max-w-xs px-3 py-2 border border-red-500/30 bg-red-500/[0.05] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmText !== 'DELETE' || deleting}
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {deleting ? 'Deleting...' : 'Permanently Delete Account'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText('') }}
+                  className="px-4 py-2 text-sm font-medium rounded-lg border border-white/[0.08] text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

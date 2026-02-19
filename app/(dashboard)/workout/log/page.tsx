@@ -65,7 +65,8 @@ export default function LogWorkoutPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="font-display text-3xl font-bold text-foreground mb-8 tracking-tight">Log Workout</h1>
-        <div className="card-glass p-6">
+        <div className="card-glass card-accent-top p-6 relative">
+          <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
           <p className="text-secondary mb-4">
             You need to create a workout template first before logging workouts.
           </p>
@@ -96,8 +97,9 @@ export default function LogWorkoutPage() {
               key={template.id}
               type="button"
               onClick={() => setSelectedTemplateId(template.id)}
-              className="w-full min-h-[72px] card-glass p-4 sm:p-6 text-left hover:border-accent/50 transition-all duration-200 hover:bg-white/[0.04] hover:shadow-card-hover"
+              className="w-full min-h-[72px] card-glass card-accent-top p-4 sm:p-6 text-left hover:border-accent/50 transition-all duration-200 hover:bg-white/[0.04] hover:shadow-card-hover relative"
             >
+              <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <h2 className="text-lg font-semibold text-foreground">{template.name}</h2>
                 <span
@@ -168,8 +170,9 @@ export default function LogWorkoutPage() {
           <Link
             key={day.id}
             href={`/workout/log/${day.id}`}
-            className="min-h-[64px] flex items-center card-glass p-4 sm:p-6 hover:border-accent/50 transition-all duration-200 hover:bg-white/[0.04] hover:shadow-card-hover"
+            className="min-h-[64px] flex items-center card-glass card-accent-top p-4 sm:p-6 hover:border-accent/50 transition-all duration-200 hover:bg-white/[0.04] hover:shadow-card-hover relative"
           >
+            <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
             <h3 className="text-xl font-semibold text-foreground">{day.day_label}</h3>
           </Link>
         ))}

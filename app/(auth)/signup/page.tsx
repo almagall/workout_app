@@ -51,7 +51,7 @@ export default function SignupPage() {
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative max-w-md w-full space-y-8 p-8 card-glass mx-4 animate-fade-in-up">
+      <div className="relative max-w-md w-full space-y-8 p-8 card-glass card-accent-top mx-4 animate-fade-in-up">
         <div>
           <h1 className="font-display text-center text-3xl font-extrabold text-gradient mb-1 tracking-tight">
             Workout Planner

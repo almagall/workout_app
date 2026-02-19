@@ -33,8 +33,9 @@ export default function ConsistencyScore() {
 
   if (!metrics || metrics.weeklyData.length === 0) {
     return (
-      <div className="card-glass p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Performance Consistency</h2>
+      <div className="card-glass card-accent-top p-6">
+        <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+        <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Performance Consistency</h2>
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-muted mb-2">Not enough data yet</p>
           <p className="text-sm text-secondary">Log workouts with targets to see consistency metrics</p>
@@ -54,33 +55,40 @@ export default function ConsistencyScore() {
     metrics.score >= 85 ? '#22c55e' : metrics.score >= 70 ? '#eab308' : '#ef4444'
 
   return (
-    <div className="card-glass overflow-hidden">
-      <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+    <div className="card-glass card-accent-top">
+      <div
+        className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }}
+      />
+      <div className="relative p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Performance Consistency</h2>
       </div>
 
       <div className="p-4 sm:p-6">
-        {/* Score Display */}
-        <div className="mb-3">
+        <div className="mb-4">
           <div className="flex items-baseline gap-2 mb-2">
-            <span className="text-3xl font-bold" style={{ color: scoreColor }}>
+            <span
+              className="text-4xl font-bold"
+              style={{ color: scoreColor, textShadow: `0 0 20px ${scoreColor}40` }}
+            >
               {metrics.score}
             </span>
-            <span className="text-lg text-muted">/100</span>
+            <span className="text-lg text-muted font-medium">/100</span>
             <span
-              className="text-sm font-semibold ml-2"
-              style={{ color: scoreColor }}
+              className="text-xs font-semibold uppercase tracking-wider ml-2 px-2 py-0.5 rounded-full"
+              style={{ color: scoreColor, backgroundColor: `${scoreColor}15` }}
             >
               {metrics.score >= 85 ? 'Excellent' : metrics.score >= 70 ? 'Good' : 'Needs Work'}
             </span>
           </div>
 
-          <div className="w-full bg-white/[0.06] rounded-full h-2">
+          <div className="w-full bg-white/[0.08] rounded-full h-2.5">
             <div
-              className="h-2 rounded-full transition-all duration-300"
+              className="h-2.5 rounded-full transition-all duration-500"
               style={{
                 width: `${metrics.score}%`,
                 backgroundColor: scoreColor,
+                boxShadow: `0 0 10px ${scoreColor}40`,
               }}
             />
           </div>

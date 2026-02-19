@@ -85,7 +85,7 @@ function ExerciseCard({ exercise, onClick }: { exercise: ExerciseEntry; onClick?
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick?.()}
-      className="card-glass p-4 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer"
+      className="card-glass card-accent-top p-4 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer"
     >
       <h3 className="text-lg font-semibold text-foreground mb-2">{exercise.name}</h3>
       <p className="text-sm text-muted mb-3">
@@ -183,7 +183,7 @@ export default function ExerciseDatabasePage() {
 
               return (
                 <section key={group}>
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">{group}</h2>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />{group}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {exercises.map((exercise) => (
                       <ExerciseCard key={exercise.id} exercise={exercise} onClick={() => setSelectedExercise(exercise)} />

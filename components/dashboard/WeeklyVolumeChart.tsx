@@ -52,7 +52,7 @@ export default function WeeklyVolumeChart() {
 
   if (loading) {
     return (
-      <div className="card-glass">
+      <div className="card-glass card-accent-top">
         <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Weekly Volume</h2>
         </div>
@@ -65,7 +65,7 @@ export default function WeeklyVolumeChart() {
 
   if (data.length === 0) {
     return (
-      <div className="card-glass">
+      <div className="card-glass card-accent-top">
         <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Weekly Volume</h2>
         </div>
@@ -91,8 +91,12 @@ export default function WeeklyVolumeChart() {
     'text-muted'
 
   return (
-    <div className="card-glass">
-      <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+    <div className="card-glass card-accent-top">
+      <div
+        className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }}
+      />
+      <div className="relative p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Weekly Volume</h2>
           <span className="text-xs text-muted">Avg {formatVolume(avg)} lbs</span>
@@ -142,9 +146,26 @@ export default function WeeklyVolumeChart() {
               strokeDasharray="4 4"
               label={{ value: 'avg', position: 'right', fill: '#555555', fontSize: 10 }}
             />
-            <Bar dataKey="volume" radius={[4, 4, 0, 0]} maxBarSize={40}>
+            <defs>
+              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#60a5fa" />
+                <stop offset="100%" stopColor="#3b82f6" />
+              </linearGradient>
+              <filter id="barGlow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            <Bar dataKey="volume" radius={[6, 6, 0, 0]} maxBarSize={40}>
               {chartData.map((entry, i) => (
-                <Cell key={i} fill={entry.aboveAvg ? '#3b82f6' : 'rgba(255,255,255,0.08)'} />
+                <Cell
+                  key={i}
+                  fill={entry.aboveAvg ? 'url(#barGradient)' : 'rgba(255,255,255,0.06)'}
+                  filter={entry.aboveAvg ? 'url(#barGlow)' : undefined}
+                />
               ))}
             </Bar>
           </BarChart>

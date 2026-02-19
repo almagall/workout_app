@@ -131,8 +131,9 @@ export default function WeightPage() {
       </div>
 
       {/* Current Weight Card */}
-      <div className="card-glass p-6 mb-6">
-        <div className="flex items-center justify-between">
+      <div className="card-glass card-accent-top p-6 mb-6">
+        <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+        <div className="relative flex items-center justify-between">
           <div>
             <p className="text-sm text-muted mb-1">Current Weight</p>
             <p className="text-3xl font-bold text-foreground">
@@ -150,8 +151,9 @@ export default function WeightPage() {
 
       {/* Chart */}
       {history.length > 0 && (
-        <div className="card-glass p-6 mb-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Weight Over Time</h2>
+        <div className="card-glass card-accent-top p-6 mb-6">
+          <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+          <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Weight Over Time</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -179,8 +181,9 @@ export default function WeightPage() {
       )}
 
       {/* Recent Logs */}
-      <div className="card-glass p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Recent Logs</h2>
+      <div className="card-glass card-accent-top p-6">
+        <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+        <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Recent Logs</h2>
         
         {history.length === 0 ? (
           <p className="text-muted text-center py-8">

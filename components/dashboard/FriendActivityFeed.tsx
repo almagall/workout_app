@@ -216,7 +216,8 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
   if (!user) return null
 
   return (
-    <div className="card-glass overflow-hidden">
+    <div className="card-glass card-accent-top overflow-hidden relative">
+      <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
       <div className="p-4 border-b border-white/[0.06] bg-white/[0.015] flex items-center justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Friend Activity</h2>
         {showViewAllLink && (

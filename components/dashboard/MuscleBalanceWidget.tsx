@@ -31,8 +31,12 @@ export default function MuscleBalanceWidget() {
   const neglectedMuscles = ALL_MUSCLE_GROUPS.filter((g) => (muscleVolume[g] ?? 0) === 0)
 
   return (
-    <div className="card-glass overflow-hidden">
-      <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+    <div className="card-glass card-accent-top">
+      <div
+        className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }}
+      />
+      <div className="relative p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Muscle Balance</h2>
         <div className="flex gap-2">
           {TIME_RANGES.map(({ days, label }) => (

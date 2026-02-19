@@ -157,16 +157,20 @@ export default function WorkoutCalendar() {
 
   if (loading) {
     return (
-      <div className="card-glass p-4 sm:p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Workout Calendar</h2>
+      <div className="card-glass card-accent-top p-4 sm:p-6">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Workout Calendar</h2>
         <div className="text-muted text-sm">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="card-glass p-4 sm:p-6">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 sm:mb-4">Workout Calendar</h2>
+    <div className="card-glass card-accent-top p-4 sm:p-6">
+      <div
+        className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }}
+      />
+      <h2 className="relative text-xs font-semibold uppercase tracking-wider text-muted mb-3 sm:mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Workout Calendar</h2>
 
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <button
@@ -237,9 +241,9 @@ export default function WorkoutCalendar() {
                 onClick={hasWorkout ? () => setModalDate(dateStr) : undefined}
                 className={`aspect-square flex items-center justify-center rounded-md text-[10px] sm:text-sm ${
                   hasWorkout
-                    ? 'bg-green-600/60 text-foreground font-semibold cursor-pointer hover:bg-green-600/80 transition-colors'
+                    ? 'bg-emerald-500/50 text-foreground font-semibold cursor-pointer hover:bg-emerald-500/70 shadow-[0_0_6px_rgba(16,185,129,0.2)] transition-colors'
                     : 'text-secondary'
-                } ${isToday ? 'ring-2 ring-accent ring-offset-2 ring-offset-background' : ''}`}
+                } ${isToday ? 'ring-2 ring-accent shadow-[0_0_10px_rgba(59,130,246,0.25)] ring-offset-2 ring-offset-background' : ''}`}
                 title={hasWorkout ? `Workout on ${dateStr} – click for details` : undefined}
               >
                 {day}
@@ -251,7 +255,7 @@ export default function WorkoutCalendar() {
 
       <div className="mt-2 sm:mt-3 flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-[10px] sm:text-xs text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-green-600/60" />
+          <span className="w-3 h-3 rounded bg-emerald-500/50" />
           Workout logged
         </span>
         {isCurrentMonth && (

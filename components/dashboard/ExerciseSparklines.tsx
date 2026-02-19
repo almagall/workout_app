@@ -179,7 +179,7 @@ export default function ExerciseSparklines() {
 
   if (loading) {
     return (
-      <div className="card-glass p-6">
+      <div className="card-glass card-accent-top p-6">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Exercise Progression</h2>
         <div className="flex items-center justify-center py-12">
           <p className="text-muted">Loading...</p>
@@ -190,7 +190,7 @@ export default function ExerciseSparklines() {
 
   if (allExercises.length === 0) {
     return (
-      <div className="card-glass p-6">
+      <div className="card-glass card-accent-top p-6">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Exercise Progression</h2>
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-muted mb-2">Not enough data yet</p>
@@ -201,8 +201,12 @@ export default function ExerciseSparklines() {
   }
 
   return (
-    <div className="card-glass overflow-hidden h-[320px] sm:h-[420px] flex flex-col">
-      <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015] flex-shrink-0">
+    <div className="card-glass card-accent-top h-[320px] sm:h-[420px] flex flex-col">
+      <div
+        className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }}
+      />
+      <div className="relative p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015] flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Exercise Progression</h2>
         </div>
@@ -251,6 +255,16 @@ export default function ExerciseSparklines() {
               <div className="flex items-center gap-3">
                 {/* Sparkline */}
                 <svg width="80" height="20" className="flex-shrink-0">
+                  <defs>
+                    <linearGradient id={`sparkFill-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={exercise.percentChange >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0.2" />
+                      <stop offset="100%" stopColor={exercise.percentChange >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d={generateSparklinePath(exercise.sparklineData) + ` L80,20 L0,20 Z`}
+                    fill={`url(#sparkFill-${index})`}
+                  />
                   <path
                     d={generateSparklinePath(exercise.sparklineData)}
                     fill="none"

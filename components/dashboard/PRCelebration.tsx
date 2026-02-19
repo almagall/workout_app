@@ -83,16 +83,20 @@ export default function PRCelebration() {
   }
 
   return (
-    <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] backdrop-blur-sm p-4 shadow-[0_0_20px_rgba(245,158,11,0.06)]">
-      <div className="flex items-start justify-between gap-3">
+    <div className="relative rounded-xl border border-amber-500/20 bg-amber-500/[0.04] backdrop-blur-sm p-4 shadow-[0_0_24px_rgba(245,158,11,0.08)] overflow-hidden">
+      <div
+        className="absolute -top-10 -left-10 w-32 h-32 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.08), transparent 70%)' }}
+      />
+      <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-amber-400 mb-1">
+          <p className="text-sm font-bold text-amber-400 mb-1.5" style={{ textShadow: '0 0 16px rgba(251,191,36,0.2)' }}>
             You hit {data.prCount} new PR{data.prCount !== 1 ? 's' : ''} on {data.dayLabel}!
           </p>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
             {data.prs.map(pr => (
               <span key={`${pr.name}-${pr.type}`} className="text-xs text-amber-300/80">
-                {pr.name}: {pr.value} lbs <span className="text-amber-400/50">({pr.type})</span>
+                {pr.name}: <span className="font-semibold text-amber-300">{pr.value} lbs</span> <span className="text-amber-400/50">({pr.type})</span>
               </span>
             ))}
           </div>

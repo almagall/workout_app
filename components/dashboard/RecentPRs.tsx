@@ -45,7 +45,7 @@ export default function RecentPRs() {
 
   if (loading) {
     return (
-      <div className="card-glass overflow-hidden">
+      <div className="card-glass card-accent-top">
         <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Recent PRs</h2>
         </div>
@@ -58,7 +58,7 @@ export default function RecentPRs() {
 
   if (workoutDays.length === 0) {
     return (
-      <div className="card-glass overflow-hidden">
+      <div className="card-glass card-accent-top">
         <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Recent PRs</h2>
         </div>
@@ -70,18 +70,22 @@ export default function RecentPRs() {
   }
 
   return (
-    <div className="card-glass overflow-hidden">
-      <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+    <div className="card-glass card-accent-top">
+      <div
+        className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.05), transparent 70%)' }}
+      />
+      <div className="relative p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Recent PRs</h2>
       </div>
-      <div className="p-4 sm:p-6">
+      <div className="relative p-4 sm:p-6">
         <div className="space-y-3">
           {workoutDays.map((day) => {
           const dayKey = `${day.workoutDate}|${day.templateDayId}`
           const isExpanded = expandedDays.has(dayKey)
           
           return (
-            <div key={dayKey} className="border border-white/[0.06] rounded-lg overflow-hidden">
+            <div key={dayKey} className="border border-white/[0.05] rounded-lg overflow-hidden">
               <button
                 onClick={() => toggleDay(day.workoutDate, day.templateDayId)}
                 className="w-full bg-white/[0.025] hover:bg-white/[0.05] px-4 py-3 flex items-center justify-between transition-colors"
@@ -123,7 +127,7 @@ export default function RecentPRs() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-amber-300 font-semibold">{pr.value} lbs</span>
+                        <span className="text-amber-300 font-bold" style={{ textShadow: '0 0 12px rgba(251,191,36,0.2)' }}>{pr.value} lbs</span>
                       </div>
                     </div>
                   ))}

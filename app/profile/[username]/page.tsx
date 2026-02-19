@@ -138,7 +138,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
         </Link>
 
         {/* Profile header */}
-        <div className="card-glass p-6 mt-4">
+        <div className="card-glass card-accent-top p-6 mt-4">
           <div className="flex items-start gap-4">
             {/* Avatar */}
             <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-2xl font-bold shrink-0">
@@ -196,7 +196,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
         </div>
 
         {/* Recent PRs section */}
-        <div className="card-glass mt-6">
+        <div className="card-glass card-accent-top mt-6">
           <div className="p-4 border-b border-white/[0.06]">
             <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
           </div>

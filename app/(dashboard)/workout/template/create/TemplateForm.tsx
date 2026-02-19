@@ -316,7 +316,8 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="card-glass p-6">
+      <form onSubmit={handleSubmit} className="card-glass card-accent-top p-6">
+        <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
         <div className="mb-6">
           <label htmlFor="templateName" className="block text-sm font-medium text-foreground mb-2">
             Template Name

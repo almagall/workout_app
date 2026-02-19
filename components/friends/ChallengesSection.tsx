@@ -107,7 +107,8 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
     c.challenger_id === user.id ? c.challenged_username : c.challenger_username
 
   return (
-    <section className="card-glass shadow-card p-5 mb-6">
+    <section className="card-glass card-accent-top shadow-card p-5 mb-6 relative overflow-hidden">
+      <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-foreground">Challenges</h2>
         <button

@@ -63,7 +63,9 @@ export default function AchievementsPage() {
       <h1 className="font-display text-3xl font-bold text-foreground mb-6 tracking-tight">Achievements</h1>
       
       {/* Progress Header */}
-      <div className="flex items-center justify-center mb-10">
+      <div className="card-glass card-accent-top p-6 flex items-center justify-center mb-10 relative">
+        <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.05), transparent 70%)' }} />
+      <div className="flex items-center justify-center">
         <div className="relative w-32 h-32">
           <svg className="w-full h-full transform -rotate-90">
             <circle
@@ -101,12 +103,13 @@ export default function AchievementsPage() {
           </p>
         </div>
       </div>
+      </div>
 
       {/* Your Trophies Section */}
       <div className="mb-10">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Your Trophies</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-amber-400/40 flex-shrink-0" />Your Trophies</h2>
         {unlockedAchievements.length === 0 ? (
-          <div className="card-glass p-8 text-center">
+          <div className="card-glass card-accent-top p-8 text-center">
             <p className="text-muted">No achievements unlocked yet. Start working out to unlock your first!</p>
           </div>
         ) : (
@@ -124,7 +127,7 @@ export default function AchievementsPage() {
 
       {/* Locked Achievements Section */}
       <div>
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Locked Achievements</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Locked Achievements</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {lockedAchievements.map((achievement) => (
             <AchievementCard
@@ -148,10 +151,10 @@ function AchievementCard({
 }) {
   return (
     <div
-      className={`rounded-lg border p-4 flex flex-col items-center text-center transition-all ${
+      className={`rounded-xl border p-4 flex flex-col items-center text-center transition-all relative overflow-hidden ${
         unlocked
-          ? 'bg-amber-950/30 border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)] hover:scale-105 hover:border-amber-300'
-          : 'bg-card border-white/[0.06] opacity-70'
+          ? 'bg-amber-950/30 border-amber-400/50 shadow-[0_0_16px_rgba(251,191,36,0.15)] hover:scale-105 hover:border-amber-300'
+          : 'card-glass border-white/[0.06] opacity-70'
       }`}
     >
       <div className="relative mb-2">

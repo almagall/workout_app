@@ -2176,8 +2176,9 @@ export default function WorkoutLogger({
   if (workoutComplete) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="card-glass p-6 shadow-card">
-          <h2 className="font-display text-2xl font-bold mb-4 text-foreground tracking-tight">Workout Complete!</h2>
+        <div className="card-glass card-accent-top p-6 shadow-card">
+          <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+          <h2 className="relative font-display text-2xl font-bold mb-4 text-foreground tracking-tight">Workout Complete!</h2>
           {completedWorkoutDurationSeconds != null && (
             <p className="text-muted mb-4">
               Workout time: {(() => {
@@ -2682,8 +2683,9 @@ export default function WorkoutLogger({
         </div>
       )}
 
-      <div className="card-glass p-6 mb-6 shadow-card">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
+      <div className="card-glass card-accent-top p-6 mb-6 shadow-card">
+        <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+        <div className="relative flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
           <div>
             <div ref={swapPopoverRef} className="relative">
               <div className="flex items-center gap-2 mb-2">

@@ -103,12 +103,16 @@ export default function WeeklySummaryCard() {
   const allDone = data.workoutsDone >= data.workoutsGoal
 
   return (
-    <div className="card-glass p-4 sm:p-6 border-l-2 border-l-accent/30">
-      <div className="flex items-start justify-between gap-3 mb-3">
+    <div className="card-glass p-4 sm:p-6 border-l-2 border-l-accent/30 relative overflow-hidden">
+      <div
+        className="absolute top-0 right-0 w-40 h-40 pointer-events-none"
+        style={{ background: 'radial-gradient(circle at 100% 0%, rgba(59,130,246,0.07), transparent 70%)' }}
+      />
+      <div className="relative flex items-start justify-between gap-3 mb-3">
         <div>
-          <p className="text-xs font-medium text-muted uppercase tracking-wide mb-1">This Week</p>
-          <p className="text-foreground font-semibold text-base sm:text-lg">
-            {data.workoutsDone} of {data.workoutsGoal} workouts
+          <p className="text-xs font-medium text-accent-light/70 uppercase tracking-wide mb-1">This Week</p>
+          <p className="text-foreground font-bold text-lg sm:text-xl">
+            {data.workoutsDone}<span className="text-muted font-medium text-sm"> / {data.workoutsGoal}</span>
           </p>
         </div>
 
@@ -130,23 +134,21 @@ export default function WeeklySummaryCard() {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full bg-white/[0.06] rounded-full h-2 mb-2">
+      <div className="relative w-full bg-white/[0.08] rounded-full h-2.5 mb-2">
         <div
-          className={`h-2 rounded-full transition-all duration-500 ${allDone ? 'bg-green-500' : 'bg-gradient-accent'}`}
+          className={`h-2.5 rounded-full transition-all duration-500 ${allDone ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-gradient-accent shadow-[0_0_8px_rgba(59,130,246,0.2)]'}`}
           style={{ width: `${progress}%` }}
         />
       </div>
 
       {data.nudge && (
-        <p className={`text-xs ${allDone ? 'text-green-400' : 'text-muted'}`}>
+        <p className={`relative text-xs ${allDone ? 'text-green-400' : 'text-muted'}`}>
           {data.nudge}
         </p>
       )}
 
-      {/* Up Next */}
       {nextWorkout && (
-        <div className="mt-3 pt-3 border-t border-white/[0.06]">
+        <div className="relative mt-3 pt-3 border-t border-white/[0.06]">
           <div className="flex items-baseline justify-between gap-2 mb-0.5">
             <p className="text-xs font-medium text-muted uppercase tracking-wide">Up Next</p>
             {nextWorkout.daysSinceLastTrained !== null && (

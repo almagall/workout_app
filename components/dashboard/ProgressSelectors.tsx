@@ -110,11 +110,11 @@ export default function ProgressSelectors({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTemplateDayId])
 
-  const cardClass = embedded ? '' : 'card-glass p-4 sm:p-6'
+  const cardClass = embedded ? '' : 'card-glass card-accent-top p-4 sm:p-6'
 
   if (loadingDays) {
     return (
-      <div className={embedded ? '' : 'card-glass p-6'}>
+      <div className={embedded ? '' : 'card-glass card-accent-top p-6'}>
         <div className="text-muted">Loading...</div>
       </div>
     )
@@ -122,7 +122,7 @@ export default function ProgressSelectors({
 
   if (dayOptions.length === 0) {
     return (
-      <div className={embedded ? '' : 'card-glass p-6'}>
+      <div className={embedded ? '' : 'card-glass card-accent-top p-6'}>
         <p className="text-secondary">
           Create a template and log workouts to see progress.
         </p>

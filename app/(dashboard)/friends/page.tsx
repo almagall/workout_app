@@ -303,7 +303,8 @@ export default function FriendsPage() {
 
       {/* Pending requests */}
       {pending.length > 0 && (
-        <section className="card-glass p-4 mb-6">
+        <section className="card-glass card-accent-top p-4 mb-6 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
           <h2 className="text-lg font-semibold text-foreground mb-3">Pending requests</h2>
           <ul className="space-y-2">
             {pending.map((req) => (
@@ -337,7 +338,8 @@ export default function FriendsPage() {
       )}
 
       {/* Friends list */}
-      <section className="card-glass p-4 mb-6">
+      <section className="card-glass card-accent-top p-4 mb-6 relative overflow-hidden">
+        <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
         <h2 className="text-lg font-semibold text-foreground mb-3">Your friends</h2>
         {friends.length === 0 ? (
           <p className="text-muted text-sm">No friends yet. Send a request by username above.</p>

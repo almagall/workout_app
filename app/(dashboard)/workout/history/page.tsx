@@ -102,7 +102,8 @@ export default function WorkoutHistoryPage() {
       </div>
 
       {sessions.length === 0 ? (
-        <div className="card-glass p-6">
+        <div className="card-glass card-accent-top relative p-6">
+          <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
           <p className="text-secondary text-center">
             No workouts logged yet. Start logging workouts to see your history!
           </p>
@@ -122,7 +123,8 @@ export default function WorkoutHistoryPage() {
               })
 
               return (
-                <div key={date} className="card-glass p-6">
+                <div key={date} className="card-glass card-accent-top relative p-6">
+                  <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
                   <h2 className="text-xl font-semibold text-foreground mb-4">{formattedDate}</h2>
                   <div className="space-y-3">
                     {dateSessions.map((session) => {

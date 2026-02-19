@@ -78,12 +78,12 @@ function TrophyIcon() {
   )
 }
 
-const TILES: { key: keyof Metrics; label: string; icon: React.ReactNode; color: string; suffix?: string; format?: (v: number) => string }[] = [
-  { key: 'streak', label: 'Week Streak', icon: <StreakIcon />, color: 'text-amber-400' },
-  { key: 'workoutsThisMonth', label: 'This Month', icon: <CalendarIcon />, color: 'text-blue-400' },
-  { key: 'targetHitRate', label: 'Hit Rate', icon: <TargetIcon />, color: 'text-emerald-400', suffix: '%' },
-  { key: 'avgDurationMin', label: 'Avg Duration', icon: <ClockIcon />, color: 'text-purple-400', suffix: ' min' },
-  { key: 'prsThisMonth', label: 'PRs This Month', icon: <TrophyIcon />, color: 'text-yellow-400' },
+const TILES: { key: keyof Metrics; label: string; icon: React.ReactNode; color: string; glow: string; suffix?: string; format?: (v: number) => string }[] = [
+  { key: 'streak', label: 'Week Streak', icon: <StreakIcon />, color: 'text-amber-400', glow: 'rgba(251,191,36,0.08)' },
+  { key: 'workoutsThisMonth', label: 'This Month', icon: <CalendarIcon />, color: 'text-blue-400', glow: 'rgba(96,165,250,0.08)' },
+  { key: 'targetHitRate', label: 'Hit Rate', icon: <TargetIcon />, color: 'text-emerald-400', glow: 'rgba(52,211,153,0.08)', suffix: '%' },
+  { key: 'avgDurationMin', label: 'Avg Duration', icon: <ClockIcon />, color: 'text-purple-400', glow: 'rgba(192,132,252,0.08)', suffix: ' min' },
+  { key: 'prsThisMonth', label: 'PRs This Month', icon: <TrophyIcon />, color: 'text-yellow-400', glow: 'rgba(250,204,21,0.08)' },
 ]
 
 export default function PerformanceMetrics() {
@@ -162,15 +162,21 @@ export default function PerformanceMetrics() {
         return (
           <div
             key={tile.key}
-            className="flex-shrink-0 min-w-[6.5rem] sm:min-w-0 sm:flex-1 card-glass p-4 sm:p-5"
+            className="flex-shrink-0 min-w-[6.5rem] sm:min-w-0 sm:flex-1 card-glass p-4 sm:p-5 relative overflow-hidden"
           >
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span className={`${tile.color}`}>{tile.icon}</span>
-              <span className="text-[11px] sm:text-xs text-muted font-medium uppercase tracking-wide">{tile.label}</span>
+            <div
+              className="absolute -top-8 -right-8 w-24 h-24 rounded-full pointer-events-none"
+              style={{ background: `radial-gradient(circle, ${tile.glow}, transparent 70%)` }}
+            />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className={`${tile.color}`}>{tile.icon}</span>
+                <span className="text-[11px] sm:text-xs text-muted font-medium uppercase tracking-wide">{tile.label}</span>
+              </div>
+              <p className={`text-xl sm:text-2xl font-bold leading-none ${tile.color}`}>
+                {value}<span className="text-muted font-medium text-sm">{suffix}</span>
+              </p>
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-foreground leading-none">
-              {value}{suffix}
-            </p>
           </div>
         )
       })}

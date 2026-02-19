@@ -147,9 +147,13 @@ export default function DashboardPage() {
 
       {deloadSuggestion && !deloadDismissed && (
         <FadeIn delay={0.1}>
-          <div className="mb-6 sm:mb-8 card-glass p-4 sm:p-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-1">Deload Suggestion</h3>
+          <div className="mb-6 sm:mb-8 card-glass card-accent-top p-4 sm:p-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div
+              className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none"
+              style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.06), transparent 70%)' }}
+            />
+            <div className="relative flex-1 min-w-0">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-1 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-amber-400/40 flex-shrink-0" />Deload Suggestion</h3>
               <p className="text-sm text-secondary line-clamp-2 sm:line-clamp-none">{deloadSuggestion.reason}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -185,8 +189,12 @@ export default function DashboardPage() {
 
       <StaggerChildren staggerDelay={0.07} className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <StaggerItem className="lg:col-span-2">
-          <div className="card-glass overflow-hidden">
-            <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+          <div className="card-glass card-accent-top relative">
+            <div
+              className="absolute top-0 left-0 w-48 h-48 pointer-events-none"
+              style={{ background: 'radial-gradient(circle at 0% 0%, rgba(59,130,246,0.04), transparent 70%)' }}
+            />
+            <div className="relative p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 sm:mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Progress Over Time</h2>
               <ProgressSelectors
                 selectedTemplateDayId={selectedTemplateDayId}

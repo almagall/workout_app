@@ -172,7 +172,8 @@ export default function TemplatePage() {
       {tab === 'my' && (
         <>
           {templates.length === 0 ? (
-            <div className="card-glass p-6">
+            <div className="card-glass card-accent-top p-6 relative">
+              <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
               <p className="text-secondary mb-4">
                 You have not created any templates yet. Create a custom template or choose a pre-created one to get started.
               </p>
@@ -197,8 +198,9 @@ export default function TemplatePage() {
               {templates.map(({ template, days }) => (
                 <div
                   key={template.id}
-                  className="card-glass p-6"
+                  className="card-glass card-accent-top p-6 relative"
                 >
+                  <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -278,8 +280,9 @@ export default function TemplatePage() {
             {filteredPresets.map((preset) => (
               <div
                 key={preset.id}
-                className="card-glass p-5 flex flex-col"
+                className="card-glass card-accent-top p-5 flex flex-col relative"
               >
+                <div className="absolute -top-10 -right-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <h2 className="text-lg font-semibold text-foreground">{preset.name}</h2>
                   <span
