@@ -115,13 +115,13 @@ export default function AccountabilitySection({ friends }: AccountabilitySection
   const availableFriends = friends.filter(f => !pairedFriendIds.has(f.user_id))
 
   return (
-    <section className="bg-card rounded-xl border border-border shadow-card p-5 mb-6">
+    <section className="card-glass shadow-card p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-foreground">Accountability</h2>
         <button
           type="button"
           onClick={() => { setShowPicker(!showPicker); setRequestError('') }}
-          className="px-3 py-1.5 text-sm bg-white text-black font-medium rounded-md hover:bg-[#e5e5e5]"
+          className="px-3 py-1.5 text-sm btn-primary"
         >
           Partner Up
         </button>
@@ -131,7 +131,7 @@ export default function AccountabilitySection({ friends }: AccountabilitySection
 
       {/* Partner picker */}
       {showPicker && (
-        <div className="mb-4 bg-elevated rounded-lg p-3">
+        <div className="mb-4 bg-white/[0.04] rounded-lg p-3">
           <p className="text-sm text-foreground mb-2">Choose a friend:</p>
           {availableFriends.length === 0 ? (
             <p className="text-xs text-muted">No available friends (all already partnered or pending)</p>
@@ -159,11 +159,11 @@ export default function AccountabilitySection({ friends }: AccountabilitySection
           <h3 className="text-sm font-medium text-muted mb-2">Incoming Requests</h3>
           <div className="space-y-2">
             {pendingReceived.map(p => (
-              <div key={p.id} className="flex items-center justify-between bg-elevated rounded-lg p-3">
+              <div key={p.id} className="flex items-center justify-between bg-white/[0.04] rounded-lg p-3">
                 <p className="text-foreground text-sm font-medium">{p.requester_username}</p>
                 <div className="flex gap-2">
-                  <button type="button" disabled={!!actingId} onClick={() => handleAccept(p.id)} className="px-3 py-1 rounded bg-white text-black text-xs font-medium hover:bg-[#e5e5e5] disabled:opacity-50">Accept</button>
-                  <button type="button" disabled={!!actingId} onClick={() => handleDecline(p.id)} className="px-3 py-1 rounded border border-border text-foreground text-xs hover:bg-elevated disabled:opacity-50">Decline</button>
+                  <button type="button" disabled={!!actingId} onClick={() => handleAccept(p.id)} className="px-3 py-1 rounded btn-primary text-xs disabled:opacity-50">Accept</button>
+                  <button type="button" disabled={!!actingId} onClick={() => handleDecline(p.id)} className="px-3 py-1 rounded border border-white/[0.06] text-foreground text-xs hover:bg-white/[0.04] disabled:opacity-50">Decline</button>
                 </div>
               </div>
             ))}
@@ -177,7 +177,7 @@ export default function AccountabilitySection({ friends }: AccountabilitySection
           <h3 className="text-sm font-medium text-muted mb-2">Sent</h3>
           <div className="space-y-2">
             {pendingSent.map(p => (
-              <div key={p.id} className="flex items-center justify-between bg-elevated rounded-lg p-3">
+              <div key={p.id} className="flex items-center justify-between bg-white/[0.04] rounded-lg p-3">
                 <p className="text-foreground text-sm">{p.partner_username}</p>
                 <span className="text-xs text-muted">Waiting...</span>
               </div>
@@ -195,7 +195,7 @@ export default function AccountabilitySection({ friends }: AccountabilitySection
             const partnerTrainedThisWeek = status?.partnerTrained ?? false
 
             return (
-              <div key={p.id} className="bg-elevated rounded-lg p-4">
+              <div key={p.id} className="bg-white/[0.04] rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-foreground font-medium">{partnerName(p)}</p>
                   <button

@@ -106,17 +106,19 @@ export default function ProfilePage({ params }: { params: { username: string } }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted">Loading profile...</p>
+      <div className="relative min-h-screen flex items-center justify-center bg-background">
+        <div className="absolute inset-0 bg-radial-hero pointer-events-none" />
+        <p className="relative text-muted">Loading profile...</p>
       </div>
     )
   }
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-        <p className="text-red-400 text-lg mb-4">{error || 'Profile not found'}</p>
-        <Link href="/dashboard" className="text-amber-400 hover:text-amber-300">
+      <div className="relative min-h-screen flex flex-col items-center justify-center bg-background px-4">
+        <div className="absolute inset-0 bg-radial-hero pointer-events-none" />
+        <p className="relative text-red-400 text-lg mb-4">{error || 'Profile not found'}</p>
+        <Link href="/dashboard" className="relative text-amber-400 hover:text-amber-300">
           Return to Dashboard
         </Link>
       </div>
@@ -124,8 +126,9 @@ export default function ProfilePage({ params }: { params: { username: string } }
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="relative min-h-screen bg-background">
+      <div className="absolute inset-0 bg-radial-hero pointer-events-none" />
+      <div className="relative max-w-3xl mx-auto px-4 py-8">
         {/* Back link */}
         <Link href="/dashboard" className="text-muted hover:text-foreground text-sm mb-6 inline-flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +138,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
         </Link>
 
         {/* Profile header */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6 mt-4">
+        <div className="card-glass p-6 mt-4">
           <div className="flex items-start gap-4">
             {/* Avatar */}
             <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-2xl font-bold shrink-0">
@@ -168,7 +171,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
                         type="button"
                         onClick={handleAddFriend}
                         disabled={sendingRequest}
-                        className="px-4 py-1.5 bg-amber-500 text-black font-medium rounded-full hover:bg-amber-400 disabled:opacity-60 transition-colors text-sm"
+                        className="btn-primary px-4 py-1.5 font-medium rounded-full disabled:opacity-60 transition-colors text-sm"
                       >
                         {sendingRequest ? 'Sending...' : 'Add Friend'}
                       </button>
@@ -193,8 +196,8 @@ export default function ProfilePage({ params }: { params: { username: string } }
         </div>
 
         {/* Recent PRs section */}
-        <div className="bg-card rounded-xl border border-border shadow-card mt-6">
-          <div className="p-4 border-b border-border">
+        <div className="card-glass mt-6">
+          <div className="p-4 border-b border-white/[0.06]">
             <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
           </div>
           <div className="p-4">
@@ -226,7 +229,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
                   return (
                     <div
                       key={`${pr.exerciseName}-${pr.workoutDate}-${pr.prType}-${i}`}
-                      className="flex items-center justify-between py-2 border-b border-border last:border-0 gap-2"
+                      className="flex items-center justify-between py-2 border-b border-white/[0.06] last:border-0 gap-2"
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-foreground font-medium">{pr.exerciseName}</p>
@@ -255,7 +258,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
                                 type="button"
                                 disabled={isSending}
                                 onClick={() => setShowReactionPicker(isPickerOpen ? null : key)}
-                                className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-elevated transition-colors disabled:opacity-60"
+                                className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-white/[0.04] transition-colors disabled:opacity-60"
                                 title="React"
                               >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,7 +266,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
                                 </svg>
                               </button>
                               {isPickerOpen && (
-                                <div className="absolute right-0 top-full mt-1 flex gap-1 bg-elevated rounded-full p-1 shadow-lg z-10">
+                                <div className="absolute right-0 top-full mt-1 flex gap-1 bg-white/[0.04] rounded-full p-1 shadow-lg z-10">
                                   {(['kudos', 'strong', 'fire'] as ReactionType[]).map((type) => (
                                     <button
                                       key={type}

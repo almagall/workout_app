@@ -157,16 +157,16 @@ export default function WorkoutCalendar() {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-card">
-        <h2 className="font-display text-lg sm:text-xl font-semibold mb-4 text-foreground tracking-tight">Workout Calendar</h2>
-        <div className="text-muted text-sm">Loading…</div>
+      <div className="card-glass p-4 sm:p-6">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Workout Calendar</h2>
+        <div className="text-muted text-sm">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-card">
-      <h2 className="font-display text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground tracking-tight">Workout Calendar</h2>
+    <div className="card-glass p-4 sm:p-6">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 sm:mb-4">Workout Calendar</h2>
 
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <button
@@ -183,7 +183,7 @@ export default function WorkoutCalendar() {
           <select
             value={viewMonth}
             onChange={(e) => setViewMonth(Number(e.target.value))}
-            className="bg-elevated border border-border text-foreground rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-white"
+            className="bg-white/[0.04] border border-white/[0.08] text-foreground rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
           >
             {MONTHS.map((m, i) => (
               <option key={m} value={i}>
@@ -194,7 +194,7 @@ export default function WorkoutCalendar() {
           <select
             value={viewYear}
             onChange={(e) => setViewYear(Number(e.target.value))}
-            className="bg-elevated border border-border text-foreground rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-white"
+            className="bg-white/[0.04] border border-white/[0.08] text-foreground rounded-md px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
           >
             {Array.from({ length: 10 }, (_, i) => now.getFullYear() - 5 + i).map((y) => (
               <option key={y} value={y}>
@@ -239,7 +239,7 @@ export default function WorkoutCalendar() {
                   hasWorkout
                     ? 'bg-green-600/60 text-foreground font-semibold cursor-pointer hover:bg-green-600/80 transition-colors'
                     : 'text-secondary'
-                } ${isToday ? 'ring-2 ring-white ring-offset-2 ring-offset-background' : ''}`}
+                } ${isToday ? 'ring-2 ring-accent ring-offset-2 ring-offset-background' : ''}`}
                 title={hasWorkout ? `Workout on ${dateStr} – click for details` : undefined}
               >
                 {day}
@@ -256,7 +256,7 @@ export default function WorkoutCalendar() {
         </span>
         {isCurrentMonth && (
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded ring-2 ring-white ring-offset-1 ring-offset-background bg-transparent" />
+            <span className="w-3 h-3 rounded ring-2 ring-accent ring-offset-1 ring-offset-background bg-transparent" />
             Today
           </span>
         )}
@@ -272,11 +272,11 @@ export default function WorkoutCalendar() {
           aria-label="Workout Completion Log"
         >
           <div
-            className="bg-card rounded-lg border border-border shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
+            className="modal-glass max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-border flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-foreground">
+            <div className="p-4 border-b border-white/[0.06] bg-white/[0.015] flex justify-between items-center">
+              <h3 className="text-base font-semibold text-foreground">
                 Workout Completion Log
                 {modalDate && (
                   <span className="block text-sm font-normal text-muted mt-0.5">
@@ -308,7 +308,7 @@ export default function WorkoutCalendar() {
               {!loadingCompletion && completionData && completionData.length > 0 && (
                 <div className="space-y-6">
                   {completionData.map((row) => (
-                    <div key={row.session.id} className="bg-elevated rounded-lg border border-border p-4">
+                    <div key={row.session.id} className="bg-white/[0.025] rounded-lg border border-white/[0.05] shadow-[0_1px_2px_rgba(0,0,0,0.1)] p-4">
                       <div className="flex justify-between items-start mb-3">
                         <h4 className="text-base font-semibold text-foreground">{row.dayLabel}</h4>
                         <Link

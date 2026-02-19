@@ -67,18 +67,18 @@ function ExerciseAutocompleteInline({
         onFocus={() => { if (query.trim().length > 0) setOpen(true) }}
         placeholder={placeholder}
         required
-        className="w-full px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+        className="w-full px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
         autoComplete="off"
       />
       {open && query.trim().length > 0 && (
-        <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-md border border-border bg-elevated shadow-lg">
+        <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-md border border-white/[0.06] bg-white/[0.04] shadow-lg">
           {suggestions.length === 0 ? (
             <li className="px-3 py-2 text-muted text-sm">No matches. Use as custom exercise.</li>
           ) : (
             suggestions.map((entry) => (
               <li
                 key={entry.id}
-                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm hover:bg-elevated text-foreground"
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm hover:bg-white/[0.04] text-foreground"
                 onClick={() => {
                   onChange(entry.name)
                   setQuery(entry.name)
@@ -316,9 +316,9 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-border shadow-card p-6">
+      <form onSubmit={handleSubmit} className="card-glass p-6">
         <div className="mb-6">
-          <label htmlFor="templateName" className="block text-sm font-medium text-white mb-2">
+          <label htmlFor="templateName" className="block text-sm font-medium text-foreground mb-2">
             Template Name
           </label>
           <input
@@ -326,14 +326,14 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
             id="templateName"
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
-            className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+            className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
             placeholder="e.g., 6-Day Push/Pull/Legs"
             required
           />
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-white mb-2">Workout focus</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Workout focus</label>
           <p className="text-sm text-muted mb-3">
             Choose whether this template is for building muscle size (hypertrophy) or strength. Targets and rep ranges will adjust accordingly.
           </p>
@@ -347,7 +347,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
                 onChange={() => setPlanType('hypertrophy')}
                 className="w-4 h-4 accent-white"
               />
-              <span className="text-white">Hypertrophy</span>
+              <span className="text-foreground">Hypertrophy</span>
               <span className="text-muted text-sm">(8–15 reps, volume focus)</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -359,33 +359,33 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
                 onChange={() => setPlanType('strength')}
                 className="w-4 h-4 accent-white"
               />
-              <span className="text-white">Strength</span>
+              <span className="text-foreground">Strength</span>
               <span className="text-muted text-sm">(3–6 reps, weight focus)</span>
             </label>
           </div>
         </div>
 
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Workout Days</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Workout Days</h2>
 
           {days.length === 0 && (
             <button
               type="button"
               onClick={addDay}
-              className="mb-6 px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
+              className="btn-primary mb-6"
             >
               Add Day
             </button>
           )}
 
           {days.map((day, dayIndex) => (
-            <div key={dayIndex} className="mb-6 p-4 border border-border bg-elevated rounded-lg">
+            <div key={dayIndex} className="mb-6 p-4 border border-white/[0.06] bg-white/[0.04] rounded-lg">
               <div className="flex justify-between items-center mb-4">
                 <input
                   type="text"
                   value={day.dayLabel}
                   onChange={(e) => updateDay(dayIndex, 'dayLabel', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                  className="flex-1 px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
                   placeholder="e.g., Push A, Pull B, Legs A"
                   required
                 />
@@ -399,7 +399,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">Exercises</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Exercises</label>
                 {day.exercises.map((exercise, exerciseIndex) => {
                   const exerciseData = getExerciseByName(exercise.name)
                   return (
@@ -419,7 +419,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
                             e.target.value === '' ? null : (e.target.value as PlanType)
                           )
                         }
-                        className="px-2 py-2 rounded-md border border-border bg-elevated text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 flex-shrink-0 w-[120px]"
+                        className="px-2 py-2 rounded-md border border-white/[0.06] bg-white/[0.04] text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 flex-shrink-0 w-[120px]"
                         title="Focus for this exercise"
                       >
                         <option value="">Use template</option>
@@ -451,7 +451,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
                 <button
                   type="button"
                   onClick={() => addExercise(dayIndex)}
-                  className="mt-2 text-sm px-3 py-1 bg-elevated text-foreground rounded hover:bg-elevated border border-border transition-colors"
+                  className="mt-2 text-sm px-3 py-1 bg-white/[0.04] text-foreground rounded hover:bg-white/[0.04] border border-white/[0.06] transition-colors"
                 >
                   + Add Exercise
                 </button>
@@ -463,7 +463,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
             <button
               type="button"
               onClick={addDay}
-              className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
+              className="btn-primary"
             >
               Add Day
             </button>
@@ -474,7 +474,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading 
               ? (isEditMode ? 'Updating...' : 'Creating...') 
@@ -483,7 +483,7 @@ export default function TemplateForm({ templateId }: TemplateFormProps) {
           <button
             type="button"
             onClick={() => router.push('/workout/template')}
-            className="px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow border border-transparent transition-all duration-200 transition-colors"
+            className="btn-primary"
           >
             Cancel
           </button>

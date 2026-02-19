@@ -52,9 +52,9 @@ export default function WeeklyVolumeChart() {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-xl border border-border shadow-card">
-        <div className="p-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">Weekly Volume</h2>
+      <div className="card-glass">
+        <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Weekly Volume</h2>
         </div>
         <div className="flex items-center justify-center py-12">
           <p className="text-muted text-sm">Loading...</p>
@@ -65,9 +65,9 @@ export default function WeeklyVolumeChart() {
 
   if (data.length === 0) {
     return (
-      <div className="bg-card rounded-xl border border-border shadow-card">
-        <div className="p-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">Weekly Volume</h2>
+      <div className="card-glass">
+        <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Weekly Volume</h2>
         </div>
         <div className="flex items-center justify-center py-12 px-4">
           <p className="text-muted text-sm text-center">Not enough data yet. Log workouts to see your weekly volume trend.</p>
@@ -91,18 +91,18 @@ export default function WeeklyVolumeChart() {
     'text-muted'
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card">
-      <div className="p-4 border-b border-border">
+    <div className="card-glass">
+      <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-lg font-semibold text-foreground">Weekly Volume</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Weekly Volume</h2>
           <span className="text-xs text-muted">Avg {formatVolume(avg)} lbs</span>
         </div>
         <p className={`text-xs ${insightColor} leading-snug`}>{insight.text}</p>
       </div>
-      <div className="p-4">
+      <div className="p-4 sm:p-6">
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={chartData} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
             <XAxis
               dataKey="label"
               stroke="#888888"
@@ -119,11 +119,12 @@ export default function WeeklyVolumeChart() {
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#111111',
-                border: '1px solid #2a2a2a',
+                backgroundColor: 'rgba(17,17,19,0.9)',
+                border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '8px',
                 fontSize: '12px',
                 color: '#f5f5f5',
+                backdropFilter: 'blur(12px)',
               }}
               labelStyle={{ color: '#888888' }}
               itemStyle={{ color: '#f5f5f5' }}
@@ -143,7 +144,7 @@ export default function WeeklyVolumeChart() {
             />
             <Bar dataKey="volume" radius={[4, 4, 0, 0]} maxBarSize={40}>
               {chartData.map((entry, i) => (
-                <Cell key={i} fill={entry.aboveAvg ? '#ffffff' : '#555555'} />
+                <Cell key={i} fill={entry.aboveAvg ? '#3b82f6' : 'rgba(255,255,255,0.08)'} />
               ))}
             </Bar>
           </BarChart>

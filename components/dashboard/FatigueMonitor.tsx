@@ -124,8 +124,8 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
 
   if (loading) {
     return (
-      <div className="bg-card rounded-lg border border-border p-6">
-        <h3 className="text-sm font-medium text-white mb-3">Training load</h3>
+      <div className="card-glass p-6">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
         <p className="text-sm text-secondary">Loading...</p>
       </div>
     )
@@ -133,8 +133,8 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
 
   if (!data) {
     return (
-      <div className="bg-card rounded-lg border border-border p-6">
-        <h3 className="text-sm font-medium text-white mb-3">Training load</h3>
+      <div className="card-glass p-6">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
         <p className="text-sm text-secondary">Not enough data yet.</p>
       </div>
     )
@@ -149,13 +149,13 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
   }
 
   return (
-    <div className="bg-card rounded-lg border border-border p-6">
-      <h3 className="text-sm font-medium text-white mb-3">Training load</h3>
+    <div className="card-glass p-6">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
       <p className="text-xs text-muted mb-3">
         {data.weeksTrained} week{data.weeksTrained !== 1 ? 's' : ''} of training
       </p>
 
-      <div className="h-2 bg-border rounded-full overflow-hidden mb-3">
+      <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden mb-3">
         <div
           className={`h-full rounded-full transition-all ${zoneColors[zone]}`}
           style={{ width: `${Math.min(100, data.fatigueScore)}%` }}

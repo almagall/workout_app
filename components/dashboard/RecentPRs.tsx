@@ -45,11 +45,11 @@ export default function RecentPRs() {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
+      <div className="card-glass overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Recent PRs</h2>
         </div>
-        <div className="p-4">
+        <div className="p-4 sm:p-6">
           <div className="text-muted text-sm">Loading...</div>
         </div>
       </div>
@@ -58,11 +58,11 @@ export default function RecentPRs() {
 
   if (workoutDays.length === 0) {
     return (
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
+      <div className="card-glass overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Recent PRs</h2>
         </div>
-        <div className="p-4">
+        <div className="p-4 sm:p-6">
           <p className="text-muted text-sm">No personal records yet. Log workouts to see your PRs here.</p>
         </div>
       </div>
@@ -70,22 +70,21 @@ export default function RecentPRs() {
   }
 
   return (
-    <div className="bg-card rounded-lg border border-border overflow-hidden">
-      <div className="p-4 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground">Recent PRs</h2>
+    <div className="card-glass overflow-hidden">
+      <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Recent PRs</h2>
       </div>
-      <div className="p-4">
+      <div className="p-4 sm:p-6">
         <div className="space-y-3">
           {workoutDays.map((day) => {
           const dayKey = `${day.workoutDate}|${day.templateDayId}`
           const isExpanded = expandedDays.has(dayKey)
           
           return (
-            <div key={dayKey} className="border border-border rounded-lg overflow-hidden">
-              {/* Day Header */}
+            <div key={dayKey} className="border border-white/[0.06] rounded-lg overflow-hidden">
               <button
                 onClick={() => toggleDay(day.workoutDate, day.templateDayId)}
-                className="w-full bg-elevated hover:bg-border px-4 py-3 flex items-center justify-between transition-colors"
+                className="w-full bg-white/[0.025] hover:bg-white/[0.05] px-4 py-3 flex items-center justify-between transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <svg
@@ -111,7 +110,7 @@ export default function RecentPRs() {
 
               {/* PRs List */}
               {isExpanded && (
-                <div className="bg-[#111111] divide-y divide-border">
+                <div className="bg-white/[0.01] divide-y divide-white/[0.06]">
                   {day.prs.map((pr, i) => (
                     <div
                       key={`${pr.exerciseName}-${pr.prType}-${i}`}

@@ -2176,7 +2176,7 @@ export default function WorkoutLogger({
   if (workoutComplete) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+        <div className="card-glass p-6 shadow-card">
           <h2 className="font-display text-2xl font-bold mb-4 text-foreground tracking-tight">Workout Complete!</h2>
           {completedWorkoutDurationSeconds != null && (
             <p className="text-muted mb-4">
@@ -2236,14 +2236,14 @@ export default function WorkoutLogger({
           <div className="flex flex-wrap items-center gap-3 mt-4">
             <button
               onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-all duration-200"
+              className="px-4 py-2 btn-primary transition-all duration-200"
             >
               Back to Dashboard
             </button>
             {completedSessionId && (
               <Link
                 href={`/share/workout/${completedSessionId}`}
-                className="px-4 py-2 rounded-md border border-border text-foreground/90 hover:bg-elevated transition-colors font-medium"
+                className="px-4 py-2 rounded-md border border-white/[0.06] text-foreground/90 hover:bg-white/[0.04] transition-colors font-medium"
               >
                 View workout summary
               </Link>
@@ -2276,7 +2276,7 @@ export default function WorkoutLogger({
   }
 
   const exerciseSelectorDropdown = (
-    <div className="absolute left-0 right-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-64 max-w-[min(100vw-2rem,24rem)] bg-elevated border border-border rounded-md shadow-lg z-10 max-h-96 overflow-y-auto">
+    <div className="absolute left-0 right-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-64 max-w-[min(100vw-2rem,24rem)] bg-white/[0.04] border border-white/[0.06] rounded-md shadow-lg z-10 max-h-96 overflow-y-auto">
       <div className="p-2">
         {exercises.map((exerciseName, index) => {
           const isCompleted = completedExercises.has(index)
@@ -2290,10 +2290,10 @@ export default function WorkoutLogger({
               }}
               className={`w-full text-left px-4 min-h-[44px] flex items-center rounded-md mb-1 transition-colors ${
                 isCurrent
-                  ? 'bg-elevated text-foreground font-semibold border-l-2 border-l-accent'
+                  ? 'bg-white/[0.04] text-foreground font-semibold border-l-2 border-l-accent'
                   : isCompleted
                   ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
-                  : 'text-foreground hover:bg-elevated'
+                  : 'text-foreground hover:bg-white/[0.04]'
               }`}
             >
               <div className="flex items-center justify-between w-full">
@@ -2312,7 +2312,7 @@ export default function WorkoutLogger({
   )
 
   const plateCalcBlock = currentExercise && isBarbellExercise(currentExercise.exerciseName) ? (
-    <div className="flex flex-wrap items-center gap-2 py-2 px-3 rounded-lg bg-elevated border border-border">
+    <div className="flex flex-wrap items-center gap-2 py-2 px-3 rounded-lg bg-white/[0.04] border border-white/[0.06]">
       <span className="text-sm text-muted">Plate calc:</span>
       <input
         type="number"
@@ -2330,7 +2330,7 @@ export default function WorkoutLogger({
           if (!Number.isNaN(n) && n < 0) return
           setPlateCalcWeight(v)
         }}
-        className="w-24 px-2.5 py-1.5 text-sm border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+        className="w-24 px-2.5 py-1.5 text-sm border border-white/[0.08] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
       />
       <span className="text-sm text-[#cccccc]">
         {(() => {
@@ -2361,10 +2361,10 @@ export default function WorkoutLogger({
     return (
       <Fragment key={setKey}>
         <div
-          className={`relative bg-elevated rounded-xl p-2.5 shadow-card ${
+          className={`relative bg-white/[0.04] rounded-xl p-2.5 shadow-card ${
             isConfirmed
               ? 'border-2 border-success'
-              : 'border border-border'
+              : 'border border-white/[0.06]'
           }`}
         >
           {currentExercise!.sets.length > 1 && (
@@ -2410,7 +2410,7 @@ export default function WorkoutLogger({
               </label>
               {isBodyweightExercise(currentExercise!.exerciseName) ? (
                 <div
-                  className="w-full px-2.5 py-1 text-sm border border-border bg-elevated rounded-md text-muted"
+                  className="w-full px-2.5 py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md text-muted"
                   title="Bodyweight exercises use your logged weight from Profile > Weight"
                 >
                   {userBodyweightForDate
@@ -2427,7 +2427,7 @@ export default function WorkoutLogger({
                     onChange={(e) =>
                       updateSet(currentExerciseIndex, originalIndex, 'weight', parseFloat(e.target.value) || 0)
                     }
-                    className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-border bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
+                    className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
                       (() => {
                         const key = `${currentExerciseIndex}-${originalIndex}`
                         const prePop = prePopulatedValues.get(key)
@@ -2452,7 +2452,7 @@ export default function WorkoutLogger({
                 onChange={(e) =>
                   updateSet(currentExerciseIndex, originalIndex, 'reps', parseInt(e.target.value) || 0)
                 }
-                className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-border bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
+                className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
                   (() => {
                     const key = `${currentExerciseIndex}-${originalIndex}`
                     const prePop = prePopulatedValues.get(key)
@@ -2476,7 +2476,7 @@ export default function WorkoutLogger({
                 onChange={(e) =>
                   updateSet(currentExerciseIndex, originalIndex, 'rpe', parseFloat(e.target.value) || 0)
                 }
-                className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-border bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
+                className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
                   (() => {
                     const key = `${currentExerciseIndex}-${originalIndex}`
                     const prePop = prePopulatedValues.get(key)
@@ -2495,7 +2495,7 @@ export default function WorkoutLogger({
             {!isConfirmed ? (
               <button
                 onClick={() => confirmSet(currentExerciseIndex, originalIndex)}
-                className="min-h-[36px] px-3 py-1.5 text-sm font-medium bg-accent text-background rounded-lg hover:shadow-glow transition-all duration-200"
+                className="min-h-[36px] px-3 py-1.5 text-sm btn-primary transition-all duration-200"
               >
                 Confirm Set
               </button>
@@ -2550,7 +2550,7 @@ export default function WorkoutLogger({
             <input
               id="workout-date-mobile"
               {...workoutDateInputProps}
-              className="min-h-[44px] px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent w-full min-w-0"
+              className="min-h-[44px] px-3 py-2 border border-white/[0.08] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent w-full min-w-0"
             />
             <p className="text-xs text-muted mt-1">
               {workoutDate === getTodayLocalYYYYMMDD()
@@ -2568,7 +2568,7 @@ export default function WorkoutLogger({
           <div className="w-full min-w-0 relative">
             <button
               onClick={() => setShowExerciseSelector(!showExerciseSelector)}
-              className="w-full min-h-[44px] px-3 py-2.5 text-sm bg-elevated text-foreground rounded-md hover:bg-elevated border border-border transition-colors flex items-center justify-between gap-1.5"
+              className="w-full min-h-[44px] px-3 py-2.5 text-sm bg-white/[0.04] text-foreground rounded-md hover:bg-white/[0.04] border border-white/[0.06] transition-colors flex items-center justify-between gap-1.5"
             >
               <span>Select Exercise</span>
               <svg
@@ -2584,7 +2584,7 @@ export default function WorkoutLogger({
           </div>
           {plateCalcBlock}
           {!isEditMode && workoutStartedAt != null && !workoutComplete && (
-            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-elevated text-muted border border-border">
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-white/[0.04] text-muted border border-white/[0.06]">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -2605,7 +2605,7 @@ export default function WorkoutLogger({
           <div className="relative w-full sm:w-auto">
             <button
               onClick={() => setShowExerciseSelector(!showExerciseSelector)}
-              className="w-full sm:w-auto min-h-[44px] px-3 py-2.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-elevated text-foreground rounded-md hover:bg-elevated border border-border transition-colors flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2"
+              className="w-full sm:w-auto min-h-[44px] px-3 py-2.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-white/[0.04] text-foreground rounded-md hover:bg-white/[0.04] border border-white/[0.06] transition-colors flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2"
             >
               <span>Select Exercise</span>
               <svg
@@ -2626,7 +2626,7 @@ export default function WorkoutLogger({
             <input
               id="workout-date"
               {...workoutDateInputProps}
-              className="min-h-[44px] px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent w-full sm:w-auto min-w-0"
+              className="min-h-[44px] px-3 py-2 border border-white/[0.08] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent w-full sm:w-auto min-w-0"
             />
             <p className="text-xs text-muted mt-1">
               {workoutDate === getTodayLocalYYYYMMDD()
@@ -2682,7 +2682,7 @@ export default function WorkoutLogger({
         </div>
       )}
 
-      <div className="bg-card rounded-xl border border-border p-6 mb-6 shadow-card">
+      <div className="card-glass p-6 mb-6 shadow-card">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
           <div>
             <div ref={swapPopoverRef} className="relative">
@@ -2695,7 +2695,7 @@ export default function WorkoutLogger({
                     <button
                       type="button"
                       onClick={() => setExerciseInfoModal(entry)}
-                      className="shrink-0 p-1 -m-1 rounded-full text-foreground/70 hover:text-foreground/90 hover:bg-elevated transition-colors"
+                      className="shrink-0 p-1 -m-1 rounded-full text-foreground/70 hover:text-foreground/90 hover:bg-white/[0.04] transition-colors"
                       title="Exercise info"
                       aria-label="Exercise info"
                     >
@@ -2717,7 +2717,7 @@ export default function WorkoutLogger({
                         setShowExerciseSelector(false)
                         setShowSwapPopover((v) => !v)
                       }}
-                      className="shrink-0 px-2 py-1 rounded-md text-xs font-medium text-foreground/80 hover:text-foreground bg-elevated hover:bg-elevated border border-border transition-colors"
+                      className="shrink-0 px-2 py-1 rounded-md text-xs font-medium text-foreground/80 hover:text-foreground bg-white/[0.04] hover:bg-white/[0.04] border border-white/[0.06] transition-colors"
                       title="Swap exercise"
                       aria-label="Swap exercise"
                     >
@@ -2736,7 +2736,7 @@ export default function WorkoutLogger({
                   return acc
                 }, {})
                 return (
-                  <div className="absolute left-0 mt-1 z-20 w-72 bg-elevated border border-border rounded-md shadow-lg p-3 max-h-[min(60vh,320px)] overflow-y-auto">
+                  <div className="absolute left-0 mt-1 z-20 w-72 bg-white/[0.04] border border-white/[0.06] rounded-md shadow-lg p-3 max-h-[min(60vh,320px)] overflow-y-auto">
                     <p className="text-xs text-muted mb-3">Equipment taken? Choose an alternative.</p>
                     <div className="flex flex-col gap-3">
                       {EQUIPMENT_ORDER.filter((eq) => byEquipment[eq]?.length).map((equipment) => (
@@ -2753,7 +2753,7 @@ export default function WorkoutLogger({
                                   handleSelectAlternative(name)
                                   setShowSwapPopover(false)
                                 }}
-                                className="text-xs px-2.5 py-1 rounded-md border border-border bg-elevated text-foreground/90 hover:bg-elevated transition-colors text-left"
+                                className="text-xs px-2.5 py-1 rounded-md border border-white/[0.06] bg-white/[0.04] text-foreground/90 hover:bg-white/[0.04] transition-colors text-left"
                               >
                                 {name}
                               </button>
@@ -2777,7 +2777,7 @@ export default function WorkoutLogger({
                                     handleSelectAlternative(name)
                                     setShowSwapPopover(false)
                                   }}
-                                  className="text-xs px-2.5 py-1 rounded-md border border-border bg-elevated text-foreground/90 hover:bg-elevated transition-colors text-left"
+                                  className="text-xs px-2.5 py-1 rounded-md border border-white/[0.06] bg-white/[0.04] text-foreground/90 hover:bg-white/[0.04] transition-colors text-left"
                                 >
                                   {name}
                                 </button>
@@ -2841,7 +2841,7 @@ export default function WorkoutLogger({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 restTimerEnabled
                   ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
-                  : 'bg-elevated text-muted border border-border'
+                  : 'bg-white/[0.04] text-muted border border-white/[0.06]'
               }`}
               title={restTimerEnabled ? 'Rest timer enabled' : 'Rest timer disabled'}
             >
@@ -2851,7 +2851,7 @@ export default function WorkoutLogger({
               <span className="inline">Timer {restTimerEnabled ? 'On' : 'Off'}</span>
             </button>
             {!isEditMode && workoutStartedAt != null && !workoutComplete && (
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-elevated text-muted border border-border">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-white/[0.04] text-muted border border-white/[0.06]">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -2864,7 +2864,7 @@ export default function WorkoutLogger({
         {presetId && (() => {
           const note = getPresetExerciseNotes(presetId, dayLabel, currentExercise.exerciseName)
           return note ? (
-            <div className="mb-4 rounded-lg border border-border bg-elevated p-3">
+            <div className="mb-4 rounded-lg border border-white/[0.06] bg-white/[0.04] p-3">
               <p className="text-xs font-medium text-muted uppercase tracking-wide mb-1.5">Program notes</p>
               <p className="text-sm text-secondary">{note}</p>
             </div>
@@ -2881,7 +2881,7 @@ export default function WorkoutLogger({
           const showSecond = warmupWeight > pc.barWeight
           if (!showEmptyBar && !showSecond) return null
           return (
-            <div className="mb-3 px-3 py-2 rounded-lg bg-elevated border border-border">
+            <div className="mb-3 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
               <p className="text-xs font-medium text-muted uppercase tracking-wide mb-1">Suggested warm-up</p>
               <p className="text-sm text-secondary">
                 {showEmptyBar && `${pc.barWeight} lb (empty bar) × 10`}
@@ -2932,16 +2932,16 @@ export default function WorkoutLogger({
           <p className="text-xs text-muted mb-2 sm:mb-1.5">Done logging sets? Complete exercise to see feedback.</p>
           <button
             onClick={() => completeExercise(currentExerciseIndex)}
-            className="w-full sm:w-auto min-h-[44px] px-4 py-3 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-all duration-200"
+            className="w-full sm:w-auto min-h-[44px] px-4 py-3 btn-primary transition-all duration-200"
           >
             Complete Exercise
           </button>
         </div>
 
         {currentExercise.exerciseFeedback && (
-          <div className="mt-4 p-4 bg-elevated border border-border rounded-xl">
+          <div className="mt-4 p-4 bg-white/[0.04] border border-white/[0.06] rounded-xl">
             {currentExercise.exerciseRating !== null && currentExercise.exerciseRating !== undefined && (
-              <div className="mb-3 pb-3 border-b border-border">
+              <div className="mb-3 pb-3 border-b border-white/[0.06]">
                 <p className="text-sm text-muted mb-1">Exercise Rating</p>
                 <p className="text-2xl font-bold text-foreground">{currentExercise.exerciseRating}/10</p>
               </div>
@@ -2953,19 +2953,19 @@ export default function WorkoutLogger({
       </div>
 
       <div
-        className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-0 z-30 flex justify-between gap-3 py-3 px-1 -mx-1 mt-4 bg-background border-t border-border pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] lg:pb-0 lg:mt-4 lg:border-t-0 lg:bg-transparent lg:px-0 lg:-mx-0"
+        className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-0 z-30 flex justify-between gap-3 py-3 px-1 -mx-1 mt-4 bg-background border-t border-white/[0.06] pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] lg:pb-0 lg:mt-4 lg:border-t-0 lg:bg-transparent lg:px-0 lg:-mx-0"
       >
         <button
           onClick={() => setCurrentExerciseIndex(Math.max(0, currentExerciseIndex - 1))}
           disabled={currentExerciseIndex === 0}
-          className="min-h-[44px] px-4 py-2.5 bg-elevated text-foreground rounded-md hover:bg-elevated border border-border disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          className="min-h-[44px] px-4 py-2.5 bg-white/[0.04] text-foreground rounded-md hover:bg-white/[0.04] border border-white/[0.06] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
         >
           Previous
         </button>
         {currentExerciseIndex < exercises.length - 1 ? (
           <button
             onClick={() => setCurrentExerciseIndex(currentExerciseIndex + 1)}
-            className="min-h-[44px] px-4 py-2.5 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-all duration-200"
+            className="min-h-[44px] px-4 py-2.5 btn-primary transition-all duration-200"
           >
             Next Exercise
           </button>
@@ -2973,7 +2973,7 @@ export default function WorkoutLogger({
           <button
             onClick={saveWorkout}
             disabled={saving}
-            className="min-h-[44px] px-4 py-2.5 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+            className="min-h-[44px] px-4 py-2.5 btn-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
           >
             {saving ? 'Saving...' : 'Complete Workout'}
           </button>

@@ -105,12 +105,12 @@ export default function CompareModal({ friend, onClose }: CompareModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80" onClick={onClose}>
       <div
-        className="bg-card border border-border rounded-xl shadow-card max-w-2xl w-full max-h-[85vh] overflow-hidden"
+        className="modal-glass max-w-2xl w-full max-h-[85vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <div className="p-4 border-b border-border flex justify-between items-center">
+        <div className="p-4 border-b border-white/[0.06] flex justify-between items-center">
           <h3 className="text-lg font-semibold text-foreground">Compare with {friend.username}</h3>
-          <button type="button" onClick={onClose} className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated" aria-label="Close">
+          <button type="button" onClick={onClose} className="p-1 rounded text-muted hover:text-foreground hover:bg-white/[0.04]" aria-label="Close">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -131,7 +131,7 @@ export default function CompareModal({ friend, onClose }: CompareModalProps) {
                     <select
                       value={selectedExercise}
                       onChange={e => setSelectedExercise(e.target.value)}
-                      className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+                      className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
                     >
                       {data.commonExercises.map(ex => (
                         <option key={ex} value={ex}>{ex}</option>
@@ -151,7 +151,7 @@ export default function CompareModal({ friend, onClose }: CompareModalProps) {
 
                       {/* Chart */}
                       {chartData.length > 1 ? (
-                        <div className="bg-elevated rounded-lg p-3 border border-border">
+                        <div className="bg-white/[0.04] rounded-lg p-3 border border-white/[0.06]">
                           <p className="text-sm text-foreground font-medium mb-3">e1RM Over Time</p>
                           <ResponsiveContainer width="100%" height={250}>
                             <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -170,7 +170,7 @@ export default function CompareModal({ friend, onClose }: CompareModalProps) {
                               />
                               <Tooltip
                                 contentStyle={{
-                                  backgroundColor: '#111111',
+                                  backgroundColor: 'rgba(255,255,255,0.02)',
                                   border: '1px solid #2a2a2a',
                                   borderRadius: '8px',
                                   fontSize: '12px',
@@ -210,7 +210,7 @@ export default function CompareModal({ friend, onClose }: CompareModalProps) {
 
 function StatCard({ label, stats }: { label: string; stats: UserStats }) {
   return (
-    <div className="bg-elevated rounded-lg p-3 border border-border">
+    <div className="bg-white/[0.04] rounded-lg p-3 border border-white/[0.06]">
       <p className="text-sm font-medium text-foreground mb-2 truncate">{label}</p>
       <div className="space-y-1.5">
         <div className="flex justify-between text-xs">

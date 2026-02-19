@@ -11,7 +11,6 @@ export default function GetStartedPage() {
   const [loading, setLoading] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
 
-  // Check if already logged in and redirect based on whether they have templates
   useEffect(() => {
     if (typeof window === 'undefined') return
     const user = getCurrentUser()
@@ -41,10 +40,7 @@ export default function GetStartedPage() {
     }
 
     try {
-      // First try to sign in
       let user = await signIn(username, password)
-
-      // If sign in failed, create new account
       if (!user) {
         user = await createUser(username, password)
       }
@@ -67,16 +63,21 @@ export default function GetStartedPage() {
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted">Loading...</p>
+        <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-2xl border border-border shadow-card">
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+      {/* Background gradient blobs */}
+      <div className="absolute inset-0 bg-radial-hero pointer-events-none" />
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="relative max-w-md w-full space-y-8 p-8 card-glass mx-4 animate-fade-in-up">
         <div>
-          <h1 className="font-display text-center text-4xl font-extrabold text-foreground mb-2 tracking-tight">
+          <h1 className="font-display text-center text-4xl font-extrabold text-gradient mb-2 tracking-tight">
             Workout Planner
           </h1>
           <h2 className="font-display mt-6 text-center text-2xl font-bold text-foreground tracking-tight">
@@ -88,22 +89,20 @@ export default function GetStartedPage() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded-lg">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
-          <div className="rounded-lg shadow-sm -space-y-px">
+          <div className="space-y-3">
             <div>
-              <label htmlFor="username" className="sr-only">
-                Username
-              </label>
+              <label htmlFor="username" className="sr-only">Username</label>
               <input
                 id="username"
                 name="username"
                 type="text"
                 autoComplete="username"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border bg-elevated text-foreground placeholder-muted rounded-t-lg focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent focus:z-10 sm:text-sm"
+                className="appearance-none relative block w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] text-foreground placeholder-muted/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40 transition-all duration-200 sm:text-sm"
                 placeholder="Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -111,9 +110,7 @@ export default function GetStartedPage() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
+              <label htmlFor="password" className="sr-only">Password</label>
               <input
                 id="password"
                 name="password"
@@ -121,7 +118,7 @@ export default function GetStartedPage() {
                 autoComplete="current-password"
                 required
                 minLength={6}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border bg-elevated text-foreground placeholder-muted rounded-b-lg focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent focus:z-10 sm:text-sm"
+                className="appearance-none relative block w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] text-foreground placeholder-muted/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40 transition-all duration-200 sm:text-sm"
                 placeholder="Password (min 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -134,9 +131,14 @@ export default function GetStartedPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-background bg-accent hover:shadow-glow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="btn-primary w-full flex justify-center py-3 px-4 text-sm min-h-[44px]"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in...
+                </span>
+              ) : 'Sign In'}
             </button>
           </div>
         </form>

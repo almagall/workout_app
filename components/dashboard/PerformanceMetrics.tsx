@@ -42,12 +42,48 @@ function getConsecutiveWorkoutWeeks(dates: string[]): number {
   return count
 }
 
-const TILES: { key: keyof Metrics; label: string; icon: string; suffix?: string; format?: (v: number) => string }[] = [
-  { key: 'streak', label: 'Week Streak', icon: '🔥' },
-  { key: 'workoutsThisMonth', label: 'This Month', icon: '📅' },
-  { key: 'targetHitRate', label: 'Hit Rate', icon: '🎯', suffix: '%' },
-  { key: 'avgDurationMin', label: 'Avg Duration', icon: '⏱', suffix: ' min' },
-  { key: 'prsThisMonth', label: 'PRs This Month', icon: '⭐' },
+function StreakIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+function CalendarIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  )
+}
+function TargetIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+    </svg>
+  )
+}
+function ClockIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+function TrophyIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2" /><path d="M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2" /><path d="M6 3h12v7a6 6 0 01-12 0V3z" /><path d="M9 21h6" /><path d="M12 16v5" />
+    </svg>
+  )
+}
+
+const TILES: { key: keyof Metrics; label: string; icon: React.ReactNode; color: string; suffix?: string; format?: (v: number) => string }[] = [
+  { key: 'streak', label: 'Week Streak', icon: <StreakIcon />, color: 'text-amber-400' },
+  { key: 'workoutsThisMonth', label: 'This Month', icon: <CalendarIcon />, color: 'text-blue-400' },
+  { key: 'targetHitRate', label: 'Hit Rate', icon: <TargetIcon />, color: 'text-emerald-400', suffix: '%' },
+  { key: 'avgDurationMin', label: 'Avg Duration', icon: <ClockIcon />, color: 'text-purple-400', suffix: ' min' },
+  { key: 'prsThisMonth', label: 'PRs This Month', icon: <TrophyIcon />, color: 'text-yellow-400' },
 ]
 
 export default function PerformanceMetrics() {
@@ -106,7 +142,7 @@ export default function PerformanceMetrics() {
     return (
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="bg-card rounded-xl border border-border p-3 sm:p-4 animate-pulse">
+          <div key={i} className="card-glass p-4 sm:p-5 animate-pulse">
             <div className="h-3 w-12 bg-elevated rounded mb-2" />
             <div className="h-6 w-10 bg-elevated rounded" />
           </div>
@@ -126,10 +162,10 @@ export default function PerformanceMetrics() {
         return (
           <div
             key={tile.key}
-            className="flex-shrink-0 min-w-[6.5rem] sm:min-w-0 sm:flex-1 bg-card rounded-xl border border-border p-3 sm:p-4 shadow-card"
+            className="flex-shrink-0 min-w-[6.5rem] sm:min-w-0 sm:flex-1 card-glass p-4 sm:p-5"
           >
             <div className="flex items-center gap-1.5 mb-1.5">
-              <span className="text-base leading-none">{tile.icon}</span>
+              <span className={`${tile.color}`}>{tile.icon}</span>
               <span className="text-[11px] sm:text-xs text-muted font-medium uppercase tracking-wide">{tile.label}</span>
             </div>
             <p className="text-xl sm:text-2xl font-bold text-foreground leading-none">

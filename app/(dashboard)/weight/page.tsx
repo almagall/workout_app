@@ -126,12 +126,12 @@ export default function WeightPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Weight Tracking</h1>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Weight Tracking</h1>
         <p className="text-muted mt-2">Track your bodyweight over time</p>
       </div>
 
       {/* Current Weight Card */}
-      <div className="bg-card rounded-xl border border-border shadow-card p-6 mb-6">
+      <div className="card-glass p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted mb-1">Current Weight</p>
@@ -141,7 +141,7 @@ export default function WeightPage() {
           </div>
           <button
             onClick={openAddModal}
-            className="px-4 py-2 bg-white text-black rounded-md font-medium hover:bg-gray-200 transition-colors"
+            className="btn-primary"
           >
             + Log Weight
           </button>
@@ -150,8 +150,8 @@ export default function WeightPage() {
 
       {/* Chart */}
       {history.length > 0 && (
-        <div className="bg-card rounded-xl border border-border shadow-card p-6 mb-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Weight Over Time</h2>
+        <div className="card-glass p-6 mb-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Weight Over Time</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -179,8 +179,8 @@ export default function WeightPage() {
       )}
 
       {/* Recent Logs */}
-      <div className="bg-card rounded-xl border border-border shadow-card p-6">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Recent Logs</h2>
+      <div className="card-glass p-6">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Recent Logs</h2>
         
         {history.length === 0 ? (
           <p className="text-muted text-center py-8">
@@ -191,7 +191,7 @@ export default function WeightPage() {
             {[...history].reverse().slice(0, 10).map(entry => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between p-3 bg-elevated rounded-lg border border-border"
+                className="flex items-center justify-between p-3 bg-white/[0.025] rounded-lg border border-white/[0.05] shadow-[0_1px_2px_rgba(0,0,0,0.1)]"
               >
                 <div className="flex-1">
                   <p className="text-foreground font-medium">
@@ -231,7 +231,7 @@ export default function WeightPage() {
       {/* Add/Edit Weight Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-card">
+          <div className="modal-glass max-w-md w-full p-6">
             <h3 className="text-xl font-semibold text-foreground mb-4">
               {editingEntry ? 'Edit Weight Entry' : 'Log New Weight'}
             </h3>
@@ -251,7 +251,7 @@ export default function WeightPage() {
                   type="date"
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                  className="w-full px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
                   required
                 />
               </div>
@@ -267,13 +267,13 @@ export default function WeightPage() {
                     value={formWeight}
                     onChange={(e) => setFormWeight(e.target.value)}
                     placeholder="165"
-                    className="flex-1 px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                    className="flex-1 px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
                     required
                   />
                   <select
                     value={formUnit}
                     onChange={(e) => setFormUnit(e.target.value as 'lbs' | 'kg')}
-                    className="px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                    className="px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
                   >
                     <option value="lbs">lbs</option>
                     <option value="kg">kg</option>
@@ -290,21 +290,21 @@ export default function WeightPage() {
                   onChange={(e) => setFormNotes(e.target.value)}
                   placeholder="e.g., Morning weight, after workout, etc."
                   rows={2}
-                  className="w-full px-3 py-2 border border-border bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent resize-none"
+                  className="w-full px-3 py-2 border border-white/[0.06] bg-card text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40 resize-none"
                 />
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-white text-black rounded-md font-medium hover:bg-gray-200 transition-colors"
+                  className="flex-1 btn-primary"
                 >
                   {editingEntry ? 'Update' : 'Save'}
                 </button>
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-colors"
+                  className="btn-primary hover:shadow-glow"
                 >
                   Cancel
                 </button>

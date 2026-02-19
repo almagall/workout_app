@@ -17,8 +17,9 @@ export default function OnboardingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
+    <div className="relative min-h-screen flex items-center justify-center bg-background">
+      <div className="absolute inset-0 bg-radial-hero pointer-events-none" />
+      <div className="relative text-center">
         <p className="text-muted">Loading...</p>
       </div>
     </div>

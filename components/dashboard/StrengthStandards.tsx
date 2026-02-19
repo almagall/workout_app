@@ -51,12 +51,12 @@ export default function StrengthStandards() {
 
   if (loading) {
     return (
-      <div className="bg-[#0d0d0d] rounded-xl border border-[#252525] overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-        <div className="p-4 sm:p-5 border-b border-[#252525] bg-gradient-to-b from-[#141414] to-transparent">
-          <h2 className="text-lg font-semibold text-white tracking-tight">Strength Standards</h2>
+      <div className="card-glass overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Strength Standards</h2>
         </div>
         <div className="flex items-center justify-center py-12">
-          <p className="text-[#666]">Loading...</p>
+          <p className="text-muted">Loading...</p>
         </div>
       </div>
     )
@@ -64,17 +64,17 @@ export default function StrengthStandards() {
 
   if (needsProfile) {
     return (
-      <div className="bg-[#0d0d0d] rounded-xl border border-[#252525] overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-        <div className="p-4 sm:p-5 border-b border-[#252525] bg-gradient-to-b from-[#141414] to-transparent">
-          <h2 className="text-lg font-semibold text-white tracking-tight">Strength Standards</h2>
+      <div className="card-glass overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Strength Standards</h2>
         </div>
         <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-          <p className="text-[#888] mb-5">
+          <p className="text-muted mb-5">
             Set your bodyweight and gender in Settings to see how you compare to strength standards
           </p>
           <button
             onClick={() => router.push('/settings')}
-            className="px-5 py-2.5 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            className="btn-primary px-5 py-2.5"
           >
             Go to Settings
           </button>
@@ -85,13 +85,13 @@ export default function StrengthStandards() {
 
   if (standards.length === 0) {
     return (
-      <div className="bg-[#0d0d0d] rounded-xl border border-[#252525] overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-        <div className="p-4 sm:p-5 border-b border-[#252525] bg-gradient-to-b from-[#141414] to-transparent">
-          <h2 className="text-lg font-semibold text-white tracking-tight">Strength Standards</h2>
+      <div className="card-glass overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Strength Standards</h2>
         </div>
         <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-          <p className="text-[#888] mb-2">No main lifts logged yet</p>
-          <p className="text-sm text-[#666]">Log Bench Press, Squat, Deadlift, or Overhead Press to see standards</p>
+          <p className="text-muted mb-2">No main lifts logged yet</p>
+          <p className="text-sm text-secondary">Log Bench Press, Squat, Deadlift, or Overhead Press to see standards</p>
         </div>
       </div>
     )
@@ -110,10 +110,10 @@ export default function StrengthStandards() {
       : { text: 'Keep pushing!', color: '#8b5cf6', icon: '▲' }
 
   return (
-    <div className="bg-[#0d0d0d] rounded-xl border border-[#252525] overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-      <div className="p-4 border-b border-[#252525] bg-gradient-to-b from-[#141414] to-transparent">
+    <div className="card-glass overflow-hidden">
+      <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white tracking-tight">Strength Standards</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Strength Standards</h2>
           <div
             className="px-3 py-1 rounded-full text-xs font-semibold"
             style={{
@@ -136,7 +136,7 @@ export default function StrengthStandards() {
             return (
               <div
                 key={index}
-                className="relative rounded-lg border border-[#252525] bg-[#141414] p-4 sm:p-5 min-w-[240px] sm:min-w-0 flex-shrink-0 lg:flex-shrink lg:min-w-0 overflow-hidden group hover:border-[#333] transition-colors duration-200"
+                className="relative rounded-lg border border-white/[0.05] bg-white/[0.025] shadow-[0_1px_2px_rgba(0,0,0,0.1)] p-4 sm:p-5 min-w-[240px] sm:min-w-0 flex-shrink-0 lg:flex-shrink lg:min-w-0 overflow-hidden group hover:border-white/[0.12] transition-all duration-200"
               >
                 {/* Subtle tier glow */}
                 <div
@@ -148,10 +148,10 @@ export default function StrengthStandards() {
 
                 <div className="relative space-y-4">
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-white font-semibold text-sm truncate">{standard.exercise}</p>
-                    <span className="text-sm font-bold text-white tabular-nums shrink-0">
+                    <p className="text-foreground font-semibold text-sm truncate">{standard.exercise}</p>
+                    <span className="text-sm font-bold text-accent-light tabular-nums shrink-0">
                       {standard.currentWeight.toFixed(0)}
-                      <span className="text-[#666] font-normal text-xs ml-0.5">lbs</span>
+                      <span className="text-muted font-normal text-xs ml-0.5">lbs</span>
                     </span>
                   </div>
 
@@ -168,13 +168,13 @@ export default function StrengthStandards() {
                       {[20, 40, 60, 80].map((pct) => (
                         <div
                           key={pct}
-                          className="absolute top-0 bottom-0 w-px bg-[#333] z-[1]"
+                          className="absolute top-0 bottom-0 w-px bg-black/40 z-[1]"
                           style={{ left: `${pct}%` }}
                         />
                       ))}
                     {/* Current position marker - based on weight progress within tier */}
                     <div
-                      className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border border-white bg-[#404040] shadow-sm transition-transform group-hover:scale-110 z-[2]"
+                      className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-white bg-background shadow-sm transition-transform group-hover:scale-125 z-[2]"
                       style={{
                         left: `clamp(0px, calc(${getBarPosition(standard)}% - 6px), calc(100% - 12px))`,
                       }}
@@ -201,9 +201,9 @@ export default function StrengthStandards() {
                       {tier.label}
                     </div>
                     {standard.tier !== 'elite' && (
-                      <p className="text-[11px] text-[#888] leading-tight">
+                      <p className="text-[11px] text-muted leading-tight">
                         Next tier: <span style={{ color: nextTier.color }}>{standard.nextTierWeight} lbs</span>
-                        <span className="text-[#555]"> (+{(standard.nextTierWeight - standard.currentWeight).toFixed(0)})</span>
+                        <span className="text-muted/60"> (+{(standard.nextTierWeight - standard.currentWeight).toFixed(0)})</span>
                       </p>
                     )}
                   </div>

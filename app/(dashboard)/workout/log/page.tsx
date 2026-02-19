@@ -65,13 +65,13 @@ export default function LogWorkoutPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="font-display text-3xl font-bold text-foreground mb-8 tracking-tight">Log Workout</h1>
-        <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+        <div className="card-glass p-6">
           <p className="text-secondary mb-4">
             You need to create a workout template first before logging workouts.
           </p>
           <Link
             href="/workout/template/create"
-            className="inline-block px-4 py-2 bg-accent text-background rounded-lg font-medium hover:shadow-glow transition-all duration-200"
+            className="btn-primary inline-block"
           >
             Create Template
           </Link>
@@ -96,7 +96,7 @@ export default function LogWorkoutPage() {
               key={template.id}
               type="button"
               onClick={() => setSelectedTemplateId(template.id)}
-              className="w-full min-h-[72px] bg-card rounded-xl border border-border p-4 sm:p-6 text-left hover:border-accent/50 transition-all duration-200 hover:bg-elevated hover:shadow-card-hover shadow-card"
+              className="w-full min-h-[72px] card-glass p-4 sm:p-6 text-left hover:border-accent/50 transition-all duration-200 hover:bg-white/[0.04] hover:shadow-card-hover"
             >
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <h2 className="text-lg font-semibold text-foreground">{template.name}</h2>
@@ -118,7 +118,7 @@ export default function LogWorkoutPage() {
                   {days.map((day) => (
                     <span
                       key={day.id}
-                      className="text-xs px-2 py-0.5 bg-elevated text-muted rounded border border-border"
+                      className="text-xs px-2 py-0.5 bg-white/[0.04] text-muted rounded border border-white/[0.06]"
                     >
                       {day.day_label}
                     </span>
@@ -168,7 +168,7 @@ export default function LogWorkoutPage() {
           <Link
             key={day.id}
             href={`/workout/log/${day.id}`}
-            className="min-h-[64px] flex items-center bg-card rounded-xl border border-border p-4 sm:p-6 hover:border-accent/50 transition-all duration-200 hover:bg-elevated hover:shadow-card-hover shadow-card"
+            className="min-h-[64px] flex items-center card-glass p-4 sm:p-6 hover:border-accent/50 transition-all duration-200 hover:bg-white/[0.04] hover:shadow-card-hover"
           >
             <h3 className="text-xl font-semibold text-foreground">{day.day_label}</h3>
           </Link>

@@ -107,13 +107,13 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
     c.challenger_id === user.id ? c.challenged_username : c.challenger_username
 
   return (
-    <section className="bg-card rounded-xl border border-border shadow-card p-5 mb-6">
+    <section className="card-glass shadow-card p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-foreground">Challenges</h2>
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="px-3 py-1.5 text-sm bg-white text-black font-medium rounded-md hover:bg-[#e5e5e5]"
+          className="px-3 py-1.5 text-sm btn-primary"
         >
           Challenge a Friend
         </button>
@@ -124,10 +124,10 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
       {/* Create challenge modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80" onClick={() => setShowCreate(false)}>
-          <div className="bg-card border border-border rounded-xl shadow-card max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <div className="p-4 border-b border-border flex justify-between items-center">
+          <div className="modal-glass max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-white/[0.06] flex justify-between items-center">
               <h3 className="text-lg font-semibold text-foreground">New Challenge</h3>
-              <button type="button" onClick={() => setShowCreate(false)} className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated" aria-label="Close">
+              <button type="button" onClick={() => setShowCreate(false)} className="p-1 rounded text-muted hover:text-foreground hover:bg-white/[0.04]" aria-label="Close">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -137,7 +137,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                 <select
                   value={selectedFriend}
                   onChange={e => setSelectedFriend(e.target.value)}
-                  className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
                 >
                   <option value="">Select a friend</option>
                   {friends.map(f => (
@@ -151,7 +151,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                 <select
                   value={challengeType}
                   onChange={e => setChallengeType(e.target.value as ChallengeType)}
-                  className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
                 >
                   <option value="workout_count">Most Workouts</option>
                   <option value="e1rm">Highest e1RM</option>
@@ -166,7 +166,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                     value={exerciseName}
                     onChange={e => setExerciseName(e.target.value)}
                     placeholder="e.g. Bench Press"
-                    className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
                   />
                 </div>
               )}
@@ -176,7 +176,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                 <select
                   value={durationDays}
                   onChange={e => setDurationDays(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50"
                 >
                   <option value={7}>7 days</option>
                   <option value={14}>14 days</option>
@@ -187,10 +187,10 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
               {createError && <p className="text-sm text-red-400">{createError}</p>}
 
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 rounded border border-border text-foreground text-sm hover:bg-elevated">
+                <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 rounded border border-white/[0.06] text-foreground text-sm hover:bg-white/[0.04]">
                   Cancel
                 </button>
-                <button type="submit" disabled={creating} className="px-4 py-2 bg-white text-black font-medium rounded-md hover:bg-[#e5e5e5] disabled:opacity-50">
+                <button type="submit" disabled={creating} className="px-4 py-2 btn-primary disabled:opacity-50">
                   {creating ? 'Sending...' : 'Send Challenge'}
                 </button>
               </div>
@@ -205,14 +205,14 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
           <h3 className="text-sm font-medium text-muted mb-2">Incoming</h3>
           <div className="space-y-2">
             {pendingReceived.map(c => (
-              <div key={c.id} className="flex items-center justify-between bg-elevated rounded-lg p-3">
+              <div key={c.id} className="flex items-center justify-between bg-white/[0.04] rounded-lg p-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-foreground text-sm font-medium">{c.challenger_username}</p>
                   <p className="text-xs text-muted">{typeLabel(c)} · {c.duration_days} days</p>
                 </div>
                 <div className="flex gap-2 ml-2">
-                  <button type="button" disabled={!!actingId} onClick={() => handleAccept(c.id)} className="px-3 py-1 rounded bg-white text-black text-xs font-medium hover:bg-[#e5e5e5] disabled:opacity-50">Accept</button>
-                  <button type="button" disabled={!!actingId} onClick={() => handleDecline(c.id)} className="px-3 py-1 rounded border border-border text-foreground text-xs hover:bg-elevated disabled:opacity-50">Decline</button>
+                  <button type="button" disabled={!!actingId} onClick={() => handleAccept(c.id)} className="px-3 py-1 rounded btn-primary text-xs disabled:opacity-50">Accept</button>
+                  <button type="button" disabled={!!actingId} onClick={() => handleDecline(c.id)} className="px-3 py-1 rounded border border-white/[0.06] text-foreground text-xs hover:bg-white/[0.04] disabled:opacity-50">Decline</button>
                 </div>
               </div>
             ))}
@@ -226,7 +226,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
           <h3 className="text-sm font-medium text-muted mb-2">Sent</h3>
           <div className="space-y-2">
             {pendingSent.map(c => (
-              <div key={c.id} className="flex items-center justify-between bg-elevated rounded-lg p-3">
+              <div key={c.id} className="flex items-center justify-between bg-white/[0.04] rounded-lg p-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-foreground text-sm font-medium">{c.challenged_username}</p>
                   <p className="text-xs text-muted">{typeLabel(c)} · {c.duration_days} days</p>
@@ -253,7 +253,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
               const unit = c.challenge_type === 'e1rm' ? 'lbs' : ''
 
               return (
-                <div key={c.id} className="bg-elevated rounded-lg p-4">
+                <div key={c.id} className="bg-white/[0.04] rounded-lg p-4">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-foreground text-sm font-medium">vs {opponentName(c)}</p>
                     <span className="text-xs text-muted">{daysLeft}d left</span>
@@ -296,7 +296,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
               const isWinner = c.winner_id === user.id
               const isTie = !c.winner_id
               return (
-                <div key={c.id} className="flex items-center justify-between bg-elevated rounded-lg p-3">
+                <div key={c.id} className="flex items-center justify-between bg-white/[0.04] rounded-lg p-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-foreground text-sm">
                       vs {opponentName(c)} <span className="text-muted">· {typeLabel(c)}</span>

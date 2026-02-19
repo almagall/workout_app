@@ -138,17 +138,17 @@ export default function TemplatePage() {
         <div className="flex items-center gap-2">
           <Link
             href="/workout/template/create"
-            className="px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium text-sm sm:text-base"
+            className="btn-primary text-sm sm:text-base"
           >
             + Create custom
           </Link>
-          <div className="flex rounded-md border border-border overflow-hidden">
+          <div className="flex rounded-md border border-white/[0.06] overflow-hidden">
             <button
               type="button"
               onClick={() => setTab('my')}
               className={`px-3 py-2 text-sm font-medium transition-colors ${
                 tab === 'my'
-                  ? 'bg-elevated text-foreground'
+                  ? 'bg-white/[0.04] text-foreground'
                   : 'bg-card text-muted hover:text-foreground'
               }`}
             >
@@ -159,7 +159,7 @@ export default function TemplatePage() {
               onClick={() => setTab('precreated')}
               className={`px-3 py-2 text-sm font-medium transition-colors ${
                 tab === 'precreated'
-                  ? 'bg-elevated text-foreground'
+                  ? 'bg-white/[0.04] text-foreground'
                   : 'bg-card text-muted hover:text-foreground'
               }`}
             >
@@ -172,21 +172,21 @@ export default function TemplatePage() {
       {tab === 'my' && (
         <>
           {templates.length === 0 ? (
-            <div className="bg-card rounded-xl border border-border shadow-card p-6">
+            <div className="card-glass p-6">
               <p className="text-secondary mb-4">
                 You have not created any templates yet. Create a custom template or choose a pre-created one to get started.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="/workout/template/create"
-                  className="inline-block px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] transition-colors font-medium"
+                  className="btn-primary inline-block"
                 >
                   Create custom
                 </Link>
                 <button
                   type="button"
                   onClick={() => setTab('precreated')}
-                  className="inline-block px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow border border-transparent transition-all duration-200 font-medium"
+                  className="btn-primary inline-block"
                 >
                   Browse pre-created
                 </button>
@@ -197,7 +197,7 @@ export default function TemplatePage() {
               {templates.map(({ template, days }) => (
                 <div
                   key={template.id}
-                  className="bg-card rounded-xl border border-border shadow-card p-6"
+                  className="card-glass p-6"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -221,7 +221,7 @@ export default function TemplatePage() {
                           {days.map((day) => (
                             <span
                               key={day.id}
-                              className="text-xs px-2 py-1 bg-elevated text-muted rounded border border-border"
+                              className="text-xs px-2 py-1 bg-white/[0.04] text-muted rounded border border-white/[0.06]"
                             >
                               {day.day_label}
                             </span>
@@ -232,7 +232,7 @@ export default function TemplatePage() {
                     <div className="flex items-center gap-3">
                       <Link
                         href={`/workout/template/edit/${template.id}`}
-                        className="px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow border border-transparent transition-all duration-200 text-sm font-medium"
+                        className="btn-primary text-sm"
                       >
                         Edit
                       </Link>
@@ -257,7 +257,7 @@ export default function TemplatePage() {
         <>
           <div className="mb-4 flex items-center gap-2 flex-wrap">
             <span className="text-sm text-muted">Workout focus:</span>
-            <div className="flex rounded-md border border-border overflow-hidden">
+            <div className="flex rounded-md border border-white/[0.06] overflow-hidden">
               {(['all', 'hypertrophy', 'strength'] as const).map((f) => (
                 <button
                   key={f}
@@ -265,7 +265,7 @@ export default function TemplatePage() {
                   onClick={() => setFocusFilter(f)}
                   className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                     focusFilter === f
-                      ? 'bg-elevated text-foreground'
+                      ? 'bg-white/[0.04] text-foreground'
                       : 'bg-card text-muted hover:text-foreground'
                   }`}
                 >
@@ -278,7 +278,7 @@ export default function TemplatePage() {
             {filteredPresets.map((preset) => (
               <div
                 key={preset.id}
-                className="bg-card rounded-xl border border-border shadow-card p-5 flex flex-col"
+                className="card-glass p-5 flex flex-col"
               >
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <h2 className="text-lg font-semibold text-foreground">{preset.name}</h2>
@@ -338,7 +338,7 @@ export default function TemplatePage() {
                   {preset.days.map((day) => (
                     <span
                       key={day.dayOrder}
-                      className="text-xs px-2 py-0.5 bg-elevated text-muted rounded border border-border"
+                      className="text-xs px-2 py-0.5 bg-white/[0.04] text-muted rounded border border-white/[0.06]"
                     >
                       {day.dayLabel}
                     </span>
@@ -349,7 +349,7 @@ export default function TemplatePage() {
                     day.exercises.map((ex) => (
                       <span
                         key={`${day.dayOrder}-${ex}`}
-                        className="text-[10px] sm:text-xs px-1.5 py-0.5 bg-background text-secondary rounded border border-border"
+                        className="text-[10px] sm:text-xs px-1.5 py-0.5 bg-background text-secondary rounded border border-white/[0.06]"
                       >
                         {ex}
                       </span>
@@ -360,7 +360,7 @@ export default function TemplatePage() {
                   type="button"
                   onClick={() => handleUsePreset(preset.id)}
                   disabled={usingPresetId !== null}
-                  className="mt-auto w-full px-4 py-2 bg-white text-black rounded-md hover:bg-[#e5e5e5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+                  className="btn-primary mt-auto w-full disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {usingPresetId === preset.id ? 'Adding...' : 'Use this template'}
                 </button>

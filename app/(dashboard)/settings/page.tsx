@@ -202,7 +202,7 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Settings</h1>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Settings</h1>
         <p className="text-muted mt-2">Manage your profile and preferences</p>
       </div>
 
@@ -220,8 +220,8 @@ export default function SettingsPage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Information */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Personal Information</h2>
+        <div className="card-glass p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Personal Information</h2>
           
           <div className="space-y-4">
             <div>
@@ -232,7 +232,7 @@ export default function SettingsPage() {
                 type="date"
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
-                className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
               />
             </div>
 
@@ -243,7 +243,7 @@ export default function SettingsPage() {
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value as 'male' | 'female' | 'other')}
-                className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
               >
                 <option value="">Select gender</option>
                 <option value="male">Male</option>
@@ -274,8 +274,8 @@ export default function SettingsPage() {
                   }}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     heightUnit === 'ft'
-                      ? 'bg-accent text-background'
-                      : 'bg-elevated text-muted hover:text-foreground'
+                      ? 'btn-primary'
+                      : 'bg-white/[0.04] text-muted hover:text-foreground'
                   }`}
                 >
                   ft / in
@@ -294,8 +294,8 @@ export default function SettingsPage() {
                   }}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     heightUnit === 'cm'
-                      ? 'bg-accent text-background'
-                      : 'bg-elevated text-muted hover:text-foreground'
+                      ? 'btn-primary'
+                      : 'bg-white/[0.04] text-muted hover:text-foreground'
                   }`}
                 >
                   cm
@@ -320,7 +320,7 @@ export default function SettingsPage() {
                     }
                   }}
                   placeholder="170"
-                  className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                  className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
                 />
               ) : (
                 <div className="flex gap-2">
@@ -339,7 +339,7 @@ export default function SettingsPage() {
                       placeholder="5"
                       min="0"
                       max="8"
-                      className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                      className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
                     />
                     <p className="text-xs text-muted mt-1 text-center">feet</p>
                   </div>
@@ -358,7 +358,7 @@ export default function SettingsPage() {
                       placeholder="10"
                       min="0"
                       max="11"
-                      className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                      className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
                     />
                     <p className="text-xs text-muted mt-1 text-center">inches</p>
                   </div>
@@ -369,8 +369,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Bodyweight */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Bodyweight</h2>
+        <div className="card-glass p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Bodyweight</h2>
           
           <div className="space-y-4">
             <div>
@@ -384,12 +384,12 @@ export default function SettingsPage() {
                   value={bodyweight}
                   onChange={(e) => setBodyweight(e.target.value)}
                   placeholder="165"
-                  className="flex-1 px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                  className="flex-1 px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
                 />
                 <select
                   value={bodyweightUnit}
                   onChange={(e) => setBodyweightUnit(e.target.value as 'lbs' | 'kg')}
-                  className="px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                  className="px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
                 >
                   <option value="lbs">lbs</option>
                   <option value="kg">kg</option>
@@ -409,8 +409,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Training Profile */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Training Profile</h2>
+        <div className="card-glass p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Training Profile</h2>
           
           <div className="space-y-4">
             <div>
@@ -420,7 +420,7 @@ export default function SettingsPage() {
               <select
                 value={trainingExperience}
                 onChange={(e) => setTrainingExperience(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
-                className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
               >
                 <option value="">Select experience level</option>
                 <option value="beginner">Beginner (less than 1 year)</option>
@@ -432,8 +432,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Privacy */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Privacy</h2>
+        <div className="card-glass p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Privacy</h2>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -443,15 +443,15 @@ export default function SettingsPage() {
                 await setAllowFriendsSeePRs(next)
                 setAllowFriendsSeePRsState(next)
               }}
-              className="rounded border-border bg-elevated text-foreground focus:ring-accent/50"
+              className="rounded border-white/[0.06] bg-white/[0.04] text-foreground focus:ring-accent/40"
             />
             <span className="text-foreground text-sm">Allow friends to see my recent PRs</span>
           </label>
         </div>
 
         {/* Plate Calculator */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Plate Calculator</h2>
+        <div className="card-glass p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Plate Calculator</h2>
           <p className="text-sm text-muted mb-4">
             Target weights and plate breakdowns will use only the plates you select. Choose which plates your gym has.
           </p>
@@ -467,7 +467,7 @@ export default function SettingsPage() {
                 step="1"
                 value={barWeight}
                 onChange={(e) => setBarWeight(e.target.value)}
-                className="w-24 px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                className="w-24 px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40"
               />
             </div>
             <div>
@@ -478,7 +478,7 @@ export default function SettingsPage() {
                 {STANDARD_PLATES.map((plate) => (
                   <label
                     key={plate}
-                    className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-[#1a1a1a] cursor-pointer hover:bg-elevated"
+                    className="flex items-center gap-2 px-3 py-2 rounded-md border border-white/[0.06] bg-white/[0.04] cursor-pointer hover:bg-white/[0.04]"
                   >
                     <input
                       type="checkbox"
@@ -501,8 +501,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Account Information */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Account</h2>
+        <div className="card-glass p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Account</h2>
           
           <div className="space-y-4">
             <div>
@@ -513,7 +513,7 @@ export default function SettingsPage() {
                 type="email"
                 value={email}
                 disabled
-                className="w-full px-3 py-2 border border-border bg-background text-muted rounded-md cursor-not-allowed"
+                className="w-full px-3 py-2 border border-white/[0.06] bg-background text-muted rounded-md cursor-not-allowed"
               />
             </div>
 
@@ -525,7 +525,7 @@ export default function SettingsPage() {
                 type="text"
                 value={username}
                 disabled
-                className="w-full px-3 py-2 border border-border bg-background text-muted rounded-md cursor-not-allowed"
+                className="w-full px-3 py-2 border border-white/[0.06] bg-background text-muted rounded-md cursor-not-allowed"
               />
             </div>
           </div>
@@ -536,14 +536,14 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 px-6 py-3 bg-white text-black rounded-md font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 btn-primary px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-6 py-3 bg-accent text-background rounded-lg font-medium hover:shadow-glow border border-transparent transition-all duration-200"
+            className="btn-primary px-6 py-3 hover:shadow-glow transition-all duration-200"
           >
             Cancel
           </button>

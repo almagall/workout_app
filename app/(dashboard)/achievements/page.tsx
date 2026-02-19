@@ -104,9 +104,9 @@ export default function AchievementsPage() {
 
       {/* Your Trophies Section */}
       <div className="mb-10">
-        <h2 className="text-xl font-bold text-foreground mb-4">Your Trophies</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Your Trophies</h2>
         {unlockedAchievements.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl shadow-card p-8 text-center">
+          <div className="card-glass p-8 text-center">
             <p className="text-muted">No achievements unlocked yet. Start working out to unlock your first!</p>
           </div>
         ) : (
@@ -124,7 +124,7 @@ export default function AchievementsPage() {
 
       {/* Locked Achievements Section */}
       <div>
-        <h2 className="text-xl font-bold text-foreground mb-4">Locked Achievements</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Locked Achievements</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {lockedAchievements.map((achievement) => (
             <AchievementCard
@@ -151,7 +151,7 @@ function AchievementCard({
       className={`rounded-lg border p-4 flex flex-col items-center text-center transition-all ${
         unlocked
           ? 'bg-amber-950/30 border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)] hover:scale-105 hover:border-amber-300'
-          : 'bg-card border-border opacity-70'
+          : 'bg-card border-white/[0.06] opacity-70'
       }`}
     >
       <div className="relative mb-2">
@@ -159,7 +159,7 @@ function AchievementCard({
           <TrophyIcon className="w-16 h-16" />
         ) : (
           <>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-elevated">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/[0.04]">
               <span className="text-3xl grayscale opacity-60" aria-hidden>
                 {achievement.icon}
               </span>

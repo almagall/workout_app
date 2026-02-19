@@ -83,7 +83,7 @@ export default function PRCelebration() {
   }
 
   return (
-    <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 shadow-card">
+    <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] backdrop-blur-sm p-4 shadow-[0_0_20px_rgba(245,158,11,0.06)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-amber-400 mb-1">

@@ -245,7 +245,7 @@ export default function FriendsPage() {
         <button
           type="button"
           onClick={openAddModal}
-          className="px-4 py-2 bg-white text-black font-medium rounded-md hover:bg-[#e5e5e5]"
+          className="btn-primary"
         >
           Add Friend
         </button>
@@ -256,15 +256,15 @@ export default function FriendsPage() {
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80" onClick={() => setShowAddModal(false)}>
           <div
-            className="bg-card border border-border rounded-xl shadow-card shadow-xl max-w-sm w-full"
+            className="modal-glass max-w-sm w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-border flex justify-between items-center">
+            <div className="p-4 border-b border-white/[0.06] flex justify-between items-center">
               <h3 className="text-lg font-semibold text-foreground">Add Friend</h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated"
+                className="p-1 rounded text-muted hover:text-foreground hover:bg-white/[0.04]"
                 aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -278,20 +278,20 @@ export default function FriendsPage() {
                 onChange={(e) => setAddUsername(e.target.value)}
                 placeholder="Username"
                 autoFocus
-                className="w-full px-3 py-2 border border-border bg-elevated text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 mb-3"
+                className="w-full px-3 py-2 border border-white/[0.06] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 mb-3"
               />
               {addError && <p className="mb-3 text-sm text-red-400">{addError}</p>}
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded border border-border text-foreground text-sm hover:bg-elevated"
+                  className="px-4 py-2 rounded border border-white/[0.06] text-foreground text-sm hover:bg-white/[0.04]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-white text-black font-medium rounded-md hover:bg-[#e5e5e5]"
+                  className="btn-primary"
                 >
                   Send Request
                 </button>
@@ -303,13 +303,13 @@ export default function FriendsPage() {
 
       {/* Pending requests */}
       {pending.length > 0 && (
-        <section className="bg-card rounded-lg border border-border p-4 mb-6">
+        <section className="card-glass p-4 mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-3">Pending requests</h2>
           <ul className="space-y-2">
             {pending.map((req) => (
               <li
                 key={req.id}
-                className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                className="flex items-center justify-between py-2 border-b border-white/[0.06] last:border-0"
               >
                 <span className="text-foreground font-medium">{req.from_username}</span>
                 <div className="flex gap-2">
@@ -317,7 +317,7 @@ export default function FriendsPage() {
                     type="button"
                     disabled={!!actingId}
                     onClick={() => handleAccept(req.id)}
-                    className="px-3 py-1 rounded bg-white text-black text-sm font-medium hover:bg-[#e5e5e5] disabled:opacity-50"
+                    className="btn-primary text-sm px-3 py-1 rounded disabled:opacity-50"
                   >
                     Accept
                   </button>
@@ -325,7 +325,7 @@ export default function FriendsPage() {
                     type="button"
                     disabled={!!actingId}
                     onClick={() => handleDecline(req.id)}
-                    className="px-3 py-1 rounded border border-border text-foreground text-sm hover:bg-elevated disabled:opacity-50"
+                    className="px-3 py-1 rounded border border-white/[0.06] text-foreground text-sm hover:bg-white/[0.04] disabled:opacity-50"
                   >
                     Decline
                   </button>
@@ -337,7 +337,7 @@ export default function FriendsPage() {
       )}
 
       {/* Friends list */}
-      <section className="bg-card rounded-lg border border-border p-4 mb-6">
+      <section className="card-glass p-4 mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-3">Your friends</h2>
         {friends.length === 0 ? (
           <p className="text-muted text-sm">No friends yet. Send a request by username above.</p>
@@ -346,7 +346,7 @@ export default function FriendsPage() {
             {friends.map((f) => (
               <li
                 key={f.user_id}
-                className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                className="flex items-center justify-between py-2 border-b border-white/[0.06] last:border-0"
               >
                 <span className="text-foreground font-medium">{f.username}</span>
                 <div className="flex gap-2">
@@ -395,15 +395,15 @@ export default function FriendsPage() {
       {viewingFriend && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80" onClick={() => setViewingFriend(null)}>
           <div
-            className="bg-card border border-border rounded-xl shadow-card shadow-xl max-w-md w-full max-h-[80vh] overflow-hidden"
+            className="modal-glass max-w-md w-full max-h-[80vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-border flex justify-between items-center">
+            <div className="p-4 border-b border-white/[0.06] flex justify-between items-center">
               <h3 className="text-lg font-semibold text-foreground">{viewingFriend.username}&apos;s recent PRs</h3>
               <button
                 type="button"
                 onClick={() => setViewingFriend(null)}
-                className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated"
+                className="p-1 rounded text-muted hover:text-foreground hover:bg-white/[0.04]"
                 aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -429,7 +429,7 @@ export default function FriendsPage() {
                     return (
                       <div
                         key={`${pr.exerciseName}-${pr.workoutDate}-${pr.prType}-${i}`}
-                        className="border-b border-border last:border-0 pb-3"
+                        className="border-b border-white/[0.06] last:border-0 pb-3"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex-1 min-w-0">
@@ -450,7 +450,7 @@ export default function FriendsPage() {
                               type="button"
                               onClick={() => toggleComments(pr)}
                               className={`p-1.5 rounded-full transition-colors ${
-                                isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-muted hover:text-blue-400 hover:bg-elevated'
+                                isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-muted hover:text-blue-400 hover:bg-white/[0.04]'
                               }`}
                               title="Comments"
                             >
@@ -472,7 +472,7 @@ export default function FriendsPage() {
                                   type="button"
                                   disabled={isSending}
                                   onClick={() => setShowReactionPicker(isPickerOpen ? null : key)}
-                                  className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-elevated transition-colors disabled:opacity-60"
+                                  className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-white/[0.04] transition-colors disabled:opacity-60"
                                   title="React"
                                 >
                                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -480,13 +480,13 @@ export default function FriendsPage() {
                                   </svg>
                                 </button>
                                 {isPickerOpen && (
-                                  <div className="absolute right-0 top-full mt-1 flex gap-1 bg-elevated rounded-full p-1 shadow-lg z-10">
+                                  <div className="absolute right-0 top-full mt-1 flex gap-1 bg-white/[0.04] rounded-full p-1 shadow-lg z-10">
                                     {(['kudos', 'strong', 'fire'] as ReactionType[]).map((type) => (
                                       <button
                                         key={type}
                                         type="button"
                                         onClick={() => handleSendReaction(pr, type)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#3a3a3a] text-lg transition-colors"
+                                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/[0.08] text-lg transition-colors"
                                         title={type}
                                       >
                                         {getReactionEmoji(type)}
@@ -500,7 +500,7 @@ export default function FriendsPage() {
                         </div>
                         {/* Comments section */}
                         {isCommentsOpen && (
-                          <div className="mt-2 pl-2 border-l-2 border-border">
+                          <div className="mt-2 pl-2 border-l-2 border-white/[0.06]">
                             {isLoadingComments && (
                               <p className="text-xs text-muted">Loading comments...</p>
                             )}
@@ -525,7 +525,7 @@ export default function FriendsPage() {
                                 onKeyDown={(e) => e.key === 'Enter' && handlePostComment(pr)}
                                 placeholder="Add a comment..."
                                 maxLength={200}
-                                className="flex-1 text-sm px-2 py-1 rounded bg-elevated border border-border text-foreground placeholder-muted focus:outline-none focus:border-blue-500"
+                                className="flex-1 text-sm px-2 py-1 rounded bg-white/[0.04] border border-white/[0.06] text-foreground placeholder-muted focus:outline-none focus:border-blue-500"
                               />
                               <button
                                 type="button"

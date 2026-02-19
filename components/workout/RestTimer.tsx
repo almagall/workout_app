@@ -97,7 +97,7 @@ export default function RestTimer({
 
   return (
     <div
-      className={`bg-elevated border border-border rounded-xl shadow-card p-4 transition-all ${
+      className={`bg-white/[0.04] border border-white/[0.06] rounded-xl shadow-card p-4 transition-all ${
         isComplete
           ? 'border-green-500 shadow-lg shadow-green-500/20 animate-pulse'
           : 'border-border'
@@ -108,7 +108,7 @@ export default function RestTimer({
         <h3 className="text-sm font-medium text-muted uppercase tracking-wide">Rest Timer</h3>
         <button
           onClick={onDismiss}
-          className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded text-muted hover:text-foreground hover:bg-elevated transition-colors"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors"
           aria-label="Dismiss timer"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,7 +148,7 @@ export default function RestTimer({
           <div className="absolute inset-0 flex items-center justify-center">
             <span
               className={`text-3xl font-bold ${
-                isComplete ? 'text-green-400' : secondsRemaining <= 10 ? 'text-amber-400' : 'text-white'
+                isComplete ? 'text-green-400' : secondsRemaining <= 10 ? 'text-amber-400' : 'text-foreground'
               }`}
             >
               {formatTime(secondsRemaining)}
@@ -189,7 +189,7 @@ export default function RestTimer({
         )}
         <button
           onClick={handleReset}
-          className="px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow transition-colors font-medium text-sm flex items-center gap-1.5"
+          className="px-4 py-2 btn-primary text-sm flex items-center gap-1.5"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -207,7 +207,7 @@ export default function RestTimer({
             className={`min-h-[44px] px-4 py-2.5 rounded text-xs sm:text-sm font-medium transition-colors ${
               totalSeconds === preset.seconds && !isComplete
                 ? 'bg-amber-500 text-black'
-                : 'bg-elevated text-muted hover:bg-elevated hover:text-foreground'
+                : 'bg-white/[0.04] text-muted hover:bg-white/[0.04] hover:text-foreground'
             }`}
           >
             {preset.label}

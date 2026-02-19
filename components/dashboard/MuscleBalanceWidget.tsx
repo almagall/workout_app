@@ -31,18 +31,18 @@ export default function MuscleBalanceWidget() {
   const neglectedMuscles = ALL_MUSCLE_GROUPS.filter((g) => (muscleVolume[g] ?? 0) === 0)
 
   return (
-    <div className="bg-card rounded-lg border border-border overflow-hidden">
-      <div className="p-4 border-b border-border">
-        <h2 className="text-lg font-semibold text-white mb-3">Muscle Balance</h2>
+    <div className="card-glass overflow-hidden">
+      <div className="p-4 sm:p-6 border-b border-white/[0.06] bg-white/[0.015]">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Muscle Balance</h2>
         <div className="flex gap-2">
           {TIME_RANGES.map(({ days, label }) => (
             <button
               key={days}
               onClick={() => setSelectedDays(days)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                 selectedDays === days
-                  ? 'bg-white text-black'
-                  : 'bg-border text-muted hover:text-foreground hover:bg-elevated'
+                  ? 'btn-primary'
+                  : 'bg-white/[0.04] text-muted hover:text-foreground hover:bg-white/[0.08]'
               }`}
             >
               {label}
@@ -50,7 +50,7 @@ export default function MuscleBalanceWidget() {
           ))}
         </div>
       </div>
-      <div className="p-4">
+      <div className="p-4 sm:p-6">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-muted">Loading...</div>
         ) : !hasData ? (
@@ -62,7 +62,7 @@ export default function MuscleBalanceWidget() {
           <div className="flex flex-col gap-4">
             <MuscleBalanceDiagram muscleVolume={muscleVolume} />
             {neglectedMuscles.length > 0 && (
-              <div className="pt-2 border-t border-border">
+              <div className="pt-2 border-t border-white/[0.06]">
                 <p className="text-xs text-muted mb-1.5">Not worked this period</p>
                 <p className="text-sm text-secondary">{neglectedMuscles.join(', ')}</p>
               </div>

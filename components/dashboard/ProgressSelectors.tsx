@@ -110,11 +110,11 @@ export default function ProgressSelectors({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTemplateDayId])
 
-  const cardClass = embedded ? '' : 'bg-card rounded-lg border border-border p-4 sm:p-6'
+  const cardClass = embedded ? '' : 'card-glass p-4 sm:p-6'
 
   if (loadingDays) {
     return (
-      <div className={embedded ? '' : 'bg-card rounded-lg border border-border p-6'}>
+      <div className={embedded ? '' : 'card-glass p-6'}>
         <div className="text-muted">Loading...</div>
       </div>
     )
@@ -122,7 +122,7 @@ export default function ProgressSelectors({
 
   if (dayOptions.length === 0) {
     return (
-      <div className={embedded ? '' : 'bg-card rounded-lg border border-border p-6'}>
+      <div className={embedded ? '' : 'card-glass p-6'}>
         <p className="text-secondary">
           Create a template and log workouts to see progress.
         </p>
@@ -138,9 +138,9 @@ export default function ProgressSelectors({
     ? 'text-xs font-medium text-foreground whitespace-nowrap'
     : 'text-xs sm:text-sm font-medium text-foreground whitespace-nowrap'
   const selectClass = compact
-    ? 'w-full flex-1 min-w-0 px-2 sm:px-3 py-1.5 text-sm rounded-md border border-border bg-elevated text-foreground shadow-sm focus:border-foreground focus:ring-2 focus:ring-foreground focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-    : 'w-full max-w-md px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-md border border-border bg-elevated text-foreground shadow-sm focus:border-foreground focus:ring-2 focus:ring-foreground focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-  const optionClass = 'bg-elevated'
+    ? 'w-full flex-1 min-w-0 px-2 sm:px-3 py-1.5 text-sm rounded-md border border-white/[0.06] bg-white/[0.04] text-foreground shadow-sm focus:border-foreground focus:ring-2 focus:ring-foreground focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+    : 'w-full max-w-md px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-md border border-white/[0.06] bg-white/[0.04] text-foreground shadow-sm focus:border-foreground focus:ring-2 focus:ring-foreground focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  const optionClass = 'bg-white/[0.04]'
 
   return (
     <div className={cardClass || undefined}>

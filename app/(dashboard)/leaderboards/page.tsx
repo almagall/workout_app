@@ -29,8 +29,8 @@ function LeaderboardTable({
   const activeEntries = entries.filter((e) => e.count > 0)
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">
-      <div className="p-4 border-b border-border">
+    <div className="card-glass overflow-hidden">
+      <div className="p-4 border-b border-white/[0.06]">
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
       </div>
       <div className="p-4">

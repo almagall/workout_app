@@ -114,22 +114,22 @@ export default function NotificationBell() {
             }
           }
         }}
-        className="relative min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-md text-muted hover:text-foreground hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-accent/50"
+        className="relative min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-md text-muted hover:text-foreground hover:bg-white/[0.04] focus:outline-none focus:ring-2 focus:ring-accent/50"
         aria-label="Notifications"
       >
         <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-bold text-black">
+          <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="fixed right-4 top-[4.5rem] z-50 w-[min(20rem,calc(100vw-2rem))] max-h-[min(24rem,70vh)] overflow-auto rounded-xl border border-border bg-elevated shadow-card lg:absolute lg:right-0 lg:top-auto lg:mt-1 lg:w-80">
-          <div className="p-2 border-b border-border flex justify-between items-center gap-2">
+        <div className="fixed right-4 top-[4.5rem] z-50 w-[min(20rem,calc(100vw-2rem))] max-h-[min(24rem,70vh)] overflow-auto modal-glass lg:absolute lg:right-0 lg:top-auto lg:mt-1 lg:w-80">
+          <div className="p-2 border-b border-white/[0.06] flex justify-between items-center gap-2">
             <span className="font-semibold text-foreground text-sm">Notifications</span>
             <div className="flex items-center gap-1">
               <button
@@ -140,14 +140,14 @@ export default function NotificationBell() {
                   setUnreadCount(0)
                   refresh()
                 }}
-                className="min-h-[44px] px-3 py-2 text-xs text-muted hover:text-foreground whitespace-nowrap rounded-md hover:bg-elevated"
+                className="min-h-[44px] px-3 py-2 text-xs text-muted hover:text-foreground whitespace-nowrap rounded-md hover:bg-white/[0.04]"
               >
                 Clear all
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-md text-muted hover:text-foreground hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-white"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-md text-muted hover:text-foreground hover:bg-white/[0.04] focus:outline-none focus:ring-2 focus:ring-accent/40"
                 aria-label="Close notifications"
               >
                 <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -177,7 +177,7 @@ export default function NotificationBell() {
                           type="button"
                           disabled={loading && actingId === n.reference_id}
                           onClick={() => handleAccept(n.reference_id)}
-                          className="min-h-[44px] px-4 py-2.5 rounded bg-white text-black text-xs font-medium hover:bg-[#e5e5e5] disabled:opacity-50"
+                          className="min-h-[44px] px-4 py-2.5 rounded btn-primary text-xs disabled:opacity-50"
                         >
                           Accept
                         </button>
@@ -185,7 +185,7 @@ export default function NotificationBell() {
                           type="button"
                           disabled={loading && actingId === n.reference_id}
                           onClick={() => handleDecline(n.reference_id, n.id)}
-                          className="min-h-[44px] px-4 py-2.5 rounded border border-border text-foreground text-xs hover:bg-elevated disabled:opacity-50"
+                          className="min-h-[44px] px-4 py-2.5 rounded border border-white/[0.06] text-foreground text-xs hover:bg-white/[0.04] disabled:opacity-50"
                         >
                           Decline
                         </button>

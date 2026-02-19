@@ -37,12 +37,12 @@ const MUSCLE_GROUP_STYLES_SECONDARY: Record<string, string> = {
 }
 
 function getEquipmentStyle(equipment: string): string {
-  return EQUIPMENT_STYLES[equipment] ?? 'bg-elevated text-muted border border-border'
+  return EQUIPMENT_STYLES[equipment] ?? 'bg-white/[0.04] text-muted border border-white/[0.06]'
 }
 
 function getMuscleGroupStyle(muscleGroup: string, isSecondary?: boolean): string {
   const styles = isSecondary ? MUSCLE_GROUP_STYLES_SECONDARY : MUSCLE_GROUP_STYLES
-  return styles[muscleGroup] ?? 'bg-elevated text-muted border border-border'
+  return styles[muscleGroup] ?? 'bg-white/[0.04] text-muted border border-white/[0.06]'
 }
 
 interface ExerciseDetailModalProps {
@@ -61,7 +61,7 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
       onClick={onClose}
     >
       <div
-        className="bg-elevated border border-border rounded-2xl shadow-card max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        className="modal-glass max-w-lg w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
@@ -69,7 +69,7 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
             <h2 className="text-xl font-semibold text-foreground">{exercise.name}</h2>
             <button
               onClick={onClose}
-              className="shrink-0 p-1 rounded text-muted hover:text-foreground hover:bg-elevated transition-colors"
+              className="shrink-0 p-1 rounded text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors"
               aria-label="Close"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,7 +117,7 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
               return acc
             }, {})
             return (
-              <div className="pt-4 border-t border-border mb-4">
+              <div className="pt-4 border-t border-white/[0.06] mb-4">
                 <h3 className="text-sm font-medium text-foreground mb-2">Alternatives</h3>
                 <p className="text-xs text-[#888888] mb-3 flex items-center gap-1">
                   Equipment taken? Swap to the same movement with different equipment.
@@ -200,7 +200,7 @@ export function ExerciseDetailModal({ exercise, onClose, onSelectAlternative }: 
             )
           })()}
 
-          <div className="pt-4 border-t border-border">
+          <div className="pt-4 border-t border-white/[0.06]">
             <h3 className="text-sm font-medium text-foreground mb-3">Muscles worked</h3>
             <MuscleDiagram primaryMuscleGroup={exercise.muscleGroup} secondaryMuscleGroups={exercise.secondaryMuscleGroups} />
           </div>

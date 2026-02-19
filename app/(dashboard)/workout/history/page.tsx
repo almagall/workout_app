@@ -95,14 +95,14 @@ export default function WorkoutHistoryPage() {
         <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Workout History</h1>
         <Link
           href="/workout/log"
-          className="px-4 py-2 bg-accent text-background rounded-lg hover:shadow-glow transition-all duration-200 font-medium"
+          className="btn-primary"
         >
           Log New Workout
         </Link>
       </div>
 
       {sessions.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
+        <div className="card-glass p-6">
           <p className="text-secondary text-center">
             No workouts logged yet. Start logging workouts to see your history!
           </p>
@@ -122,7 +122,7 @@ export default function WorkoutHistoryPage() {
               })
 
               return (
-                <div key={date} className="bg-card rounded-xl border border-border shadow-card p-6">
+                <div key={date} className="card-glass p-6">
                   <h2 className="text-xl font-semibold text-foreground mb-4">{formattedDate}</h2>
                   <div className="space-y-3">
                     {dateSessions.map((session) => {
@@ -132,7 +132,7 @@ export default function WorkoutHistoryPage() {
                       return (
                         <div
                           key={session.id}
-                          className="bg-elevated rounded-xl p-4 hover:bg-elevated transition-all duration-200 border border-border"
+                          className="bg-white/[0.025] rounded-xl p-4 hover:bg-white/[0.04] transition-all duration-200 border border-white/[0.05] shadow-[0_1px_2px_rgba(0,0,0,0.1)]"
                         >
                           <div className="flex justify-between items-center">
                             <Link
@@ -156,7 +156,7 @@ export default function WorkoutHistoryPage() {
                               )}
                               <Link
                                 href={`/share/workout/${session.id}`}
-                                className="p-2 text-muted hover:text-amber-400 hover:bg-elevated rounded-md transition-colors"
+                                className="p-2 text-muted hover:text-amber-400 hover:bg-white/[0.04] rounded-md transition-colors"
                                 title="Share"
                               >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +165,7 @@ export default function WorkoutHistoryPage() {
                               </Link>
                               <Link
                                 href={`/workout/edit/${session.id}`}
-                                className="px-3 py-1.5 bg-accent text-background rounded-lg hover:shadow-glow border border-transparent transition-all duration-200 text-sm font-medium"
+                                className="btn-primary text-sm"
                               >
                                 Edit
                               </Link>

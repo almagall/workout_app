@@ -216,9 +216,9 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
   if (!user) return null
 
   return (
-    <div className="bg-card rounded-lg border border-border overflow-hidden">
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">Friend Activity</h2>
+    <div className="card-glass overflow-hidden">
+      <div className="p-4 border-b border-white/[0.06] bg-white/[0.015] flex items-center justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Friend Activity</h2>
         {showViewAllLink && (
           <Link href="/friends" className="text-sm text-amber-400 hover:text-amber-300">
             View all
@@ -250,7 +250,7 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                 return (
                   <div
                     key={`${item.user_id}-achievement-${item.achievement_id}-${item.unlocked_at}-${i}`}
-                    className="flex items-start gap-3 py-2 border-b border-border last:border-0"
+                    className="flex items-start gap-3 py-2 border-b border-white/[0.06] last:border-0"
                   >
                     <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-sm font-medium shrink-0">
                       {item.username.charAt(0).toUpperCase()}
@@ -270,7 +270,7 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                 return (
                   <div
                     key={`${item.user_id}-workout-${item.workoutDate}-${item.templateDayId}-${i}`}
-                    className="flex items-start gap-3 py-2 border-b border-border last:border-0"
+                    className="flex items-start gap-3 py-2 border-b border-white/[0.06] last:border-0"
                   >
                     <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-sm font-medium shrink-0">
                       {item.username.charAt(0).toUpperCase()}
@@ -309,7 +309,7 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
               return (
                 <div
                   key={`${pr.user_id}-${pr.exerciseName}-${pr.workoutDate}-${pr.prType}-${i}`}
-                  className="py-2 border-b border-border last:border-0"
+                  className="py-2 border-b border-white/[0.06] last:border-0"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-sm font-medium shrink-0">
@@ -335,7 +335,7 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                         type="button"
                         onClick={() => toggleComments(pr)}
                         className={`p-1.5 rounded-full transition-colors ${
-                          isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-muted hover:text-blue-400 hover:bg-elevated'
+                          isCommentsOpen ? 'text-blue-400 bg-blue-500/20' : 'text-muted hover:text-blue-400 hover:bg-white/[0.04]'
                         }`}
                         title="Comment"
                       >
@@ -356,7 +356,7 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                             type="button"
                             disabled={isSending}
                             onClick={() => setShowReactionPicker(isPickerOpen ? null : key)}
-                            className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-elevated transition-colors disabled:opacity-60"
+                            className="p-1.5 rounded-full text-muted hover:text-amber-400 hover:bg-white/[0.04] transition-colors disabled:opacity-60"
                             title="React"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -364,7 +364,7 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                             </svg>
                           </button>
                           {isPickerOpen && (
-                            <div className="absolute right-0 top-full mt-1 flex gap-1 bg-elevated rounded-full p-1 shadow-lg z-10">
+                            <div className="absolute right-0 top-full mt-1 flex gap-1 bg-white/[0.04] rounded-full p-1 shadow-lg z-10">
                               {(['kudos', 'strong', 'fire'] as ReactionType[]).map((type) => (
                                 <button
                                   key={type}
@@ -383,7 +383,7 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                     </div>
                   </div>
                   {isCommentsOpen && (
-                    <div className="mt-2 ml-11 pl-2 border-l-2 border-border">
+                    <div className="mt-2 ml-11 pl-2 border-l-2 border-white/[0.06]">
                       {isLoadingComments && (
                         <p className="text-xs text-muted">Loading comments...</p>
                       )}
@@ -408,7 +408,7 @@ export function FriendActivityFeed({ maxItems = 5, showViewAllLink = true, scrol
                           onKeyDown={(e) => e.key === 'Enter' && handlePostComment(pr)}
                           placeholder="Add a comment..."
                           maxLength={200}
-                          className="flex-1 text-xs px-2 py-1.5 rounded bg-elevated border border-[#3a3a3a] text-foreground placeholder-[#888888] focus:outline-none focus:border-blue-500"
+                          className="flex-1 text-xs px-2 py-1.5 rounded bg-white/[0.04] border border-[#3a3a3a] text-foreground placeholder-[#888888] focus:outline-none focus:border-blue-500"
                         />
                         <button
                           type="button"

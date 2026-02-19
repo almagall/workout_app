@@ -43,12 +43,12 @@ const MUSCLE_GROUP_STYLES_SECONDARY: Record<string, string> = {
 }
 
 function getEquipmentStyle(equipment: string): string {
-  return EQUIPMENT_STYLES[equipment] ?? 'bg-elevated text-muted border border-border'
+  return EQUIPMENT_STYLES[equipment] ?? 'bg-white/[0.04] text-muted border border-white/[0.06]'
 }
 
 function getMuscleGroupStyle(muscleGroup: string, isSecondary?: boolean): string {
   const styles = isSecondary ? MUSCLE_GROUP_STYLES_SECONDARY : MUSCLE_GROUP_STYLES
-  return styles[muscleGroup] ?? 'bg-elevated text-muted border border-border'
+  return styles[muscleGroup] ?? 'bg-white/[0.04] text-muted border border-white/[0.06]'
 }
 
 function groupByMuscleGroup(exercises: ExerciseEntry[]): Record<string, ExerciseEntry[]> {
@@ -85,7 +85,7 @@ function ExerciseCard({ exercise, onClick }: { exercise: ExerciseEntry; onClick?
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick?.()}
-      className="bg-card rounded-xl p-4 hover:bg-elevated transition-all duration-200 border border-border shadow-card cursor-pointer"
+      className="card-glass p-4 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer"
     >
       <h3 className="text-lg font-semibold text-foreground mb-2">{exercise.name}</h3>
       <p className="text-sm text-muted mb-3">
@@ -157,7 +157,7 @@ export default function ExerciseDatabasePage() {
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'muscleGroup'
                 ? 'bg-white text-black'
-                : 'text-muted hover:text-foreground hover:bg-elevated'
+                : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
             }`}
           >
             By Muscle Group
@@ -167,7 +167,7 @@ export default function ExerciseDatabasePage() {
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'equipment'
                 ? 'bg-white text-black'
-                : 'text-muted hover:text-foreground hover:bg-elevated'
+                : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
             }`}
           >
             By Equipment
@@ -183,7 +183,7 @@ export default function ExerciseDatabasePage() {
 
               return (
                 <section key={group}>
-                  <h2 className="text-xl font-semibold text-foreground mb-4">{group}</h2>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">{group}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {exercises.map((exercise) => (
                       <ExerciseCard key={exercise.id} exercise={exercise} onClick={() => setSelectedExercise(exercise)} />
@@ -198,7 +198,7 @@ export default function ExerciseDatabasePage() {
 
               return (
                 <section key={group}>
-                  <h2 className="text-xl font-semibold text-foreground mb-4">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">
                     <span className={`inline-block text-sm font-medium px-3 py-1 rounded border ${getEquipmentStyle(group)}`}>
                       {group}
                     </span>

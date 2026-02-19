@@ -95,27 +95,27 @@ export async function calculateProgressionVelocity(
 
   if (percentChange > 8) {
     trend = 'accelerating'
-    icon = '🚀'
+    icon = '▲▲'
     color = '#22c55e'
     message = 'Accelerating progress! Keep it up.'
   } else if (percentChange >= 2) {
     trend = 'progressing'
-    icon = '↗️'
+    icon = '▲'
     color = '#10b981'
     message = 'Steady progress.'
   } else if (percentChange >= -2) {
     trend = 'maintaining'
-    icon = '→'
+    icon = '—'
     color = '#888888'
     message = 'Maintaining strength.'
   } else if (percentChange >= -5) {
     trend = 'plateaued'
-    icon = '⚠️'
+    icon = '▼'
     color = '#eab308'
     message = 'Plateaued. Consider adding volume or changing rep scheme.'
   } else {
     trend = 'regressing'
-    icon = '↘️'
+    icon = '▼▼'
     color = '#ef4444'
     message = 'Regressing. Check recovery and nutrition.'
   }

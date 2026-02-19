@@ -87,7 +87,7 @@ export default function WeeklySummaryCard() {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-xl border border-border p-4 sm:p-5 shadow-card animate-pulse">
+      <div className="card-glass p-4 sm:p-5 animate-pulse">
         <div className="h-4 w-40 bg-elevated rounded mb-3" />
         <div className="h-3 w-56 bg-elevated rounded" />
       </div>
@@ -103,7 +103,7 @@ export default function WeeklySummaryCard() {
   const allDone = data.workoutsDone >= data.workoutsGoal
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4 sm:p-5 shadow-card">
+    <div className="card-glass p-4 sm:p-6 border-l-2 border-l-accent/30">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
           <p className="text-xs font-medium text-muted uppercase tracking-wide mb-1">This Week</p>
@@ -131,9 +131,9 @@ export default function WeeklySummaryCard() {
       </div>
 
       {/* Progress bar */}
-      <div className="w-full bg-border rounded-full h-2 mb-2">
+      <div className="w-full bg-white/[0.06] rounded-full h-2 mb-2">
         <div
-          className={`h-2 rounded-full transition-all duration-500 ${allDone ? 'bg-green-500' : 'bg-white'}`}
+          className={`h-2 rounded-full transition-all duration-500 ${allDone ? 'bg-green-500' : 'bg-gradient-accent'}`}
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -146,7 +146,7 @@ export default function WeeklySummaryCard() {
 
       {/* Up Next */}
       {nextWorkout && (
-        <div className="mt-3 pt-3 border-t border-border">
+        <div className="mt-3 pt-3 border-t border-white/[0.06]">
           <div className="flex items-baseline justify-between gap-2 mb-0.5">
             <p className="text-xs font-medium text-muted uppercase tracking-wide">Up Next</p>
             {nextWorkout.daysSinceLastTrained !== null && (
@@ -159,7 +159,7 @@ export default function WeeklySummaryCard() {
               </p>
             )}
           </div>
-          <p className="text-foreground font-semibold text-sm sm:text-base">{nextWorkout.dayLabel}</p>
+          <p className="text-accent-light font-semibold text-sm sm:text-base">{nextWorkout.dayLabel}</p>
           {nextWorkout.keyLifts.length > 0 && nextWorkout.keyLifts[0].weight > 0 && (
             <div className="mt-1.5">
               <p className="text-[11px] text-muted uppercase tracking-wide mb-1">Last session top sets</p>
