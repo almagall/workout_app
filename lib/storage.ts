@@ -413,8 +413,11 @@ export async function saveWorkoutSession(session: {
   overallFeedback?: string
   isComplete?: boolean
   durationSeconds?: number
+  sessionNotes?: string
+  noteTags?: string[]
   exercises: Array<{
     exerciseName: string
+    exerciseNotes?: string
     sets: Array<{
       setNumber: number
       setType?: 'warmup' | 'working' | 'cooldown'
@@ -445,6 +448,8 @@ export async function saveWorkoutSession(session: {
       overall_feedback: session.overallFeedback || null,
       is_complete: session.isComplete ?? true,
       ...(session.durationSeconds != null && { duration_seconds: session.durationSeconds }),
+      ...(session.sessionNotes && { session_notes: session.sessionNotes }),
+      ...(session.noteTags?.length && { note_tags: session.noteTags }),
     })
     .select()
     .single()
@@ -469,6 +474,7 @@ export async function saveWorkoutSession(session: {
       target_rpe: set.targetRpe ?? null,
       performance_status: (set.performanceStatus as any) || null,
       exercise_feedback: set.exerciseFeedback || null,
+      exercise_notes: exercise.exerciseNotes || null,
     }))
   )
 
@@ -509,6 +515,8 @@ export async function getWorkoutSessions(): Promise<WorkoutSession[]> {
     is_complete: s.is_complete ?? true,
     created_at: s.created_at,
     duration_seconds: s.duration_seconds ?? null,
+    session_notes: s.session_notes ?? null,
+    note_tags: s.note_tags ?? null,
   }))
 }
 
@@ -697,6 +705,8 @@ export async function getWorkoutSessionByDate(templateDayId: string, date: strin
     overall_feedback: data.overall_feedback,
     is_complete: data.is_complete ?? true,
     created_at: data.created_at,
+    session_notes: data.session_notes ?? null,
+    note_tags: data.note_tags ?? null,
   }
 }
 
@@ -727,6 +737,7 @@ export async function getExerciseLogsForSession(sessionId: string): Promise<Exer
     target_rpe: log.target_rpe,
     performance_status: log.performance_status,
     exercise_feedback: log.exercise_feedback,
+    exercise_notes: log.exercise_notes ?? null,
     created_at: log.created_at,
   }))
 }
@@ -740,8 +751,11 @@ export async function updateWorkoutSession(
     overallFeedback?: string
     isComplete?: boolean
     durationSeconds?: number
+    sessionNotes?: string
+    noteTags?: string[]
     exercises: Array<{
       exerciseName: string
+      exerciseNotes?: string
       sets: Array<{
         setNumber: number
         setType?: 'warmup' | 'working' | 'cooldown'
@@ -768,6 +782,8 @@ export async function updateWorkoutSession(
     workout_date: session.workoutDate,
     overall_performance_rating: session.overallRating || null,
     overall_feedback: session.overallFeedback || null,
+    session_notes: session.sessionNotes || null,
+    note_tags: session.noteTags?.length ? session.noteTags : null,
   }
   
   if (session.isComplete !== undefined) {
@@ -808,6 +824,7 @@ export async function updateWorkoutSession(
       target_rpe: set.targetRpe ?? null,
       performance_status: (set.performanceStatus as any) || null,
       exercise_feedback: set.exerciseFeedback || null,
+      exercise_notes: exercise.exerciseNotes || null,
     }))
   )
 

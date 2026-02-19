@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getWorkoutSessions, getTemplateDay, getTemplates, deleteWorkoutSession } from '@/lib/storage'
+import { exportWorkoutHistoryCSV } from '@/lib/export'
 import type { WorkoutSession } from '@/types/workout'
 
 export default function WorkoutHistoryPage() {
@@ -12,6 +13,7 @@ export default function WorkoutHistoryPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [templateDays, setTemplateDays] = useState<Map<string, any>>(new Map())
   const [templates, setTemplates] = useState<any[]>([])
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     async function loadSessions() {
@@ -93,12 +95,24 @@ export default function WorkoutHistoryPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Workout History</h1>
-        <Link
-          href="/workout/log"
-          className="btn-primary"
-        >
-          Log New Workout
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              setExporting(true)
+              try { await exportWorkoutHistoryCSV() } finally { setExporting(false) }
+            }}
+            disabled={exporting || sessions.length === 0}
+            className="px-3 py-1.5 text-sm rounded-md border border-white/[0.08] text-foreground/80 hover:bg-white/[0.04] disabled:opacity-50 transition-colors font-medium"
+          >
+            {exporting ? 'Exporting...' : 'Export CSV'}
+          </button>
+          <Link
+            href="/workout/log"
+            className="btn-primary"
+          >
+            Log New Workout
+          </Link>
+        </div>
       </div>
 
       {sessions.length === 0 ? (
@@ -147,6 +161,18 @@ export default function WorkoutHistoryPage() {
                                 </h3>
                                 {template && (
                                   <p className="text-sm text-muted">{template.name}</p>
+                                )}
+                                {session.note_tags && session.note_tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    {session.note_tags.map(tag => (
+                                      <span key={tag} className="px-2 py-0.5 text-[10px] rounded-full bg-accent/15 text-accent-light border border-accent/20">
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                {session.session_notes && (
+                                  <p className="text-xs text-muted mt-1 line-clamp-1">{session.session_notes}</p>
                                 )}
                               </div>
                             </Link>

@@ -1,4 +1,5 @@
 import type { PlanType, ExerciseLog, PerformanceStatus } from '@/types/workout'
+import { estimated1RM } from '@/lib/estimated-1rm'
 
 export interface TargetCalculation {
   targetWeight: number | null
@@ -275,6 +276,20 @@ export function evaluateSetPerformance(
   // If RPE is way too high, definitely underperformed (fatigue indicator)
   if (rpeTooHigh) {
     return 'underperformed'
+  }
+
+  // e1RM scaling: when the lifter went heavier than target but did fewer reps,
+  // compare estimated 1RMs to determine true performance
+  if (actualWeight > targetWeight && !repsMet) {
+    const actualE1RM = estimated1RM(actualWeight, actualReps)
+    const targetE1RM = estimated1RM(targetWeight, targetReps)
+
+    if (actualE1RM >= targetE1RM * 1.05) {
+      return 'overperformed'
+    }
+    if (actualE1RM >= targetE1RM * 0.95) {
+      return 'met_target'
+    }
   }
 
   return 'underperformed'

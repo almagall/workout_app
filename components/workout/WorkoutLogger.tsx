@@ -32,6 +32,12 @@ import { ExerciseDetailModal } from '@/components/exercises/ExerciseDetailModal'
 import RestTimer from '@/components/workout/RestTimer'
 import type { PlanType, SetData, ExerciseData, PerformanceStatus, SetType } from '@/types/workout'
 
+const NOTE_TAGS = [
+  'Low Energy', 'Great Pump', 'Post-Travel', 'Deload Feel',
+  'PR Day', 'Short on Time', 'New Exercise', 'Injury Caution',
+  'Fasted', 'Sleep Deprived', 'Peak Performance',
+]
+
 interface WorkoutLoggerProps {
   dayId: string
   dayLabel: string
@@ -68,6 +74,10 @@ export default function WorkoutLogger({
   const [error, setError] = useState<string | null>(null)
   const [workoutComplete, setWorkoutComplete] = useState(false)
   const [completedSessionId, setCompletedSessionId] = useState<string | null>(null)
+  const [sessionNotes, setSessionNotes] = useState('')
+  const [noteTags, setNoteTags] = useState<string[]>([])
+  const [exerciseNotes, setExerciseNotes] = useState<Map<number, string>>(new Map())
+  const [showExerciseNotes, setShowExerciseNotes] = useState<Set<number>>(new Set())
   const [overallFeedback, setOverallFeedback] = useState<string | null>(null)
   const [overallRating, setOverallRating] = useState<number | null>(null)
   const [workoutCompletePRs, setWorkoutCompletePRs] = useState<SessionPR[] | null>(null)
@@ -2011,10 +2021,12 @@ export default function WorkoutLogger({
           templateDayId: dayId,
           workoutDate,
           ...(baselineDurationSeconds != null && { durationSeconds: baselineDurationSeconds }),
-          exercises: exerciseData.map((exercise) => ({
+          sessionNotes: sessionNotes || undefined,
+          noteTags: noteTags.length > 0 ? noteTags : undefined,
+          exercises: exerciseData.map((exercise, idx) => ({
             exerciseName: exercise.exerciseName,
+            exerciseNotes: exerciseNotes.get(idx) || undefined,
             sets: exercise.sets.map((set) => {
-              // Baseline workouts have no targets, so no performance status
               return {
                 setNumber: set.setNumber,
                 setType: set.setType,
@@ -2120,8 +2132,11 @@ export default function WorkoutLogger({
         overallRating: rating,
         overallFeedback: feedback,
         ...(newWorkoutDurationSeconds != null && { durationSeconds: newWorkoutDurationSeconds }),
-        exercises: exerciseData.map((exercise) => ({
+        sessionNotes: sessionNotes || undefined,
+        noteTags: noteTags.length > 0 ? noteTags : undefined,
+        exercises: exerciseData.map((exercise, idx) => ({
           exerciseName: exercise.exerciseName,
+          exerciseNotes: exerciseNotes.get(idx) || undefined,
           sets: exercise.sets.map((set) => {
             const weight = getEffectiveWeight(exercise.exerciseName, set)
             const performanceStatus =
@@ -2234,6 +2249,39 @@ export default function WorkoutLogger({
               </div>
             </>
           )}
+          {/* Session Notes & Tags */}
+          <div className="mb-6 p-4 bg-white/[0.03] border border-white/[0.06] rounded-xl space-y-3">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">Session Notes</label>
+              <textarea
+                value={sessionNotes}
+                onChange={(e) => setSessionNotes(e.target.value)}
+                placeholder="How did the workout feel? Any observations..."
+                className="w-full px-3 py-2 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 text-foreground placeholder:text-muted resize-none"
+                rows={3}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">Tags</label>
+              <div className="flex flex-wrap gap-1.5">
+                {NOTE_TAGS.map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setNoteTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
+                    className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                      noteTags.includes(tag)
+                        ? 'bg-accent/20 border-accent/40 text-accent-light'
+                        : 'bg-white/[0.03] border-white/[0.08] text-muted hover:text-foreground hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-3 mt-4">
             <button
               onClick={() => router.push('/dashboard')}
@@ -2952,6 +3000,36 @@ export default function WorkoutLogger({
             <p className="text-secondary">{currentExercise.exerciseFeedback}</p>
           </div>
         )}
+
+        {/* Per-exercise notes */}
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setShowExerciseNotes(prev => {
+              const next = new Set(prev)
+              if (next.has(currentExerciseIndex)) next.delete(currentExerciseIndex)
+              else next.add(currentExerciseIndex)
+              return next
+            })}
+            className="text-xs text-muted hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            <svg className={`w-3 h-3 transition-transform ${showExerciseNotes.has(currentExerciseIndex) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            {exerciseNotes.get(currentExerciseIndex) ? 'Edit note' : 'Add note'}
+          </button>
+          {showExerciseNotes.has(currentExerciseIndex) && (
+            <textarea
+              value={exerciseNotes.get(currentExerciseIndex) ?? ''}
+              onChange={(e) => setExerciseNotes(prev => {
+                const next = new Map(prev)
+                next.set(currentExerciseIndex, e.target.value)
+                return next
+              })}
+              placeholder={`Notes for ${currentExercise.exerciseName}...`}
+              className="mt-1.5 w-full px-3 py-2 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/40 text-foreground placeholder:text-muted resize-none"
+              rows={2}
+            />
+          )}
+        </div>
       </div>
 
       <div

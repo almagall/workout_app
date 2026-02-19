@@ -2,7 +2,7 @@ import { getCurrentUser } from './auth-simple'
 import { createClient } from './supabase/client'
 import { estimated1RM } from './estimated-1rm'
 
-export type ChallengeType = 'workout_count' | 'e1rm'
+export type ChallengeType = 'workout_count' | 'e1rm' | 'total_volume' | 'consistency'
 export type ChallengeStatus = 'pending' | 'active' | 'completed' | 'declined' | 'cancelled'
 
 export interface ChallengeRow {
@@ -171,6 +171,57 @@ export async function getChallengeProgress(challenge: ChallengeRow): Promise<Cha
     const [challengerValue, challengedValue] = await Promise.all([
       fetchCount(challenge.challenger_id),
       fetchCount(challenge.challenged_id),
+    ])
+    return { challengerValue, challengedValue }
+  }
+
+  if (challenge.challenge_type === 'total_volume') {
+    const fetchVolume = async (userId: string) => {
+      const { data: sessions } = await supabase
+        .from('workout_sessions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_complete', true)
+        .gte('workout_date', challenge.start_date)
+        .lte('workout_date', challenge.end_date)
+
+      if (!sessions?.length) return 0
+      const sessionIds = sessions.map(s => s.id)
+
+      const { data: logs } = await supabase
+        .from('exercise_logs')
+        .select('weight, reps')
+        .in('session_id', sessionIds)
+        .eq('set_type', 'working')
+
+      if (!logs?.length) return 0
+      return logs.reduce((sum, l) => sum + l.weight * l.reps, 0)
+    }
+
+    const [challengerValue, challengedValue] = await Promise.all([
+      fetchVolume(challenge.challenger_id),
+      fetchVolume(challenge.challenged_id),
+    ])
+    return { challengerValue, challengedValue }
+  }
+
+  if (challenge.challenge_type === 'consistency') {
+    const fetchDays = async (userId: string) => {
+      const { data: sessions } = await supabase
+        .from('workout_sessions')
+        .select('workout_date')
+        .eq('user_id', userId)
+        .eq('is_complete', true)
+        .gte('workout_date', challenge.start_date)
+        .lte('workout_date', challenge.end_date)
+
+      const uniqueDays = new Set(sessions?.map(s => s.workout_date))
+      return uniqueDays.size
+    }
+
+    const [challengerValue, challengedValue] = await Promise.all([
+      fetchDays(challenge.challenger_id),
+      fetchDays(challenge.challenged_id),
     ])
     return { challengerValue, challengedValue }
   }

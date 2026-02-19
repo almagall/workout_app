@@ -40,6 +40,8 @@ export interface WorkoutSession {
   is_complete: boolean
   created_at: string
   duration_seconds?: number | null
+  session_notes?: string | null
+  note_tags?: string[] | null
 }
 
 export type SetType = 'warmup' | 'working' | 'cooldown'
@@ -58,6 +60,7 @@ export interface ExerciseLog {
   target_rpe: number | null
   performance_status: PerformanceStatus | null
   exercise_feedback: string | null
+  exercise_notes?: string | null
   created_at: string
 }
 
