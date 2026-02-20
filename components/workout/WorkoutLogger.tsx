@@ -1428,7 +1428,7 @@ export default function WorkoutLogger({
 
     const newData = [...exerciseData]
     const set = newData[exerciseIndex].sets[setIndex]
-    ;(set as Record<string, unknown>)[field] = validated
+    ;(set as unknown as Record<string, unknown>)[field] = validated
     setExerciseData(newData)
     setSetValidationError(null) // Clear validation error when user edits
     
