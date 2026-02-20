@@ -133,11 +133,9 @@ export default function WorkoutShareClient({ sessionId }: { sessionId: string })
             {stats.map((s) => (
               <div
                 key={s.label}
-                className={`flex flex-col items-center justify-center min-w-[52px] py-1.5 px-2 rounded-lg border ${
-                  s.accent ? 'border-accent/30 bg-accent/[0.08]' : 'border-white/[0.08] bg-white/[0.03]'
-                }`}
+                className="flex flex-col items-center justify-center min-w-[52px] py-1.5 px-2 rounded-lg border border-white/[0.08] bg-white/[0.03]"
               >
-                <span className={`text-sm font-bold tabular-nums leading-none ${s.accent ? 'text-accent-light' : 'text-foreground'}`}>
+                <span className="text-sm font-bold tabular-nums leading-none text-foreground">
                   {s.value}
                 </span>
                 <span className="text-[9px] uppercase tracking-wider text-muted mt-1">{s.label}</span>
