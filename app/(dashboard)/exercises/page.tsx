@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getExerciseList } from '@/lib/exercise-database'
 import type { ExerciseEntry } from '@/lib/exercise-database'
@@ -11,6 +11,8 @@ const MUSCLE_GROUP_ORDER = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', '
 const EQUIPMENT_ORDER = ['Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight']
 
 type ViewMode = 'muscleGroup' | 'equipment'
+
+type CategoryFilter = 'all' | 'resistance' | 'cardio'
 
 const EQUIPMENT_STYLES: Record<string, string> = {
   Barbell: 'bg-slate-600/30 text-slate-300 border border-slate-500/40',
@@ -79,6 +81,7 @@ function groupByEquipment(exercises: ExerciseEntry[]): Record<string, ExerciseEn
 }
 
 function ExerciseCard({ exercise, onClick }: { exercise: ExerciseEntry; onClick?: () => void }) {
+  const isCardio = exercise.category === 'cardio'
   return (
     <div
       role="button"
@@ -87,7 +90,14 @@ function ExerciseCard({ exercise, onClick }: { exercise: ExerciseEntry; onClick?
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick?.()}
       className="card-glass card-accent-top p-4 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer"
     >
-      <h3 className="text-lg font-semibold text-foreground mb-2">{exercise.name}</h3>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <h3 className="text-lg font-semibold text-foreground">{exercise.name}</h3>
+        {isCardio && (
+          <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded border bg-cyan-600/20 text-cyan-300 border-cyan-500/40">
+            Cardio
+          </span>
+        )}
+      </div>
       <p className="text-sm text-muted mb-3">
         {exercise.description ?? `A ${exercise.equipment} exercise targeting ${exercise.muscleGroup}.`}
       </p>
@@ -120,9 +130,9 @@ function ExerciseCard({ exercise, onClick }: { exercise: ExerciseEntry; onClick?
 }
 
 export default function ExerciseDatabasePage() {
-  const [muscleGrouped, setMuscleGrouped] = useState<Record<string, ExerciseEntry[]>>({})
-  const [equipmentGrouped, setEquipmentGrouped] = useState<Record<string, ExerciseEntry[]>>({})
+  const [exercises, setExercises] = useState<ExerciseEntry[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('muscleGroup')
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   /** When set, only show this group (muscle group or equipment depending on viewMode). Null = show all. */
   const [groupFilter, setGroupFilter] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -134,12 +144,18 @@ export default function ExerciseDatabasePage() {
       window.location.href = '/get-started'
       return
     }
-
-    const exercises = getExerciseList()
-    setMuscleGrouped(groupByMuscleGroup(exercises))
-    setEquipmentGrouped(groupByEquipment(exercises))
+    setExercises(getExerciseList())
     setLoading(false)
   }, [])
+
+  const filteredExercises = useMemo(() => {
+    if (categoryFilter === 'all') return exercises
+    if (categoryFilter === 'cardio') return exercises.filter((e) => e.category === 'cardio')
+    return exercises.filter((e) => e.category !== 'cardio')
+  }, [exercises, categoryFilter])
+
+  const muscleGrouped = useMemo(() => groupByMuscleGroup(filteredExercises), [filteredExercises])
+  const equipmentGrouped = useMemo(() => groupByEquipment(filteredExercises), [filteredExercises])
 
   if (loading) {
     return (
@@ -158,44 +174,70 @@ export default function ExerciseDatabasePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-col gap-4 mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Exercise Database</h1>
-          <div className="flex rounded-lg border border-border p-1 bg-background">
+      <div className="mb-6">
+        <h1 className="font-display text-3xl font-bold text-foreground tracking-tight mb-4">Exercise Database</h1>
+
+        {/* Single unified toolbar */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Group by toggle */}
+          <div className="flex rounded-lg border border-border p-0.5 bg-background">
             <button
-              onClick={() => {
-                setViewMode('muscleGroup')
-                setGroupFilter(null)
-              }}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'muscleGroup'
-                  ? 'bg-white text-black'
-                  : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
+              onClick={() => { setViewMode('muscleGroup'); setGroupFilter(null) }}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'muscleGroup' ? 'bg-white text-black' : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
               }`}
             >
-              By Muscle Group
+              Muscle Group
             </button>
             <button
-              onClick={() => {
-                setViewMode('equipment')
-                setGroupFilter(null)
-              }}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'equipment'
-                  ? 'bg-white text-black'
-                  : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
+              onClick={() => { setViewMode('equipment'); setGroupFilter(null) }}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'equipment' ? 'bg-white text-black' : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
               }`}
             >
-              By Equipment
+              Equipment
             </button>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted">Filter:</span>
+
+          {/* Divider */}
+          <span className="w-px h-5 bg-white/[0.08] hidden sm:block" />
+
+          {/* Type toggle */}
+          <div className="flex rounded-lg border border-border p-0.5 bg-background">
+            <button
+              onClick={() => setCategoryFilter('all')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                categoryFilter === 'all' ? 'bg-white text-black' : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setCategoryFilter('resistance')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                categoryFilter === 'resistance' ? 'bg-white text-black' : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
+              }`}
+            >
+              Resistance
+            </button>
+            <button
+              onClick={() => setCategoryFilter('cardio')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                categoryFilter === 'cardio' ? 'bg-white text-black' : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
+              }`}
+            >
+              Cardio
+            </button>
+          </div>
+
+          {/* Divider */}
+          <span className="w-px h-5 bg-white/[0.08] hidden sm:block" />
+
+          {/* Group filter dropdown */}
           <select
             value={groupFilter ?? ''}
             onChange={(e) => setGroupFilter(e.target.value === '' ? null : e.target.value)}
-            className="text-sm rounded-lg border border-white/[0.08] bg-white/[0.04] text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent min-w-[10rem]"
+            className="text-sm rounded-lg border border-white/[0.08] bg-background text-foreground px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
             aria-label={viewMode === 'muscleGroup' ? 'Filter by muscle group' : 'Filter by equipment'}
           >
             <option value="">All {viewMode === 'muscleGroup' ? 'muscle groups' : 'equipment'}</option>
