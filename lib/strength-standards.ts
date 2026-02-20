@@ -228,6 +228,7 @@ export async function getAllStrengthStandards(): Promise<StrengthStandard[]> {
       .eq('workout_sessions.user_id', user.id)
       .eq('workout_sessions.is_complete', true)
       .eq('set_type', 'working')
+      .is('duration_seconds', null)
       .ilike('exercise_name', `%${exerciseName}%`)
       .order('created_at', { ascending: false })
       .limit(50)

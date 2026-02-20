@@ -252,6 +252,7 @@ async function computeUserScore(
       .select('weight, reps')
       .in('session_id', sessionIds)
       .eq('set_type', 'working')
+      .is('duration_seconds', null)
 
     if (!logs?.length) return 0
     return logs.reduce((sum, l) => sum + l.weight * l.reps, 0)
@@ -275,6 +276,7 @@ async function computeUserScore(
       .in('session_id', sessionIds)
       .eq('exercise_name', exerciseName)
       .eq('set_type', 'working')
+      .is('duration_seconds', null)
 
     if (!logs?.length) return 0
     return Math.max(...logs.map(l => Math.round(estimated1RM(l.weight, l.reps))))

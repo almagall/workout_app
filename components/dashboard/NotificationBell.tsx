@@ -128,7 +128,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="fixed right-4 top-[4.5rem] z-50 w-[min(20rem,calc(100vw-2rem))] max-h-[min(24rem,70vh)] overflow-auto modal-glass lg:absolute lg:right-0 lg:top-auto lg:mt-1 lg:w-80">
+        <div className="fixed right-4 top-[4.5rem] z-[100] w-[min(20rem,calc(100vw-2rem))] max-h-[min(24rem,70vh)] overflow-auto rounded-xl border border-white/[0.08] bg-[#111113] shadow-[0_24px_48px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.04)] lg:absolute lg:right-0 lg:top-auto lg:mt-1 lg:w-80">
           <div className="p-2 border-b border-white/[0.06] flex justify-between items-center gap-2">
             <span className="font-semibold text-foreground text-sm">Notifications</span>
             <div className="flex items-center gap-1">

@@ -215,9 +215,11 @@ export function calculateTexasMethodSetTarget(
     }
   }
   if (dayType === 'recovery') {
-    const targetWeight = round(previousSet.weight * 0.9)
+    // Anchor to the previously stored target to keep recovery weight stable.
+    // On first use (no stored target), use 80% of actual weight as a starting point.
+    const base = previousSet.targetWeight ?? (previousSet.weight * 0.8)
     return {
-      targetWeight: targetWeight > 0 ? targetWeight : previousSet.weight,
+      targetWeight: round(base > 0 ? base : previousSet.weight),
       targetReps: 5,
       targetRpe: 7,
     }

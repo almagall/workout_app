@@ -62,6 +62,12 @@ export interface ExerciseLog {
   exercise_feedback: string | null
   exercise_notes?: string | null
   created_at: string
+  /** For cardio: duration in seconds. Null for resistance. */
+  duration_seconds?: number | null
+  /** For cardio: distance (e.g. miles or km). Null for resistance. */
+  distance?: number | null
+  /** For cardio: mi or km. Null for resistance. */
+  distance_unit?: string | null
 }
 
 export interface ProgressiveOverloadSettings {
@@ -100,6 +106,12 @@ export interface SetData {
   targetReps?: number | null
   targetRpe?: number | null
   targetExplanation?: string | null
+  /** For cardio: duration in seconds. */
+  durationSeconds?: number | null
+  /** For cardio: distance (e.g. miles or km). */
+  distance?: number | null
+  /** For cardio: mi or km. */
+  distanceUnit?: string | null
 }
 
 export interface ExerciseData {

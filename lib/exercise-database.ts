@@ -3,6 +3,8 @@
  * Existing templates keep their free-text exercise names; no migration needed.
  */
 
+export type ExerciseCategory = 'resistance' | 'cardio'
+
 export interface ExerciseEntry {
   id: string
   name: string
@@ -10,6 +12,8 @@ export interface ExerciseEntry {
   equipment: string
   description: string
   secondaryMuscleGroups?: string[]
+  /** When 'cardio', log duration/distance instead of weight/reps. Omitted = resistance. */
+  category?: ExerciseCategory
 }
 
 const EXERCISES: ExerciseEntry[] = [
@@ -439,6 +443,12 @@ const EXERCISES: ExerciseEntry[] = [
   { id: 'smith-squat-front', name: 'Smith Machine Front Squat', muscleGroup: 'Legs', equipment: 'Machine', description: 'Front squat on a Smith machine for guided quad-dominant squatting without balance demands.', secondaryMuscleGroups: ['Core'] },
   { id: 'db-snatch', name: 'Dumbbell Snatch', muscleGroup: 'Shoulders', equipment: 'Dumbbell', description: 'Explosive single-arm lift from floor to overhead in one motion. Builds full-body power with shoulder emphasis.', secondaryMuscleGroups: ['Legs', 'Core', 'Traps'] },
   { id: 'clean-and-press', name: 'Clean and Press', muscleGroup: 'Shoulders', equipment: 'Barbell', description: 'Clean a barbell to your shoulders, then press overhead. Full-body compound movement for strength and power.', secondaryMuscleGroups: ['Legs', 'Core', 'Back', 'Traps'] },
+  // ──────────────────────── Cardio ────────────────────────
+  { id: 'treadmill-run', name: 'Treadmill Run', muscleGroup: 'Legs', equipment: 'Machine', description: 'Running on a treadmill. Log duration and optionally distance. Builds cardiovascular endurance.', category: 'cardio' },
+  { id: 'rowing-machine', name: 'Rowing Machine', muscleGroup: 'Back', equipment: 'Machine', description: 'Rowing on an erg or rowing machine. Full-body cardio; log duration and optionally distance.', category: 'cardio' },
+  { id: 'stationary-bike', name: 'Stationary Bike', muscleGroup: 'Legs', equipment: 'Machine', description: 'Cycling on a stationary or spin bike. Log duration and optionally distance.', category: 'cardio' },
+  { id: 'elliptical', name: 'Elliptical', muscleGroup: 'Legs', equipment: 'Machine', description: 'Elliptical trainer for low-impact cardio. Log duration and optionally distance.', category: 'cardio' },
+  { id: 'jump-rope', name: 'Jump Rope', muscleGroup: 'Legs', equipment: 'Bodyweight', description: 'Jump rope for cardio and coordination. Log duration.', category: 'cardio' },
 ]
 
 /** Alternatives: same muscle group, similar movement. Key = exercise id, value = alternative exercise names. */
@@ -602,6 +612,12 @@ export function getExerciseByName(name: string): ExerciseEntry | null {
 export function isBodyweightExercise(name: string): boolean {
   const entry = getExerciseByName(name)
   return entry?.equipment === 'Bodyweight'
+}
+
+/** Check if an exercise is cardio (log duration/distance instead of weight/reps). */
+export function isCardioExercise(name: string): boolean {
+  const entry = getExerciseByName(name)
+  return entry?.category === 'cardio'
 }
 
 /** All exercises for dropdown when query is empty. */

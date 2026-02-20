@@ -55,6 +55,7 @@ export async function calculateProgressionVelocity(
     .eq('exercise_name', exerciseName)
     .in('session_id', sessionIds)
     .eq('set_type', 'working')
+    .is('duration_seconds', null)
 
   if (logsError || !logs || logs.length === 0) {
     return null

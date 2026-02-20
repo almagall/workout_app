@@ -62,7 +62,7 @@
 - Overall workout feedback and rating
 
 ### Progressive Overload
-- **Hypertrophy Plan**: Custom templates keep targets in 10-15 reps (recalculating weight when needed); preset templates (5/3/1, PHUL, etc.) use their own rep ranges. Volume-focused progression.
+- **Hypertrophy Plan**: Custom templates use e1RM-based double progression — targets always in 10-15 reps with weight derived from estimated 1RM so it is calibrated to current strength. Preset templates (5/3/1, PHUL, etc.) use their own rep ranges. Volume-focused progression.
 - **Strength Plan**: Lower rep range (3-6), weight-focused progression
 - Targets adjust based on performance
 - Handles overperformance, met targets, and underperformance

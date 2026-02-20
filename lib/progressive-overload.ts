@@ -32,7 +32,7 @@ export interface PlanSettings {
 
 const DEFAULT_PLAN_SETTINGS: Record<PlanType, PlanSettings> = {
   hypertrophy: {
-    rep_range_min: 8,
+    rep_range_min: 10,
     rep_range_max: 15,
     target_rpe_min: 6,
     target_rpe_max: 8,
@@ -57,38 +57,17 @@ export function getDefaultPlanSettings(planType: PlanType): PlanSettings {
 }
 
 /**
- * For custom hypertrophy: when raw target is outside [minReps, maxReps], recalculate
- * weight via inverse Epley so the target stays in range (e.g. 225×7 → lower weight×10).
- * Used only in custom-template path; presets use their own logic.
- */
-export function clampHypertrophyTargetToRepRange(
-  targetWeight: number,
-  targetReps: number,
-  minReps: number,
-  maxReps: number,
-  roundToLoadable?: (w: number) => number
-): { targetWeight: number; targetReps: number } {
-  let w = targetWeight
-  let r = targetReps
-  if (r < minReps && r >= 1) {
-    const e1rm = estimated1RM(w, r)
-    w = e1rm / (1 + minReps / 30)
-    r = minReps
-  } else if (r > maxReps) {
-    const e1rm = estimated1RM(w, r)
-    w = e1rm / (1 + maxReps / 30)
-    r = maxReps
-  }
-  if (roundToLoadable) w = roundToLoadable(w)
-  return { targetWeight: w, targetReps: r }
-}
-
-/**
- * Calculate target for a single set based on the previous set's performance
- * Uses double progression: increase reps to max, then increase weight and reset reps
- */
-/**
- * @param daysSinceLastSession Days since the last time this workout day was done. When 0-1: maintain (no progression); when 14+: "welcome back" maintain; 2-13: normal progression.
+ * Calculate target for a single set based on the previous set's performance.
+ *
+ * Hypertrophy (custom templates): uses e1RM as single currency so weight and reps
+ * always come from the same source and targets stay in [rep_range_min, rep_range_max]
+ * without a separate clamping layer. Double progression is preserved: build reps
+ * to rep_range_max, then bump e1RM and reset to rep_range_min.
+ *
+ * Strength: weight-focused progression unchanged.
+ *
+ * @param daysSinceLastSession Days since the last time this workout day was done.
+ *   0-1: maintain; 14+: "welcome back" maintain; 2-13: normal progression.
  */
 export function calculateSetTarget(
   previousSet: {
@@ -105,11 +84,9 @@ export function calculateSetTarget(
   roundToLoadable?: (w: number) => number,
   daysSinceLastSession?: number | null
 ): TargetCalculation {
-  // If previous workout had targets, evaluate performance against them
+  // Evaluate performance against previous targets (if any)
   let setStatus: PerformanceStatus = 'met_target'
-  
   if (previousSet.targetWeight && previousSet.targetReps && previousSet.targetRpe) {
-    // Previous workout had targets - evaluate performance
     setStatus = evaluateSetPerformance(
       previousSet.weight,
       previousSet.reps,
@@ -118,9 +95,6 @@ export function calculateSetTarget(
       previousSet.targetReps,
       previousSet.targetRpe
     )
-  } else {
-    // Previous workout was first week (no targets) - treat as "met target" and calculate progressive overload
-    setStatus = 'met_target'
   }
 
   let targetWeight: number
@@ -129,122 +103,130 @@ export function calculateSetTarget(
   let highRpeModulated = false
 
   if (planType === 'hypertrophy') {
-    // Hypertrophy: Double progression - prioritize rep progression, then weight
-    const isAtRepMax = previousSet.reps >= planSettings.rep_range_max
-    const isAtRepMin = previousSet.reps <= planSettings.rep_range_min
+    // --- Hypertrophy: e1RM-based double progression ---
+    // All weight targets are derived from e1RM so they are always calibrated to
+    // the user's current strength at the chosen rep count, and naturally stay
+    // within [rep_range_min, rep_range_max] without a second patching layer.
+    const currentE1RM = estimated1RM(previousSet.weight, previousSet.reps)
+
+    // 1. Decide target e1RM based on performance
+    let targetE1RM: number
+    if (setStatus === 'overperformed') {
+      targetE1RM = currentE1RM * (1 + planSettings.weight_increase_percent / 100)
+    } else if (setStatus === 'underperformed') {
+      if (consecutiveUnderperformance === 0) {
+        targetE1RM = currentE1RM            // first miss: maintain strength level
+      } else if (consecutiveUnderperformance === 1) {
+        targetE1RM = currentE1RM * 0.975    // second consecutive: slight reduction
+      } else {
+        targetE1RM = currentE1RM * 0.95     // third+: larger reduction
+      }
+    } else {
+      // met_target: smaller bump (sustainable progression)
+      targetE1RM = currentE1RM * (1 + planSettings.weight_increase_percent / 200)
+    }
+
+    // 2. Decide target reps (double progression; previous reps clamped to valid range)
+    const clampedPrevReps = Math.max(
+      planSettings.rep_range_min,
+      Math.min(previousSet.reps, planSettings.rep_range_max)
+    )
+    if (setStatus === 'overperformed') {
+      // At rep max → reset to rep min (weight bump already in e1RM); otherwise add a rep
+      targetReps =
+        clampedPrevReps >= planSettings.rep_range_max
+          ? planSettings.rep_range_min
+          : Math.min(clampedPrevReps + planSettings.rep_increase, planSettings.rep_range_max)
+    } else {
+      targetReps = clampedPrevReps
+    }
+
+    // 3. Derive weight from target e1RM at target reps (inverse Epley)
+    targetWeight = targetE1RM / (1 + targetReps / 30)
+    targetRpe = planSettings.target_rpe_max
+
+    // RPE-aware modulation: if effort was above target band, hold at current strength
+    if (previousSet.rpe > planSettings.target_rpe_max && setStatus !== 'underperformed') {
+      highRpeModulated = true
+      targetReps = clampedPrevReps
+      targetWeight = currentE1RM / (1 + targetReps / 30)
+      targetRpe = planSettings.target_rpe_max
+    }
+
+    // Recency: same/next day or long gap → maintain to avoid overreaching
+    if (
+      daysSinceLastSession != null &&
+      (daysSinceLastSession <= 1 || daysSinceLastSession >= 14)
+    ) {
+      targetReps = clampedPrevReps
+      targetWeight = currentE1RM / (1 + targetReps / 30)
+      targetRpe = planSettings.target_rpe_max
+    }
+  } else {
+    // --- Strength: double-progression model ---
+    // Phase 1: build reps within [rep_range_min, rep_range_max] at the same weight.
+    // Phase 2: once rep_range_max is hit, bump weight and reset reps to rep_range_min.
+    const clampedPrevReps = Math.max(
+      planSettings.rep_range_min,
+      Math.min(previousSet.reps, planSettings.rep_range_max)
+    )
+    const atRepMax = clampedPrevReps >= planSettings.rep_range_max
 
     if (setStatus === 'overperformed') {
-      if (isAtRepMax) {
-        // Double progression: increase weight, reset to rep min
+      if (atRepMax) {
+        // Hit the ceiling — bump weight, reset reps
         targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 100)
         targetReps = planSettings.rep_range_min
-        targetRpe = planSettings.target_rpe_max
       } else {
-        // Increase reps first (volume progression priority)
-        targetWeight = previousSet.weight // Maintain weight
-        targetReps = Math.min(
-          previousSet.reps + planSettings.rep_increase,
-          planSettings.rep_range_max
-        )
-        targetRpe = planSettings.target_rpe_max
+        // Still building reps — add a rep, hold weight
+        targetWeight = previousSet.weight
+        targetReps = clampedPrevReps + 1
       }
+      targetRpe = planSettings.target_rpe_max
     } else if (setStatus === 'underperformed') {
       if (consecutiveUnderperformance === 0) {
-        // First underperformance: maintain targets
         targetWeight = previousSet.weight
-        targetReps = previousSet.reps
-        targetRpe = planSettings.target_rpe_max
-      } else if (consecutiveUnderperformance === 1) {
-        // Second consecutive: slight reduction
-        targetWeight = previousSet.weight * 0.975
-        targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
+        targetReps = clampedPrevReps
         targetRpe = planSettings.target_rpe_max
       } else {
-        // 3+ consecutive: maintain or slight reduction
         targetWeight = previousSet.weight * 0.95
-        targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
+        targetReps = Math.max(clampedPrevReps - 1, planSettings.rep_range_min)
         targetRpe = planSettings.target_rpe_max
       }
     } else {
-      // Met target: maintain reps (only overperformed = +1 rep for sustainable progression)
-      if (isAtRepMax) {
-        // At rep max: increase weight, reset reps
-        targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200) // Half the increase
+      // met_target
+      if (atRepMax) {
+        // Sustained at rep max — small weight bump, reset reps
+        targetWeight = previousSet.weight * (1 + planSettings.weight_increase_percent / 200)
         targetReps = planSettings.rep_range_min
-        targetRpe = planSettings.target_rpe_max
       } else {
+        // Still building reps — add a rep, hold weight
         targetWeight = previousSet.weight
-        targetReps = previousSet.reps
-        targetRpe = planSettings.target_rpe_max
+        targetReps = clampedPrevReps + 1
       }
+      targetRpe = planSettings.target_rpe_max
     }
 
-    // Ensure targets are within rep range
     targetReps = Math.max(
       planSettings.rep_range_min,
       Math.min(targetReps, planSettings.rep_range_max)
     )
-  } else {
-    // Strength: Focus on weight progression, maintain rep range
-    const isAtStrengthRepMax = previousSet.reps >= planSettings.rep_range_max
-    const weightPct = isAtStrengthRepMax ? planSettings.weight_increase_percent / 2 : planSettings.weight_increase_percent
-    if (setStatus === 'overperformed') {
-      // Increase weight, maintain or slightly adjust reps within range
-      targetWeight = previousSet.weight * (1 + weightPct / 100)
-      targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
-      // If at rep max, try to maintain; if below, can increase slightly
-      if (previousSet.reps < planSettings.rep_range_max) {
-        targetReps = Math.min(previousSet.reps + 1, planSettings.rep_range_max)
-      }
-      targetRpe = planSettings.target_rpe_max
-    } else if (setStatus === 'underperformed') {
-      if (consecutiveUnderperformance === 0) {
-        // First underperformance: maintain targets
-        targetWeight = previousSet.weight
-        targetReps = previousSet.reps
-        targetRpe = planSettings.target_rpe_max
-      } else if (consecutiveUnderperformance === 1) {
-        // Second consecutive: slight reduction
-        targetWeight = previousSet.weight * 0.95
-        targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
-        targetRpe = planSettings.target_rpe_max
-      } else {
-        // 3+ consecutive: maintain or slight reduction
-        targetWeight = previousSet.weight * 0.95
-        targetReps = Math.max(previousSet.reps - 1, planSettings.rep_range_min)
-        targetRpe = planSettings.target_rpe_max
-      }
-    } else {
-      // Met target: slight weight increase (smaller when at top of rep range)
-      targetWeight = previousSet.weight * (1 + weightPct / 200)
-      targetReps = Math.min(previousSet.reps, planSettings.rep_range_max)
+
+    // RPE-aware modulation for strength
+    if (previousSet.rpe > planSettings.target_rpe_max && setStatus !== 'underperformed') {
+      highRpeModulated = true
+      targetWeight = previousSet.weight
+      targetReps = clampedPrevReps
       targetRpe = planSettings.target_rpe_max
     }
 
-    // Ensure targets are within rep range
-    targetReps = Math.max(
-      planSettings.rep_range_min,
-      Math.min(targetReps, planSettings.rep_range_max)
-    )
-  }
-
-  // RPE-aware modulation: if effort was above target band, hold or reduce next target
-  if (previousSet.rpe > planSettings.target_rpe_max && setStatus !== 'underperformed') {
-    highRpeModulated = true
-    targetWeight = previousSet.weight
-    targetReps = previousSet.reps
-    targetRpe = planSettings.target_rpe_max
-  }
-
-  // Recency: same/next day or long gap ("welcome back") → maintain to avoid overreaching
-  if (daysSinceLastSession != null) {
-    if (daysSinceLastSession <= 1) {
+    // Recency for strength
+    if (
+      daysSinceLastSession != null &&
+      (daysSinceLastSession <= 1 || daysSinceLastSession >= 14)
+    ) {
       targetWeight = previousSet.weight
-      targetReps = previousSet.reps
-      targetRpe = planSettings.target_rpe_max
-    } else if (daysSinceLastSession >= 14) {
-      targetWeight = previousSet.weight
-      targetReps = previousSet.reps
+      targetReps = clampedPrevReps
       targetRpe = planSettings.target_rpe_max
     }
   }

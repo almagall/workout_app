@@ -43,6 +43,7 @@ export async function getMuscleVolumeByPeriod(days: number): Promise<Record<stri
     .select('exercise_name, set_type')
     .in('session_id', sessionIds)
     .eq('set_type', 'working')
+    .is('duration_seconds', null)
 
   if (logsError || !logs) {
     return {}

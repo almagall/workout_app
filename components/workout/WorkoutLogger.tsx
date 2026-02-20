@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getPreviousWorkoutSessionExcludingDeload, getMostRecentSessionWithExercise, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions, saveDraftWorkoutSession, completeWorkoutSession, deleteWorkoutSession } from '@/lib/storage'
-import { calculateSetTarget, clampHypertrophyTargetToRepRange, getDefaultPlanSettings } from '@/lib/progressive-overload'
+import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { getE1RMTrendForExercises, getHitStreakForExercises, getWeeklyHitRates } from '@/lib/performance-analytics'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
@@ -26,7 +26,7 @@ import { estimated1RM } from '@/lib/estimated-1rm'
 import { checkSetPR, getPRsForSession, type SessionPR } from '@/lib/pr-helper'
 import { checkAndUnlockAchievements } from '@/lib/achievements'
 import { getBodyweightForDate } from '@/lib/bodyweight-storage'
-import { isBodyweightExercise, getExerciseByName, getExerciseAlternativesWithEquipment, type ExerciseEntry } from '@/lib/exercise-database'
+import { isBodyweightExercise, getExerciseByName, getExerciseAlternativesWithEquipment, isCardioExercise, type ExerciseEntry } from '@/lib/exercise-database'
 import { getEquipmentStyle, getMuscleGroupStyle } from '@/lib/exercise-tag-styles'
 import { ExerciseDetailModal } from '@/components/exercises/ExerciseDetailModal'
 import RestTimer from '@/components/workout/RestTimer'
@@ -251,6 +251,9 @@ export default function WorkoutLogger({
                 targetWeight: null,
                 targetReps: null,
                 targetRpe: null,
+                durationSeconds: isCardioExercise(exerciseName) ? null : undefined,
+                distance: isCardioExercise(exerciseName) ? null : undefined,
+                distanceUnit: isCardioExercise(exerciseName) ? null : undefined,
               }],
               exerciseFeedback: null,
               exerciseRating: null,
@@ -288,11 +291,14 @@ export default function WorkoutLogger({
                 targetWeight: log.target_weight ? parseFloat(log.target_weight.toString()) : null,
                 targetReps: log.target_reps,
                 targetRpe: log.target_rpe ? parseFloat(log.target_rpe.toString()) : null,
+                durationSeconds: log.duration_seconds ?? null,
+                distance: log.distance ?? null,
+                distanceUnit: log.distance_unit ?? null,
               }))
 
-            // Calculate exercise rating if feedback exists (only working sets count)
+            // Calculate exercise rating if feedback exists (only working sets count; skip cardio)
             let exerciseRating: number | null = null
-            if (exerciseLogs[0]?.exercise_feedback) {
+            if (exerciseLogs[0]?.exercise_feedback && !isCardioExercise(exerciseName)) {
               const workingSets = sets.filter((s) => s.setType === 'working')
               const performanceStatuses = workingSets.map((set) =>
                 evaluateSetPerformance(
@@ -330,6 +336,9 @@ export default function WorkoutLogger({
                 targetWeight: null,
                 targetReps: null,
                 targetRpe: null,
+                durationSeconds: isCardioExercise(exerciseName) ? null : undefined,
+                distance: isCardioExercise(exerciseName) ? null : undefined,
+                distanceUnit: isCardioExercise(exerciseName) ? null : undefined,
               }],
               exerciseFeedback: exerciseLogs[0]?.exercise_feedback || null,
               exerciseRating,
@@ -409,7 +418,9 @@ export default function WorkoutLogger({
           const useTexasMethodStrategy = targetStrategy === 'texasMethod'
 
           const phulPlanType = dayLabel.toLowerCase().includes('power') ? 'strength' : 'hypertrophy'
-          const phulSettings = getDefaultPlanSettings(phulPlanType)
+          const phulSettings = phulPlanType === 'hypertrophy'
+            ? { ...getDefaultPlanSettings('hypertrophy'), rep_range_min: 8, rep_range_max: 12 }
+            : getDefaultPlanSettings('strength')
           const texasDayType = getTexasMethodDayType(dayLabel)
 
           const linearSetsPerExercise = targetStrategy === 'stronglifts' ? 5 : 3
@@ -439,7 +450,22 @@ export default function WorkoutLogger({
             if (workingLogs.length > 0) {
               const sortedLogs = [...workingLogs].sort((a, b) => a.set_number - b.set_number)
 
-              if (is531MainLift) {
+              // Cardio: no targets; use duration/distance from previous logs
+              if (isCardioExercise(exerciseName)) {
+                sets = sortedLogs.map((log, idx) => ({
+                  setNumber: idx + 1,
+                  setType: 'working' as SetType,
+                  weight: 0,
+                  reps: 0,
+                  rpe: parseFloat(log.rpe.toString()),
+                  targetWeight: null,
+                  targetReps: null,
+                  targetRpe: null,
+                  durationSeconds: log.duration_seconds ?? null,
+                  distance: log.distance ?? null,
+                  distanceUnit: log.distance_unit ?? null,
+                }))
+              } else if (is531MainLift) {
                 // 5/3/1: 3 working sets with percentage-based targets. TM = 90% of estimated 1RM from previous session.
                 const set1RMs = sortedLogs.map((log) =>
                   estimated1RM(parseFloat(log.weight.toString()), log.reps)
@@ -803,29 +829,14 @@ export default function WorkoutLogger({
                     undefined,
                     setTarget.highRpeLastTime
                   )
-                  const needsClamp =
-                    exercisePlanType === 'hypertrophy' &&
-                    setTarget.targetWeight != null &&
-                    setTarget.targetReps != null &&
-                    (setTarget.targetReps < 10 || setTarget.targetReps > 15)
-                  const finalTarget =
-                    needsClamp && setTarget.targetWeight != null && setTarget.targetReps != null
-                      ? clampHypertrophyTargetToRepRange(
-                          setTarget.targetWeight,
-                          setTarget.targetReps,
-                          10,
-                          15,
-                          roundToLoadable
-                        )
-                      : { targetWeight: setTarget.targetWeight, targetReps: setTarget.targetReps }
                   return {
                     setNumber: idx + 1,
                     setType: 'working' as SetType,
                     weight: parseFloat(log.weight.toString()),
                     reps: log.reps,
                     rpe: parseFloat(log.rpe.toString()),
-                    targetWeight: applyDeload(finalTarget.targetWeight),
-                    targetReps: finalTarget.targetReps,
+                    targetWeight: applyDeload(setTarget.targetWeight),
+                    targetReps: setTarget.targetReps,
                     targetRpe: setTarget.targetRpe,
                     targetExplanation,
                   }
@@ -842,7 +853,21 @@ export default function WorkoutLogger({
                 targetReps: null,
                 targetRpe: null,
               })
-              if (is531MainLift) {
+              if (isCardioExercise(exerciseName)) {
+                sets = [{
+                  setNumber: 1,
+                  setType: 'working' as SetType,
+                  weight: 0,
+                  reps: 0,
+                  rpe: 5,
+                  targetWeight: null,
+                  targetReps: null,
+                  targetRpe: null,
+                  durationSeconds: null,
+                  distance: null,
+                  distanceUnit: null,
+                }]
+              } else if (is531MainLift) {
                 sets = [1, 2, 3].map(emptySet)
               } else if (useLinearStrategy) {
                 const deadlift1x5 = exerciseName.toLowerCase().includes('deadlift')
@@ -1004,7 +1029,9 @@ export default function WorkoutLogger({
     const useGzclpStrategy = targetStrategy === 'gzclp'
     const useTexasMethodStrategy = targetStrategy === 'texasMethod'
     const phulPlanType = dayLabel.toLowerCase().includes('power') ? 'strength' : 'hypertrophy'
-    const phulSettings = getDefaultPlanSettings(phulPlanType)
+    const phulSettings = phulPlanType === 'hypertrophy'
+      ? { ...getDefaultPlanSettings('hypertrophy'), rep_range_min: 8, rep_range_max: 12 }
+      : getDefaultPlanSettings('strength')
     const texasDayType = getTexasMethodDayType(dayLabel)
     const linearSetsPerExercise = targetStrategy === 'stronglifts' ? 5 : 3
     const plateConfig = getPlateConfig(userId)
@@ -1253,23 +1280,14 @@ export default function WorkoutLogger({
           const st = calculateSetTarget(prev, exercisePlanType, exercisePlanSettings, consecutiveUnderperformance, roundToLoadable)
           const status = evaluateSetPerformance(prev.weight, prev.reps, prev.rpe, prev.targetWeight, prev.targetReps, prev.targetRpe)
           const expl = getTargetExplanation(status, exercisePlanType, consecutiveUnderperformance, 'default', undefined, st.highRpeLastTime)
-          const needsClamp =
-            exercisePlanType === 'hypertrophy' &&
-            st.targetWeight != null &&
-            st.targetReps != null &&
-            (st.targetReps < 10 || st.targetReps > 15)
-          const finalTarget =
-            needsClamp && st.targetWeight != null && st.targetReps != null
-              ? clampHypertrophyTargetToRepRange(st.targetWeight, st.targetReps, 10, 15, roundToLoadable)
-              : { targetWeight: st.targetWeight, targetReps: st.targetReps }
           return {
             setNumber: idx + 1,
             setType: 'working' as SetType,
             weight: logWeight(log),
             reps: logReps(log),
             rpe: logRpe(log),
-            targetWeight: applyTargetWeight(finalTarget.targetWeight),
-            targetReps: finalTarget.targetReps,
+            targetWeight: applyTargetWeight(st.targetWeight),
+            targetReps: st.targetReps,
             targetRpe: st.targetRpe,
             targetExplanation: expl,
           }
@@ -1328,17 +1346,33 @@ export default function WorkoutLogger({
     // For warmup/cooldown, start with blank values
     const template = setType === 'working' ? (lastWorking ?? lastSet) : null
     
-    const newSet: SetData = {
-      setNumber: exercise.sets.length + 1,
-      setType,
-      weight: setType === 'working' ? (template?.weight ?? 0) : 0,
-      reps: setType === 'working' ? (template?.reps ?? 0) : 0,
-      rpe: 0,
-      targetWeight: setType === 'working' ? (template?.targetWeight ?? null) : null,
-      targetReps: setType === 'working' ? (template?.targetReps ?? null) : null,
-      targetRpe: null,
-      targetExplanation: setType === 'working' ? (template?.targetExplanation ?? null) : null,
-    }
+    const isCardio = isCardioExercise(exercise.exerciseName)
+    const newSet: SetData = isCardio && setType === 'working'
+      ? {
+          setNumber: exercise.sets.length + 1,
+          setType,
+          weight: 0,
+          reps: 0,
+          rpe: template?.rpe ?? 5,
+          targetWeight: null,
+          targetReps: null,
+          targetRpe: null,
+          targetExplanation: null,
+          durationSeconds: template?.durationSeconds ?? null,
+          distance: template?.distance ?? null,
+          distanceUnit: template?.distanceUnit ?? null,
+        }
+      : {
+          setNumber: exercise.sets.length + 1,
+          setType,
+          weight: setType === 'working' ? (template?.weight ?? 0) : 0,
+          reps: setType === 'working' ? (template?.reps ?? 0) : 0,
+          rpe: 0,
+          targetWeight: setType === 'working' ? (template?.targetWeight ?? null) : null,
+          targetReps: setType === 'working' ? (template?.targetReps ?? null) : null,
+          targetRpe: null,
+          targetExplanation: setType === 'working' ? (template?.targetExplanation ?? null) : null,
+        }
 
     // Insert set in the correct position based on type
     const setTypeOrder = getSetTypeOrder(setType)
@@ -1377,20 +1411,24 @@ export default function WorkoutLogger({
     exerciseIndex: number,
     setIndex: number,
     field: keyof SetData,
-    value: number
+    value: number | string | null
   ) => {
     // Bodyweight exercises: weight is from user's weight log, not editable
     if (field === 'weight' && isBodyweightExercise(exerciseData[exerciseIndex].exerciseName)) return
 
-    // Validate and clamp values on input
-    let validated = value
-    if (field === 'weight') validated = Math.max(0, value)
-    else if (field === 'reps') validated = Math.max(0, Math.floor(value))
-    else if (field === 'rpe') validated = value > 0 ? Math.max(1, Math.min(10, value)) : value
+    // Validate and clamp values on input (number fields only)
+    let validated: number | string | null = value
+    if (typeof value === 'number') {
+      if (field === 'weight') validated = Math.max(0, value)
+      else if (field === 'reps') validated = Math.max(0, Math.floor(value))
+      else if (field === 'rpe') validated = value > 0 ? Math.max(1, Math.min(10, value)) : value
+      else if (field === 'durationSeconds') validated = Math.max(0, value)
+      else if (field === 'distance') validated = value < 0 ? 0 : value
+    }
 
     const newData = [...exerciseData]
     const set = newData[exerciseIndex].sets[setIndex]
-    ;(set as any)[field] = validated
+    ;(set as Record<string, unknown>)[field] = validated
     setExerciseData(newData)
     setSetValidationError(null) // Clear validation error when user edits
     
@@ -1485,13 +1523,16 @@ export default function WorkoutLogger({
               setNumber: set.setNumber,
               setType: set.setType,
               weight: getEffectiveWeight(exercise.exerciseName, set),
-              reps: set.reps,
+              reps: set.reps ?? 0,
               rpe: set.rpe,
               targetWeight: set.targetWeight ?? null,
               targetReps: set.targetReps ?? null,
               targetRpe: set.targetRpe ?? null,
               performanceStatus: null, // Draft workouts don't have performance status
               exerciseFeedback: null,
+              durationSeconds: set.durationSeconds ?? null,
+              distance: set.distance ?? null,
+              distanceUnit: set.distanceUnit ?? null,
             })),
           })),
         },
@@ -1517,27 +1558,39 @@ export default function WorkoutLogger({
     const key = `${exerciseIndex}-${setIndex}`
     const exercise = exerciseData[exerciseIndex]
     const set = exercise.sets[setIndex]
-
-    // Validate set data before confirming
-    const weight = getEffectiveWeight(exercise.exerciseName, set)
-    const reps = set.reps ?? 0
     const rpe = set.rpe ?? 0
-    if (weight <= 0 || !Number.isFinite(weight)) {
-      setSetValidationError({
-        key,
-        message: isBodyweightExercise(exercise.exerciseName)
-          ? 'Log your weight in Profile > Weight to track bodyweight exercises'
-          : 'Weight must be a positive number',
-      })
-      return
-    }
-    if (reps <= 0 || !Number.isInteger(reps)) {
-      setSetValidationError({ key, message: 'Reps must be a positive whole number' })
-      return
-    }
-    if (rpe > 0 && (rpe < 1 || rpe > 10 || !Number.isFinite(rpe))) {
-      setSetValidationError({ key, message: 'RPE must be between 1 and 10' })
-      return
+
+    const isCardio = isCardioExercise(exercise.exerciseName) && set.setType === 'working'
+    if (isCardio) {
+      const durationSeconds = set.durationSeconds ?? 0
+      if (durationSeconds <= 0 || !Number.isFinite(durationSeconds)) {
+        setSetValidationError({ key, message: 'Enter duration (minutes)' })
+        return
+      }
+      if (rpe > 0 && (rpe < 1 || rpe > 10 || !Number.isFinite(rpe))) {
+        setSetValidationError({ key, message: 'RPE must be between 1 and 10' })
+        return
+      }
+    } else {
+      const weight = getEffectiveWeight(exercise.exerciseName, set)
+      const reps = set.reps ?? 0
+      if (weight <= 0 || !Number.isFinite(weight)) {
+        setSetValidationError({
+          key,
+          message: isBodyweightExercise(exercise.exerciseName)
+            ? 'Log your weight in Profile > Weight to track bodyweight exercises'
+            : 'Weight must be a positive number',
+        })
+        return
+      }
+      if (reps <= 0 || !Number.isInteger(reps)) {
+        setSetValidationError({ key, message: 'Reps must be a positive whole number' })
+        return
+      }
+      if (rpe > 0 && (rpe < 1 || rpe > 10 || !Number.isFinite(rpe))) {
+        setSetValidationError({ key, message: 'RPE must be between 1 and 10' })
+        return
+      }
     }
 
     setSetValidationError(null)
@@ -1683,17 +1736,20 @@ export default function WorkoutLogger({
   const calculateExerciseRatingAndFeedback = (exerciseIndex: number) => {
     const exercise = exerciseData[exerciseIndex]
     const workingSets = exercise.sets.filter((s) => s.setType === 'working')
-    
-    // Evaluate performance for working sets only (warmup/cooldown don't count)
+    const isCardio = isCardioExercise(exercise.exerciseName)
+
+    // Evaluate performance for working sets only (warmup/cooldown don't count; cardio not used for resistance rating)
     const performanceStatuses = workingSets.map((set) =>
-      evaluateSetPerformance(
-        getEffectiveWeight(exercise.exerciseName, set),
-        set.reps,
-        set.rpe,
-        set.targetWeight ?? null,
-        set.targetReps ?? null,
-        set.targetRpe ?? null
-      )
+      isCardio
+        ? ('met_target' as const)
+        : evaluateSetPerformance(
+            getEffectiveWeight(exercise.exerciseName, set),
+            set.reps ?? 0,
+            set.rpe,
+            set.targetWeight ?? null,
+            set.targetReps ?? null,
+            set.targetRpe ?? null
+          )
     )
 
     // Calculate overall exercise performance from working sets only
@@ -1733,11 +1789,14 @@ export default function WorkoutLogger({
         underperformedCount,
         sets: workingSets.map((set) => ({
           weight: getEffectiveWeight(exercise.exerciseName, set),
-          reps: set.reps,
+          reps: set.reps ?? 0,
           rpe: set.rpe,
           targetWeight: set.targetWeight ?? null,
           targetReps: set.targetReps ?? null,
           targetRpe: set.targetRpe ?? null,
+          durationSeconds: set.durationSeconds ?? null,
+          distance: set.distance ?? null,
+          distanceUnit: set.distanceUnit ?? null,
         })),
       },
       planType,
@@ -1778,15 +1837,18 @@ export default function WorkoutLogger({
         const workoutPerformance = {
           exercises: exerciseData.map((exercise) => {
             const workingSets = exercise.sets.filter((s) => s.setType === 'working')
+            const isCardio = isCardioExercise(exercise.exerciseName)
             const statuses = workingSets.map((set) =>
-              evaluateSetPerformance(
-                getEffectiveWeight(exercise.exerciseName, set),
-                set.reps,
-                set.rpe,
-                set.targetWeight ?? null,
-                set.targetReps ?? null,
-                set.targetRpe ?? null
-              )
+              isCardio
+                ? ('met_target' as const)
+                : evaluateSetPerformance(
+                    getEffectiveWeight(exercise.exerciseName, set),
+                    set.reps ?? 0,
+                    set.rpe,
+                    set.targetWeight ?? null,
+                    set.targetReps ?? null,
+                    set.targetRpe ?? null
+                  )
             )
             const overperformedCount = statuses.filter((s) => s === 'overperformed').length
             const metTargetCount = statuses.filter((s) => s === 'met_target').length
@@ -1807,11 +1869,14 @@ export default function WorkoutLogger({
               underperformedCount,
               sets: workingSets.map((set) => ({
                 weight: getEffectiveWeight(exercise.exerciseName, set),
-                reps: set.reps,
+                reps: set.reps ?? 0,
                 rpe: set.rpe,
                 targetWeight: set.targetWeight ?? null,
                 targetReps: set.targetReps ?? null,
                 targetRpe: set.targetRpe ?? null,
+                durationSeconds: set.durationSeconds ?? null,
+                distance: set.distance ?? null,
+                distanceUnit: set.distanceUnit ?? null,
               })),
             }
           }),
@@ -1865,10 +1930,10 @@ export default function WorkoutLogger({
             sets: exercise.sets.map((set) => {
               const weight = getEffectiveWeight(exercise.exerciseName, set)
               const performanceStatus =
-                set.setType === 'working'
+                set.setType === 'working' && !isCardioExercise(exercise.exerciseName)
                   ? evaluateSetPerformance(
                       weight,
-                      set.reps,
+                      set.reps ?? 0,
                       set.rpe,
                       set.targetWeight ?? null,
                       set.targetReps ?? null,
@@ -1880,13 +1945,16 @@ export default function WorkoutLogger({
                 setNumber: set.setNumber,
                 setType: set.setType,
                 weight,
-                reps: set.reps,
+                reps: set.reps ?? 0,
                 rpe: set.rpe,
                 targetWeight: set.targetWeight ?? null,
                 targetReps: set.targetReps ?? null,
                 targetRpe: set.targetRpe ?? null,
                 performanceStatus,
                 exerciseFeedback: exercise.exerciseFeedback || null,
+                durationSeconds: set.durationSeconds ?? null,
+                distance: set.distance ?? null,
+                distanceUnit: set.distanceUnit ?? null,
               }
             }),
           })),
@@ -1906,15 +1974,18 @@ export default function WorkoutLogger({
         const workoutPerformance = {
           exercises: exerciseData.map((exercise) => {
             const workingSets = exercise.sets.filter((s) => s.setType === 'working')
+            const isCardio = isCardioExercise(exercise.exerciseName)
             const statuses = workingSets.map((set) =>
-              evaluateSetPerformance(
-                getEffectiveWeight(exercise.exerciseName, set),
-                set.reps,
-                set.rpe,
-                set.targetWeight ?? null,
-                set.targetReps ?? null,
-                set.targetRpe ?? null
-              )
+              isCardio
+                ? ('met_target' as const) // Cardio not used for resistance rating
+                : evaluateSetPerformance(
+                    getEffectiveWeight(exercise.exerciseName, set),
+                    set.reps ?? 0,
+                    set.rpe,
+                    set.targetWeight ?? null,
+                    set.targetReps ?? null,
+                    set.targetRpe ?? null
+                  )
             )
             const overperformedCount = statuses.filter((s) => s === 'overperformed').length
             const metTargetCount = statuses.filter((s) => s === 'met_target').length
@@ -1935,11 +2006,14 @@ export default function WorkoutLogger({
               underperformedCount,
               sets: workingSets.map((set) => ({
                 weight: getEffectiveWeight(exercise.exerciseName, set),
-                reps: set.reps,
+                reps: set.reps ?? 0,
                 rpe: set.rpe,
                 targetWeight: set.targetWeight ?? null,
                 targetReps: set.targetReps ?? null,
                 targetRpe: set.targetRpe ?? null,
+                durationSeconds: set.durationSeconds ?? null,
+                distance: set.distance ?? null,
+                distanceUnit: set.distanceUnit ?? null,
               })),
             }
           }),
@@ -1989,10 +2063,10 @@ export default function WorkoutLogger({
             sets: exercise.sets.map((set) => {
               const weight = getEffectiveWeight(exercise.exerciseName, set)
               const performanceStatus =
-                set.setType === 'working'
+                set.setType === 'working' && !isCardioExercise(exercise.exerciseName)
                   ? evaluateSetPerformance(
                       weight,
-                      set.reps,
+                      set.reps ?? 0,
                       set.rpe,
                       set.targetWeight ?? null,
                       set.targetReps ?? null,
@@ -2004,13 +2078,16 @@ export default function WorkoutLogger({
                 setNumber: set.setNumber,
                 setType: set.setType,
                 weight,
-                reps: set.reps,
+                reps: set.reps ?? 0,
                 rpe: set.rpe,
                 targetWeight: set.targetWeight ?? null,
                 targetReps: set.targetReps ?? null,
                 targetRpe: set.targetRpe ?? null,
                 performanceStatus,
                 exerciseFeedback: exercise.exerciseFeedback || null,
+                durationSeconds: set.durationSeconds ?? null,
+                distance: set.distance ?? null,
+                distanceUnit: set.distanceUnit ?? null,
               }
             }),
           })),
@@ -2056,13 +2133,16 @@ export default function WorkoutLogger({
                 setNumber: set.setNumber,
                 setType: set.setType,
                 weight: getEffectiveWeight(exercise.exerciseName, set),
-                reps: set.reps,
+                reps: set.reps ?? 0,
                 rpe: set.rpe,
                 targetWeight: set.targetWeight ?? null,
                 targetReps: set.targetReps ?? null,
                 targetRpe: set.targetRpe ?? null,
                 performanceStatus: null,
                 exerciseFeedback: exercise.exerciseFeedback || null,
+                durationSeconds: set.durationSeconds ?? null,
+                distance: set.distance ?? null,
+                distanceUnit: set.distanceUnit ?? null,
               }
             }),
           })),
@@ -2082,15 +2162,18 @@ export default function WorkoutLogger({
       const workoutPerformance = {
         exercises: exerciseData.map((exercise) => {
           const workingSets = exercise.sets.filter((s) => s.setType === 'working')
+          const isCardio = isCardioExercise(exercise.exerciseName)
           const statuses = workingSets.map((set) =>
-            evaluateSetPerformance(
-              getEffectiveWeight(exercise.exerciseName, set),
-              set.reps,
-              set.rpe,
-              set.targetWeight ?? null,
-              set.targetReps ?? null,
-              set.targetRpe ?? null
-            )
+            isCardio
+              ? ('met_target' as const)
+              : evaluateSetPerformance(
+                  getEffectiveWeight(exercise.exerciseName, set),
+                  set.reps ?? 0,
+                  set.rpe,
+                  set.targetWeight ?? null,
+                  set.targetReps ?? null,
+                  set.targetRpe ?? null
+                )
           )
           const overperformedCount = statuses.filter((s) => s === 'overperformed').length
           const metTargetCount = statuses.filter((s) => s === 'met_target').length
@@ -2111,11 +2194,14 @@ export default function WorkoutLogger({
               underperformedCount,
               sets: workingSets.map((set) => ({
                 weight: getEffectiveWeight(exercise.exerciseName, set),
-                reps: set.reps,
+                reps: set.reps ?? 0,
                 rpe: set.rpe,
                 targetWeight: set.targetWeight ?? null,
                 targetReps: set.targetReps ?? null,
                 targetRpe: set.targetRpe ?? null,
+                durationSeconds: set.durationSeconds ?? null,
+                distance: set.distance ?? null,
+                distanceUnit: set.distanceUnit ?? null,
               })),
             }
           }),
@@ -2165,10 +2251,10 @@ export default function WorkoutLogger({
           sets: exercise.sets.map((set) => {
             const weight = getEffectiveWeight(exercise.exerciseName, set)
             const performanceStatus =
-              set.setType === 'working'
+              set.setType === 'working' && !isCardioExercise(exercise.exerciseName)
                 ? evaluateSetPerformance(
                     weight,
-                    set.reps,
+                    set.reps ?? 0,
                     set.rpe,
                     set.targetWeight ?? null,
                     set.targetReps ?? null,
@@ -2180,13 +2266,16 @@ export default function WorkoutLogger({
               setNumber: set.setNumber,
               setType: set.setType,
               weight,
-              reps: set.reps,
+              reps: set.reps ?? 0,
               rpe: set.rpe,
               targetWeight: set.targetWeight ?? null,
               targetReps: set.targetReps ?? null,
               targetRpe: set.targetRpe ?? null,
               performanceStatus,
               exerciseFeedback: exercise.exerciseFeedback || null,
+              durationSeconds: set.durationSeconds ?? null,
+              distance: set.distance ?? null,
+              distanceUnit: set.distanceUnit ?? null,
             }
           }),
         })),
@@ -2350,7 +2439,7 @@ export default function WorkoutLogger({
   }
 
   const exerciseSelectorDropdown = (
-    <div className="absolute left-0 right-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-64 max-w-[min(100vw-2rem,24rem)] bg-white/[0.04] border border-white/[0.06] rounded-md shadow-lg z-10 max-h-96 overflow-y-auto">
+    <div className="absolute left-0 right-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-64 max-w-[min(100vw-2rem,24rem)] bg-card border border-white/[0.12] rounded-md shadow-xl z-10 max-h-96 overflow-y-auto">
       <div className="p-2">
         {exercises.map((exerciseName, index) => {
           const isCompleted = completedExercises.has(index)
@@ -2364,10 +2453,10 @@ export default function WorkoutLogger({
               }}
               className={`w-full text-left px-4 min-h-[44px] flex items-center rounded-md mb-1 transition-colors ${
                 isCurrent
-                  ? 'bg-white/[0.04] text-foreground font-semibold border-l-2 border-l-accent'
+                  ? 'bg-white/10 text-foreground font-semibold border-l-2 border-l-accent'
                   : isCompleted
                   ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
-                  : 'text-foreground hover:bg-white/[0.04]'
+                  : 'text-foreground hover:bg-white/10'
               }`}
             >
               <div className="flex items-center justify-between w-full">
@@ -2471,7 +2560,7 @@ export default function WorkoutLogger({
                 {set.setType === 'warmup' ? 'Warm-up' : set.setType === 'cooldown' ? 'Cool-down' : 'Working'}
               </span>
             </div>
-            {set.setType === 'working' && set.targetWeight != null && (
+            {set.setType === 'working' && set.targetWeight != null && !isCardioExercise(currentExercise!.exerciseName) && (
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="text-muted">
                   Target: {set.targetWeight} lbs × {set.targetReps} reps
@@ -2493,6 +2582,71 @@ export default function WorkoutLogger({
               </div>
             )}
           </div>
+          {isCardioExercise(currentExercise!.exerciseName) && set.setType === 'working' ? (
+            <div className="grid grid-cols-3 gap-1.5">
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
+                  Duration (min)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={set.durationSeconds != null ? Math.round(set.durationSeconds / 60) : ''}
+                  onChange={(e) => {
+                    const mins = parseFloat(e.target.value)
+                    updateSet(currentExerciseIndex, originalIndex, 'durationSeconds', Number.isFinite(mins) && mins >= 0 ? mins * 60 : 0)
+                  }}
+                  className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
+                />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
+                  Distance (optional)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={set.distance ?? ''}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value)
+                    updateSet(currentExerciseIndex, originalIndex, 'distance', Number.isFinite(v) && v >= 0 ? v : null)
+                  }}
+                  className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
+                />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
+                  Unit
+                </label>
+                <select
+                  value={set.distanceUnit ?? 'mi'}
+                  onChange={(e) => updateSet(currentExerciseIndex, originalIndex, 'distanceUnit', e.target.value || null)}
+                  className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
+                >
+                  <option value="mi">mi</option>
+                  <option value="km">km</option>
+                </select>
+              </div>
+              <div className="col-span-3 sm:col-span-1">
+                <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
+                  RPE
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="0.5"
+                  value={set.rpe || ''}
+                  onChange={(e) =>
+                    updateSet(currentExerciseIndex, originalIndex, 'rpe', parseFloat(e.target.value) || 0)
+                  }
+                  className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
+                />
+              </div>
+            </div>
+          ) : (
           <div className="grid grid-cols-3 gap-1.5">
             <div>
               <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
@@ -2578,6 +2732,7 @@ export default function WorkoutLogger({
               />
             </div>
           </div>
+          )}
           {setValidationError?.key === setKey && (
             <p className="mt-1.5 text-sm text-red-400">{setValidationError.message}</p>
           )}

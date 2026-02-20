@@ -54,7 +54,8 @@ export async function checkSetPR(
     (log) =>
       daySessionIds.has(log.session_id) &&
       log.exercise_name === exerciseName &&
-      (log.set_type === 'working' || log.set_type == null)
+      (log.set_type === 'working' || log.set_type == null) &&
+      (log.duration_seconds == null) // resistance only; cardio has duration_seconds set
   )
 
   let maxWeight = 0
@@ -205,7 +206,10 @@ export async function getRecentPRs(limit: number = 5): Promise<RecentPR[]> {
 
   for (const session of sortedSessions) {
     const logs = allLogs.filter(
-      (l) => l.session_id === session.id && (l.set_type === 'working' || l.set_type == null)
+      (l) =>
+        l.session_id === session.id &&
+        (l.set_type === 'working' || l.set_type == null) &&
+        l.duration_seconds == null
     )
 
     for (const log of logs) {
@@ -262,10 +266,13 @@ export async function getRecentPRsByDay(numDays: number = 5): Promise<WorkoutDay
     (a, b) => new Date(a.workout_date).getTime() - new Date(b.workout_date).getTime()
   )
 
-  // Process sessions chronologically to detect PRs
+  // Process sessions chronologically to detect PRs (resistance only; exclude cardio)
   for (const session of sortedSessions) {
     const logs = allLogs.filter(
-      (l) => l.session_id === session.id && (l.set_type === 'working' || l.set_type == null)
+      (l) =>
+        l.session_id === session.id &&
+        (l.set_type === 'working' || l.set_type == null) &&
+        l.duration_seconds == null
     )
 
     for (const log of logs) {

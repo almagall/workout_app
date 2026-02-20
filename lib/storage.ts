@@ -429,6 +429,9 @@ export async function saveWorkoutSession(session: {
       targetRpe?: number | null
       performanceStatus?: string | null
       exerciseFeedback?: string | null
+      durationSeconds?: number | null
+      distance?: number | null
+      distanceUnit?: string | null
     }>
   }>
 }): Promise<string> {
@@ -459,7 +462,7 @@ export async function saveWorkoutSession(session: {
 
   const sessionId = sessionData.id
 
-  // Insert exercise logs (include set_type; warmup/cooldown have no targets or performance_status)
+  // Insert exercise logs (include set_type; warmup/cooldown have no targets or performance_status; cardio may have duration_seconds/distance)
   const logsToInsert = session.exercises.flatMap((exercise) =>
     exercise.sets.map((set) => ({
       session_id: sessionId,
@@ -475,6 +478,9 @@ export async function saveWorkoutSession(session: {
       performance_status: (set.performanceStatus as any) || null,
       exercise_feedback: set.exerciseFeedback || null,
       exercise_notes: exercise.exerciseNotes || null,
+      ...(set.durationSeconds != null && { duration_seconds: set.durationSeconds }),
+      ...(set.distance != null && { distance: set.distance }),
+      ...(set.distanceUnit != null && set.distanceUnit !== '' && { distance_unit: set.distanceUnit }),
     }))
   )
 
@@ -557,7 +563,11 @@ export async function getExerciseLogs(): Promise<ExerciseLog[]> {
     target_rpe: log.target_rpe,
     performance_status: log.performance_status,
     exercise_feedback: log.exercise_feedback,
+    exercise_notes: log.exercise_notes ?? null,
     created_at: log.created_at,
+    duration_seconds: log.duration_seconds ?? null,
+    distance: log.distance ?? null,
+    distance_unit: log.distance_unit ?? null,
   }))
 }
 
@@ -739,6 +749,9 @@ export async function getExerciseLogsForSession(sessionId: string): Promise<Exer
     exercise_feedback: log.exercise_feedback,
     exercise_notes: log.exercise_notes ?? null,
     created_at: log.created_at,
+    duration_seconds: log.duration_seconds ?? null,
+    distance: log.distance ?? null,
+    distance_unit: log.distance_unit ?? null,
   }))
 }
 
@@ -767,6 +780,9 @@ export async function updateWorkoutSession(
         targetRpe?: number | null
         performanceStatus?: string | null
         exerciseFeedback?: string | null
+        durationSeconds?: number | null
+        distance?: number | null
+        distanceUnit?: string | null
       }>
     }>
   }
@@ -809,7 +825,7 @@ export async function updateWorkoutSession(
 
   if (deleteError) throw new Error(`Failed to delete old exercise logs: ${deleteError.message}`)
 
-  // Insert new logs (include set_type)
+  // Insert new logs (include set_type; cardio may have duration_seconds/distance)
   const logsToInsert = session.exercises.flatMap((exercise) =>
     exercise.sets.map((set) => ({
       session_id: sessionId,
@@ -825,6 +841,9 @@ export async function updateWorkoutSession(
       performance_status: (set.performanceStatus as any) || null,
       exercise_feedback: set.exerciseFeedback || null,
       exercise_notes: exercise.exerciseNotes || null,
+      ...(set.durationSeconds != null && { duration_seconds: set.durationSeconds }),
+      ...(set.distance != null && { distance: set.distance }),
+      ...(set.distanceUnit != null && set.distanceUnit !== '' && { distance_unit: set.distanceUnit }),
     }))
   )
 

@@ -53,6 +53,7 @@ export async function getWeeklyHitRates(weeks: number = 13): Promise<WeeklyHitRa
     .select('session_id, performance_status, set_type')
     .in('session_id', sessionIds)
     .eq('set_type', 'working')
+    .is('duration_seconds', null)
 
   if (logsError || !logs) {
     return buildWeeklyDataWithWeekNumbers(weeks, today, {})
@@ -122,6 +123,7 @@ export async function getWeeklyRpeAverages(weeks: number = 6): Promise<WeeklyRpe
     .select('session_id, rpe, set_type')
     .in('session_id', sessionIds)
     .eq('set_type', 'working')
+    .is('duration_seconds', null)
 
   if (logsError || !logs || logs.length === 0) return []
 
@@ -197,6 +199,7 @@ export async function getWeeklyVolume(weeks: number = 6): Promise<WeeklyVolumeDa
     .select('session_id, weight, reps, set_type')
     .in('session_id', sessionIds)
     .eq('set_type', 'working')
+    .is('duration_seconds', null)
 
   if (logsError || !logs || logs.length === 0) return []
 
@@ -420,6 +423,7 @@ export async function getE1RMTrendForExercise(
     .in('session_id', sessionIds)
     .eq('exercise_name', exerciseName)
     .eq('set_type', 'working')
+    .is('duration_seconds', null)
 
   if (logsError || !logs || logs.length === 0) {
     return { trend: 'stable', changeLbs: null, recentE1rm: null, message: '' }
@@ -535,6 +539,7 @@ export async function getHitStreakForExercise(exerciseName: string): Promise<num
     .in('session_id', sessionIds)
     .eq('exercise_name', exerciseName)
     .eq('set_type', 'working')
+    .is('duration_seconds', null)
 
   if (logsError || !logs || logs.length === 0) return 0
 
