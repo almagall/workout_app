@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { WorkoutSummary } from '@/app/api/share/workout/[sessionId]/route'
 import WorkoutShareCard from '@/components/share/WorkoutShareCard'
+import { estimated1RM } from '@/lib/estimated-1rm'
 
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -43,6 +44,7 @@ export default function WorkoutShareClient({ sessionId }: { sessionId: string })
   const [summary, setSummary] = useState<WorkoutSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const summaryRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function loadSummary() {
@@ -109,10 +111,11 @@ export default function WorkoutShareClient({ sessionId }: { sessionId: string })
     <div className="min-h-screen bg-background relative overflow-hidden">
       {exitToHistory}
 
-      {/* Background ambient glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none" style={{ background: 'radial-gradient(ellipse 50% 60% at 50% 0%, rgba(59,130,246,0.08), transparent 70%)' }} />
+      <div ref={summaryRef} className="w-full max-w-xl mx-auto relative">
+        {/* Background ambient glow — extends from top through workout name, date, and username */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[640px] h-[420px] pointer-events-none" style={{ background: 'radial-gradient(ellipse 50% 100% at 50% 0%, rgba(59,130,246,0.18), transparent 78%)' }} />
 
-      <div className="relative max-w-xl mx-auto px-4 py-10">
+        <div className="relative px-4 py-10">
 
         {/* Hero section */}
         <div className="text-center mb-10">
@@ -157,45 +160,60 @@ export default function WorkoutShareClient({ sessionId }: { sessionId: string })
             </div>
 
             <div className="space-y-3">
-              {summary.exercises.map((exercise, i) => (
-                <div
-                  key={`${exercise.exercise_name}-${i}`}
-                  className="group rounded-xl p-4 transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)' }}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-[11px] font-bold text-accent/50 tabular-nums w-5 text-right flex-shrink-0">{i + 1}</span>
-                      <h4 className="font-semibold text-foreground text-[15px] truncate">{exercise.exercise_name}</h4>
+              {summary.exercises.map((exercise, i) => {
+                const heaviestSet = exercise.sets.length
+                  ? exercise.sets.reduce((best, set) => (set.weight > best.weight ? set : best), exercise.sets[0])
+                  : null
+                const maxE1RM = exercise.sets.length
+                  ? Math.max(...exercise.sets.map((s) => estimated1RM(s.weight, s.reps)))
+                  : 0
+                return (
+                  <div
+                    key={`${exercise.exercise_name}-${i}`}
+                    className="group rounded-xl p-4 transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)' }}
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-1">
+                      <h4 className="font-semibold text-foreground text-[15px] truncate min-w-0">{exercise.exercise_name}</h4>
+                      <div className="flex items-center gap-4 flex-shrink-0 text-right">
+                        <div>
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-muted leading-none">Heaviest weight</p>
+                          <p className="text-accent-light font-semibold tabular-nums text-sm leading-tight">
+                            {heaviestSet ? `${heaviestSet.weight} lbs` : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-muted leading-none">Est 1 RM</p>
+                          <p className="text-accent-light font-semibold tabular-nums text-sm leading-tight">
+                            {maxE1RM > 0 ? `${Math.round(maxE1RM)} lbs` : '—'}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-baseline gap-1 flex-shrink-0">
-                      <span className="text-accent-light font-bold text-lg tabular-nums">{exercise.top_set_weight}</span>
-                      <span className="text-[10px] text-muted">lbs</span>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {exercise.sets.map((set, j) => (
+                        <span
+                          key={j}
+                          className="text-xs px-2.5 py-1 rounded-md font-medium tabular-nums bg-amber-500/15 text-amber-300 border border-amber-500/10"
+                        >
+                          {set.weight} &times; {set.reps}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="mt-2">
+                      <span className="text-[10px] text-muted tabular-nums">Volume: {exercise.total_volume.toLocaleString()} lbs</span>
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap gap-1.5 ml-[30px]">
-                    {exercise.sets.map((set, j) => (
-                      <span
-                        key={j}
-                        className="text-xs px-2.5 py-1 rounded-md font-medium tabular-nums bg-amber-500/15 text-amber-300 border border-amber-500/10"
-                      >
-                        {set.weight} &times; {set.reps}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="ml-[30px] mt-2">
-                    <span className="text-[10px] text-muted tabular-nums">{exercise.total_volume.toLocaleString()} lbs volume</span>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
           {/* Share actions */}
           <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-2">
-            <WorkoutShareCard summary={summary} />
+            <WorkoutShareCard summary={summary} contentRef={summaryRef} />
           </div>
         </div>
 
@@ -208,6 +226,7 @@ export default function WorkoutShareClient({ sessionId }: { sessionId: string })
             </div>
             <span className="text-foreground/80 group-hover:text-foreground font-semibold text-sm transition-colors">Workout Planner</span>
           </Link>
+        </div>
         </div>
       </div>
     </div>

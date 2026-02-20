@@ -320,11 +320,11 @@ export default function WorkoutCalendar() {
                       <div className="flex justify-between items-start mb-3">
                         <h4 className="text-base font-semibold text-foreground">{row.dayLabel}</h4>
                         <Link
-                          href={`/workout/edit/${row.session.id}`}
+                          href={`/share/workout/${row.session.id}`}
                           onClick={() => setModalDate(null)}
-                          className="text-sm font-medium text-foreground bg-elevated hover:bg-border px-3 py-1.5 rounded-md transition-colors"
+                          className="text-sm font-medium text-accent hover:text-accent-light px-3 py-1.5 rounded-md transition-colors"
                         >
-                          Edit workout
+                          View workout summary
                         </Link>
                       </div>
                       {row.rating !== null && (

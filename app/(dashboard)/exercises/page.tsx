@@ -123,6 +123,8 @@ export default function ExerciseDatabasePage() {
   const [muscleGrouped, setMuscleGrouped] = useState<Record<string, ExerciseEntry[]>>({})
   const [equipmentGrouped, setEquipmentGrouped] = useState<Record<string, ExerciseEntry[]>>({})
   const [viewMode, setViewMode] = useState<ViewMode>('muscleGroup')
+  /** When set, only show this group (muscle group or equipment depending on viewMode). Null = show all. */
+  const [groupFilter, setGroupFilter] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedExercise, setSelectedExercise] = useState<ExerciseEntry | null>(null)
 
@@ -147,37 +149,66 @@ export default function ExerciseDatabasePage() {
     )
   }
 
+  const availableGroups = viewMode === 'muscleGroup'
+    ? MUSCLE_GROUP_ORDER.filter((g) => muscleGrouped[g]?.length)
+    : EQUIPMENT_ORDER.filter((g) => equipmentGrouped[g]?.length)
+  const groupsToShow = groupFilter && availableGroups.includes(groupFilter)
+    ? [groupFilter]
+    : availableGroups
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Exercise Database</h1>
-        <div className="flex rounded-lg border border-border p-1 bg-background">
-          <button
-            onClick={() => setViewMode('muscleGroup')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === 'muscleGroup'
-                ? 'bg-white text-black'
-                : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
-            }`}
+      <div className="flex flex-col gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">Exercise Database</h1>
+          <div className="flex rounded-lg border border-border p-1 bg-background">
+            <button
+              onClick={() => {
+                setViewMode('muscleGroup')
+                setGroupFilter(null)
+              }}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'muscleGroup'
+                  ? 'bg-white text-black'
+                  : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
+              }`}
+            >
+              By Muscle Group
+            </button>
+            <button
+              onClick={() => {
+                setViewMode('equipment')
+                setGroupFilter(null)
+              }}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'equipment'
+                  ? 'bg-white text-black'
+                  : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
+              }`}
+            >
+              By Equipment
+            </button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted">Filter:</span>
+          <select
+            value={groupFilter ?? ''}
+            onChange={(e) => setGroupFilter(e.target.value === '' ? null : e.target.value)}
+            className="text-sm rounded-lg border border-white/[0.08] bg-white/[0.04] text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent min-w-[10rem]"
+            aria-label={viewMode === 'muscleGroup' ? 'Filter by muscle group' : 'Filter by equipment'}
           >
-            By Muscle Group
-          </button>
-          <button
-            onClick={() => setViewMode('equipment')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === 'equipment'
-                ? 'bg-white text-black'
-                : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
-            }`}
-          >
-            By Equipment
-          </button>
+            <option value="">All {viewMode === 'muscleGroup' ? 'muscle groups' : 'equipment'}</option>
+            {availableGroups.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
         </div>
       </div>
 
       <div className="space-y-8">
         {viewMode === 'muscleGroup'
-          ? MUSCLE_GROUP_ORDER.map((group) => {
+          ? groupsToShow.map((group) => {
               const exercises = muscleGrouped[group]
               if (!exercises?.length) return null
 
@@ -192,17 +223,13 @@ export default function ExerciseDatabasePage() {
                 </section>
               )
             })
-          : EQUIPMENT_ORDER.map((group) => {
+          : groupsToShow.map((group) => {
               const exercises = equipmentGrouped[group]
               if (!exercises?.length) return null
 
               return (
                 <section key={group}>
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">
-                    <span className={`inline-block text-sm font-medium px-3 py-1 rounded border ${getEquipmentStyle(group)}`}>
-                      {group}
-                    </span>
-                  </h2>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />{group}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {exercises.map((exercise) => (
                       <ExerciseCard key={exercise.id} exercise={exercise} onClick={() => setSelectedExercise(exercise)} />

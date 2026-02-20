@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth-simple'
 import { getPreviousWorkoutSessionExcludingDeload, getMostRecentSessionWithExercise, getExerciseLogsForSession, saveWorkoutSession, getWorkoutSessionByDate, getExerciseLogs, updateWorkoutSession, getWorkoutSessions, saveDraftWorkoutSession, completeWorkoutSession, deleteWorkoutSession } from '@/lib/storage'
-import { calculateSetTarget, getDefaultPlanSettings } from '@/lib/progressive-overload'
+import { calculateSetTarget, clampHypertrophyTargetToRepRange, getDefaultPlanSettings } from '@/lib/progressive-overload'
 import { generateExerciseFeedback, generateWorkoutFeedback, calculateWorkoutRating } from '@/lib/feedback-generator'
 import { getE1RMTrendForExercises, getHitStreakForExercises, getWeeklyHitRates } from '@/lib/performance-analytics'
 import { evaluateSetPerformance } from '@/lib/progressive-overload'
@@ -89,6 +89,7 @@ export default function WorkoutLogger({
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set())
   // Track if exercise selector dropdown is open
   const [showExerciseSelector, setShowExerciseSelector] = useState(false)
+  const [targetWhyModal, setTargetWhyModal] = useState<{ exerciseIndex: number; setIndex: number } | null>(null)
   const [prBadges, setPrBadges] = useState<Map<string, { heaviestSetPR: boolean; e1RMPR: boolean }>>(new Map())
   const [setValidationError, setSetValidationError] = useState<{ key: string; message: string } | null>(null)
   const [userBodyweightForDate, setUserBodyweightForDate] = useState<{ weight: number; unit: 'lbs' } | null>(null)
@@ -802,14 +803,29 @@ export default function WorkoutLogger({
                     undefined,
                     setTarget.highRpeLastTime
                   )
+                  const needsClamp =
+                    exercisePlanType === 'hypertrophy' &&
+                    setTarget.targetWeight != null &&
+                    setTarget.targetReps != null &&
+                    (setTarget.targetReps < 10 || setTarget.targetReps > 15)
+                  const finalTarget =
+                    needsClamp && setTarget.targetWeight != null && setTarget.targetReps != null
+                      ? clampHypertrophyTargetToRepRange(
+                          setTarget.targetWeight,
+                          setTarget.targetReps,
+                          10,
+                          15,
+                          roundToLoadable
+                        )
+                      : { targetWeight: setTarget.targetWeight, targetReps: setTarget.targetReps }
                   return {
                     setNumber: idx + 1,
                     setType: 'working' as SetType,
                     weight: parseFloat(log.weight.toString()),
                     reps: log.reps,
                     rpe: parseFloat(log.rpe.toString()),
-                    targetWeight: applyDeload(setTarget.targetWeight),
-                    targetReps: setTarget.targetReps,
+                    targetWeight: applyDeload(finalTarget.targetWeight),
+                    targetReps: finalTarget.targetReps,
                     targetRpe: setTarget.targetRpe,
                     targetExplanation,
                   }
@@ -1237,14 +1253,23 @@ export default function WorkoutLogger({
           const st = calculateSetTarget(prev, exercisePlanType, exercisePlanSettings, consecutiveUnderperformance, roundToLoadable)
           const status = evaluateSetPerformance(prev.weight, prev.reps, prev.rpe, prev.targetWeight, prev.targetReps, prev.targetRpe)
           const expl = getTargetExplanation(status, exercisePlanType, consecutiveUnderperformance, 'default', undefined, st.highRpeLastTime)
+          const needsClamp =
+            exercisePlanType === 'hypertrophy' &&
+            st.targetWeight != null &&
+            st.targetReps != null &&
+            (st.targetReps < 10 || st.targetReps > 15)
+          const finalTarget =
+            needsClamp && st.targetWeight != null && st.targetReps != null
+              ? clampHypertrophyTargetToRepRange(st.targetWeight, st.targetReps, 10, 15, roundToLoadable)
+              : { targetWeight: st.targetWeight, targetReps: st.targetReps }
           return {
             setNumber: idx + 1,
             setType: 'working' as SetType,
             weight: logWeight(log),
             reps: logReps(log),
             rpe: logRpe(log),
-            targetWeight: applyTargetWeight(st.targetWeight),
-            targetReps: st.targetReps,
+            targetWeight: applyTargetWeight(finalTarget.targetWeight),
+            targetReps: finalTarget.targetReps,
             targetRpe: st.targetRpe,
             targetExplanation: expl,
           }
@@ -2367,7 +2392,7 @@ export default function WorkoutLogger({
         type="number"
         min={0}
         step="2.5"
-        placeholder="Weight (lbs)"
+        placeholder="lbs"
         value={plateCalcWeight}
         onChange={(e) => {
           const v = e.target.value
@@ -2447,9 +2472,25 @@ export default function WorkoutLogger({
               </span>
             </div>
             {set.setType === 'working' && set.targetWeight != null && (
-              <span className="text-muted" title={set.targetExplanation ?? undefined}>
-                Target: {set.targetWeight} lbs × {set.targetReps} reps
-              </span>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-muted">
+                  Target: {set.targetWeight} lbs × {set.targetReps} reps
+                </span>
+                {set.targetExplanation && (
+                  <button
+                    type="button"
+                    onClick={() => setTargetWhyModal({ exerciseIndex: currentExerciseIndex, setIndex: originalIndex })}
+                    className="shrink-0 p-1 -m-1 rounded-full text-foreground/70 hover:text-foreground hover:bg-white/[0.04] transition-colors"
+                    aria-label="Why this target?"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 10v7" />
+                      <circle cx="12" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             )}
           </div>
           <div className="grid grid-cols-3 gap-1.5">
@@ -2767,10 +2808,13 @@ export default function WorkoutLogger({
                         setShowExerciseSelector(false)
                         setShowSwapPopover((v) => !v)
                       }}
-                      className="shrink-0 px-2 py-1 rounded-md text-xs font-medium text-foreground/80 hover:text-foreground bg-white/[0.04] hover:bg-white/[0.04] border border-white/[0.06] transition-colors"
+                      className="shrink-0 px-2 py-1 rounded-md text-xs font-medium text-foreground/80 hover:text-foreground bg-white/[0.04] hover:bg-white/[0.04] border border-white/[0.06] transition-colors inline-flex items-center gap-1.5"
                       title="Swap exercise"
                       aria-label="Swap exercise"
                     >
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                      </svg>
                       Swap
                     </button>
                   )
@@ -2786,12 +2830,12 @@ export default function WorkoutLogger({
                   return acc
                 }, {})
                 return (
-                  <div className="absolute left-0 mt-1 z-20 w-72 bg-white/[0.04] border border-white/[0.06] rounded-md shadow-lg p-3 max-h-[min(60vh,320px)] overflow-y-auto">
+                  <div className="absolute left-0 mt-1 z-20 w-72 rounded-lg border border-white/[0.08] bg-card shadow-xl p-3 max-h-[min(60vh,320px)] overflow-y-auto">
                     <p className="text-xs text-muted mb-3">Equipment taken? Choose an alternative.</p>
                     <div className="flex flex-col gap-3">
                       {EQUIPMENT_ORDER.filter((eq) => byEquipment[eq]?.length).map((equipment) => (
                         <div key={equipment}>
-                          <span className="inline-block text-[10px] uppercase tracking-wider text-[#999] mb-1.5">
+                          <span className="inline-block text-[10px] uppercase tracking-wider text-muted mb-1.5">
                             {equipment}
                           </span>
                           <div className="flex flex-wrap gap-2">
@@ -2803,7 +2847,7 @@ export default function WorkoutLogger({
                                   handleSelectAlternative(name)
                                   setShowSwapPopover(false)
                                 }}
-                                className="text-xs px-2.5 py-1 rounded-md border border-white/[0.06] bg-white/[0.04] text-foreground/90 hover:bg-white/[0.04] transition-colors text-left"
+                                className="text-xs px-2.5 py-1 rounded-md border border-white/[0.08] bg-white/[0.06] text-foreground hover:bg-white/[0.08] transition-colors text-left"
                               >
                                 {name}
                               </button>
@@ -2815,7 +2859,7 @@ export default function WorkoutLogger({
                         .filter((eq) => !EQUIPMENT_ORDER.includes(eq as (typeof EQUIPMENT_ORDER)[number]))
                         .map((equipment) => (
                           <div key={equipment}>
-                            <span className="inline-block text-[10px] uppercase tracking-wider text-[#999] mb-1.5">
+                            <span className="inline-block text-[10px] uppercase tracking-wider text-muted mb-1.5">
                               {equipment}
                             </span>
                             <div className="flex flex-wrap gap-2">
@@ -2827,7 +2871,7 @@ export default function WorkoutLogger({
                                     handleSelectAlternative(name)
                                     setShowSwapPopover(false)
                                   }}
-                                  className="text-xs px-2.5 py-1 rounded-md border border-white/[0.06] bg-white/[0.04] text-foreground/90 hover:bg-white/[0.04] transition-colors text-left"
+                                  className="text-xs px-2.5 py-1 rounded-md border border-white/[0.08] bg-white/[0.06] text-foreground hover:bg-white/[0.08] transition-colors text-left"
                                 >
                                   {name}
                                 </button>
@@ -2919,27 +2963,6 @@ export default function WorkoutLogger({
               <p className="text-sm text-secondary">{note}</p>
             </div>
           ) : null
-        })()}
-
-        {currentExercise && isBarbellExercise(currentExercise.exerciseName) && (() => {
-          const firstWorking = currentExercise.sets.find((s) => s.setType === 'working')
-          const targetWeight = firstWorking?.targetWeight ?? null
-          if (targetWeight == null || targetWeight <= 0) return null
-          const pc = getPlateConfig(userId)
-          const warmupWeight = Math.max(pc.barWeight, roundToLoadableWeight(targetWeight * 0.5, pc.plates, pc.barWeight))
-          const showEmptyBar = pc.barWeight > 0
-          const showSecond = warmupWeight > pc.barWeight
-          if (!showEmptyBar && !showSecond) return null
-          return (
-            <div className="mb-3 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-              <p className="text-xs font-medium text-muted uppercase tracking-wide mb-1">Suggested warm-up</p>
-              <p className="text-sm text-secondary">
-                {showEmptyBar && `${pc.barWeight} lb (empty bar) × 10`}
-                {showEmptyBar && showSecond && ' → '}
-                {showSecond && `${warmupWeight} lb × 5`}
-              </p>
-            </div>
-          )
         })()}
 
         {/* Add Warm Up - above all sets */}
@@ -3059,6 +3082,45 @@ export default function WorkoutLogger({
           </button>
         )}
       </div>
+
+      {targetWhyModal && (() => {
+        const ex = exerciseData[targetWhyModal.exerciseIndex]
+        const set = ex?.sets[targetWhyModal.setIndex]
+        if (!ex || !set || set.targetWeight == null || !set.targetExplanation) return null
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/70 backdrop-blur-sm"
+            onClick={() => setTargetWhyModal(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="target-why-modal-title"
+          >
+            <div
+              className="modal-glass max-w-sm w-full p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <h3 id="target-why-modal-title" className="text-base font-semibold text-foreground">Target info</h3>
+                <button
+                  type="button"
+                  onClick={() => setTargetWhyModal(null)}
+                  className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-white/[0.04] transition-colors"
+                  aria-label="Close"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-muted mb-1">Set {set.setNumber} · {ex.exerciseName}</p>
+              <p className="text-lg font-semibold text-foreground mb-3">
+                Target: {set.targetWeight} lbs × {set.targetReps} reps
+              </p>
+              <p className="text-sm text-secondary leading-relaxed">{set.targetExplanation}</p>
+            </div>
+          </div>
+        )
+      })()}
 
       {exerciseInfoModal && (
         <ExerciseDetailModal

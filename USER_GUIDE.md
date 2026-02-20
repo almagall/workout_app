@@ -28,7 +28,7 @@ The app uses smart algorithms to suggest weight and rep targets based on your pr
 After signing in, you'll be asked to choose between:
 
 **Hypertrophy Training:**
-- Higher rep range (8-15 reps)
+- Custom templates: targets stay in 10-15 reps; the app recalculates weight when needed so 10-15 reps is achievable. Preset templates (e.g. 5/3/1, PHUL) use their program’s own rep ranges.
 - Focus on volume progression
 - Moderate intensity (RPE 6-8)
 - Goal: Build muscle size and endurance
@@ -255,7 +255,7 @@ View key statistics:
 
 **Hypertrophy Plan:**
 - Focuses on volume (weight × reps)
-- Targets higher rep ranges (8-15)
+- Custom templates: targets in 10-15 rep range (weight recalculated when needed); presets use their program’s rep ranges.
 - Moderate RPE (6-8)
 - Gradual weight increases when hitting rep targets
 

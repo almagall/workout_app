@@ -233,7 +233,7 @@ export default function DashboardLayout({
 
       {/* Desktop Top Bar */}
       <div className="hidden lg:block lg:pl-64">
-        <div className="bg-sidebar/60 backdrop-blur-xl border-b border-white/[0.04]">
+        <div className="bg-sidebar border-b border-white/[0.04]">
           <div className="flex items-center justify-end h-14 px-6">
             <div className="flex items-center gap-4">
               <NotificationBell />

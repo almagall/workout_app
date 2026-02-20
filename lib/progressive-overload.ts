@@ -57,6 +57,33 @@ export function getDefaultPlanSettings(planType: PlanType): PlanSettings {
 }
 
 /**
+ * For custom hypertrophy: when raw target is outside [minReps, maxReps], recalculate
+ * weight via inverse Epley so the target stays in range (e.g. 225×7 → lower weight×10).
+ * Used only in custom-template path; presets use their own logic.
+ */
+export function clampHypertrophyTargetToRepRange(
+  targetWeight: number,
+  targetReps: number,
+  minReps: number,
+  maxReps: number,
+  roundToLoadable?: (w: number) => number
+): { targetWeight: number; targetReps: number } {
+  let w = targetWeight
+  let r = targetReps
+  if (r < minReps && r >= 1) {
+    const e1rm = estimated1RM(w, r)
+    w = e1rm / (1 + minReps / 30)
+    r = minReps
+  } else if (r > maxReps) {
+    const e1rm = estimated1RM(w, r)
+    w = e1rm / (1 + maxReps / 30)
+    r = maxReps
+  }
+  if (roundToLoadable) w = roundToLoadable(w)
+  return { targetWeight: w, targetReps: r }
+}
+
+/**
  * Calculate target for a single set based on the previous set's performance
  * Uses double progression: increase reps to max, then increase weight and reset reps
  */

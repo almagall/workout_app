@@ -98,7 +98,8 @@ An intelligent workout tracking system that automatically suggests weight and re
 ## Plan Types
 
 ### Hypertrophy Training
-- **Rep Range:** 8-15 reps
+- **Rep Range (custom templates):** Targets stay in 10-15 reps; when progression would suggest a weight for fewer than 10 or more than 15 reps, the app recalculates a weight so 10-15 reps is achievable (e.g. 225×7 → lower weight×10).
+- **Preset templates** (e.g. 5/3/1, PHUL): use their program-specific rep ranges.
 - **Focus:** Volume progression (weight × reps)
 - **RPE:** 6-8 (moderate intensity)
 - **Goal:** Build muscle size

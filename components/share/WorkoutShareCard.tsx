@@ -1,10 +1,13 @@
 'use client'
 
-import { useRef, useCallback } from 'react'
+import { useCallback } from 'react'
+import { toPng, toBlob } from 'html-to-image'
 import type { WorkoutSummary } from '@/app/api/share/workout/[sessionId]/route'
 
 interface WorkoutShareCardProps {
   summary: WorkoutSummary
+  /** When provided, download/share use a screenshot of this element so the export matches the workout summary UI. */
+  contentRef?: React.RefObject<HTMLDivElement | null>
 }
 
 function formatVolume(v: number): string {
@@ -19,173 +22,66 @@ function formatDuration(seconds: number): string {
   return m > 0 ? `${h}hr ${m}m` : `${h}hr`
 }
 
-export default function WorkoutShareCard({ summary }: WorkoutShareCardProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+const EXPORT_OPTIONS = {
+  backgroundColor: '#0a0a0b',
+  pixelRatio: 2,
+  cacheBust: true,
+}
 
-  const generateImage = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return null
-
-    const w = 600
-    const h = 800
-    const dpr = 2
-    canvas.width = w * dpr
-    canvas.height = h * dpr
-    canvas.style.width = `${w}px`
-    canvas.style.height = `${h}px`
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-
-    ctx.scale(dpr, dpr)
-
-    // Background
-    const grad = ctx.createLinearGradient(0, 0, w, h)
-    grad.addColorStop(0, '#0a0a0c')
-    grad.addColorStop(1, '#111115')
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, w, h)
-
-    // Accent strip at top
-    const accentGrad = ctx.createLinearGradient(0, 0, w, 0)
-    accentGrad.addColorStop(0, '#2563eb')
-    accentGrad.addColorStop(1, '#3b82f6')
-    ctx.fillStyle = accentGrad
-    ctx.fillRect(0, 0, w, 4)
-
-    // App branding
-    ctx.fillStyle = '#888888'
-    ctx.font = '500 12px system-ui, sans-serif'
-    ctx.fillText('WORKOUT PLANNER', 30, 36)
-
-    // Username
-    ctx.fillStyle = '#3b82f6'
-    ctx.font = '600 16px system-ui, sans-serif'
-    ctx.fillText(`@${summary.username}`, 30, 66)
-
-    // Workout name
-    ctx.fillStyle = '#f5f5f5'
-    ctx.font = 'bold 28px system-ui, sans-serif'
-    ctx.fillText(summary.day_label, 30, 104)
-
-    // Template and date
-    ctx.fillStyle = '#888888'
-    ctx.font = '400 14px system-ui, sans-serif'
-    ctx.fillText(`${summary.template_name}  ·  ${summary.workout_date}`, 30, 130)
-
-    // Stats row
-    const stats = [
-      { label: 'Exercises', value: String(summary.exercises.length) },
-      { label: 'Sets', value: String(summary.total_sets) },
-      { label: 'Volume', value: `${formatVolume(summary.total_volume)} lbs` },
-    ]
-    if (summary.duration_seconds) {
-      stats.push({ label: 'Duration', value: formatDuration(summary.duration_seconds) })
+export default function WorkoutShareCard({ summary, contentRef }: WorkoutShareCardProps) {
+  const getImageDataUrl = useCallback(async (): Promise<string | null> => {
+    if (contentRef?.current) {
+      try {
+        return await toPng(contentRef.current, EXPORT_OPTIONS)
+      } catch {
+        return null
+      }
     }
+    return null
+  }, [contentRef])
 
-    const statY = 170
-    const statW = (w - 60) / stats.length
-
-    ctx.fillStyle = 'rgba(255,255,255,0.04)'
-    ctx.beginPath()
-    ctx.roundRect(20, statY - 10, w - 40, 60, 8)
-    ctx.fill()
-
-    stats.forEach((stat, i) => {
-      const x = 30 + i * statW
-      ctx.fillStyle = '#f5f5f5'
-      ctx.font = 'bold 20px system-ui, sans-serif'
-      ctx.fillText(stat.value, x, statY + 18)
-      ctx.fillStyle = '#666666'
-      ctx.font = '400 11px system-ui, sans-serif'
-      ctx.fillText(stat.label, x, statY + 36)
-    })
-
-    // Exercises list
-    let y = statY + 80
-    const maxExercises = Math.min(summary.exercises.length, 8)
-
-    ctx.fillStyle = '#666666'
-    ctx.font = '600 10px system-ui, sans-serif'
-    ctx.fillText('EXERCISES', 30, y)
-    y += 20
-
-    for (let i = 0; i < maxExercises; i++) {
-      const ex = summary.exercises[i]
-      const setsText = ex.sets.map(s => `${s.weight}×${s.reps}`).join('  ')
-
-      ctx.fillStyle = 'rgba(255,255,255,0.03)'
-      ctx.beginPath()
-      ctx.roundRect(20, y - 2, w - 40, 48, 6)
-      ctx.fill()
-
-      ctx.fillStyle = '#e5e5e5'
-      ctx.font = '500 14px system-ui, sans-serif'
-      ctx.fillText(ex.exercise_name, 32, y + 17)
-
-      ctx.fillStyle = '#3b82f6'
-      ctx.font = '400 12px system-ui, sans-serif'
-      const topSetText = `Top: ${ex.top_set_weight} lbs`
-      ctx.fillText(topSetText, w - 30 - ctx.measureText(topSetText).width, y + 17)
-
-      ctx.fillStyle = '#777777'
-      ctx.font = '400 11px system-ui, sans-serif'
-      ctx.fillText(setsText.substring(0, 60), 32, y + 35)
-
-      y += 56
+  const getImageBlob = useCallback(async (): Promise<Blob | null> => {
+    if (contentRef?.current) {
+      try {
+        return await toBlob(contentRef.current, { ...EXPORT_OPTIONS, type: 'image/png' })
+      } catch {
+        return null
+      }
     }
+    return null
+  }, [contentRef])
 
-    if (summary.exercises.length > maxExercises) {
-      ctx.fillStyle = '#666666'
-      ctx.font = '400 12px system-ui, sans-serif'
-      ctx.fillText(`+ ${summary.exercises.length - maxExercises} more exercises`, 30, y + 10)
-    }
-
-    // Footer
-    ctx.fillStyle = '#333333'
-    ctx.fillRect(20, h - 50, w - 40, 1)
-    ctx.fillStyle = '#555555'
-    ctx.font = '400 11px system-ui, sans-serif'
-    ctx.fillText('Generated by Workout Planner', 30, h - 22)
-
-    return canvas
-  }, [summary])
-
-  const handleDownload = () => {
-    const canvas = generateImage()
-    if (!canvas) return
+  const handleDownload = async () => {
+    const dataUrl = await getImageDataUrl()
+    if (!dataUrl) return
 
     const link = document.createElement('a')
     link.download = `workout_${summary.day_label.replace(/\s/g, '_')}_${summary.workout_date}.png`
-    link.href = canvas.toDataURL('image/png')
+    link.href = dataUrl
     link.click()
   }
 
   const handleShare = async () => {
-    const canvas = generateImage()
-    if (!canvas) return
+    const blob = await getImageBlob()
+    if (!blob) return
 
-    canvas.toBlob(async (blob) => {
-      if (!blob) return
-      const file = new File([blob], 'workout.png', { type: 'image/png' })
+    const file = new File([blob], 'workout.png', { type: 'image/png' })
 
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({
-            title: `${summary.day_label} - ${summary.template_name}`,
-            text: `Check out my workout: ${summary.exercises.length} exercises, ${summary.total_sets} sets, ${formatVolume(summary.total_volume)} lbs volume`,
-            files: [file],
-          })
-        } catch { /* cancelled */ }
-      } else {
-        handleDownload()
-      }
-    }, 'image/png')
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: `${summary.day_label} - ${summary.template_name}`,
+          text: `Check out my workout: ${summary.exercises.length} exercises, ${summary.total_sets} sets, ${formatVolume(summary.total_volume)} lbs volume`,
+          files: [file],
+        })
+      } catch { /* cancelled */ }
+    } else {
+      handleDownload()
+    }
   }
 
   return (
     <div className="space-y-3">
-      <canvas ref={canvasRef} className="hidden" />
       <div className="flex gap-2">
         <button onClick={handleDownload} className="flex-1 py-2.5 px-4 rounded-lg border border-white/[0.08] text-foreground text-sm hover:bg-white/[0.04] transition-colors flex items-center justify-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>

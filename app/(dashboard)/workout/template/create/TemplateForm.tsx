@@ -71,14 +71,14 @@ function ExerciseAutocompleteInline({
         autoComplete="off"
       />
       {open && query.trim().length > 0 && (
-        <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-md border border-white/[0.06] bg-white/[0.04] shadow-lg">
+        <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-lg border border-white/[0.08] bg-card shadow-xl">
           {suggestions.length === 0 ? (
             <li className="px-3 py-2 text-muted text-sm">No matches. Use as custom exercise.</li>
           ) : (
             suggestions.map((entry) => (
               <li
                 key={entry.id}
-                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm hover:bg-white/[0.04] text-foreground"
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm hover:bg-white/[0.08] text-foreground"
                 onClick={() => {
                   onChange(entry.name)
                   setQuery(entry.name)
