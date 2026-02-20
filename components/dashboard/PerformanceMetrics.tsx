@@ -173,7 +173,7 @@ export default function PerformanceMetrics() {
                 <span className={`${tile.color}`}>{tile.icon}</span>
                 <span className="text-[11px] sm:text-xs text-muted font-medium uppercase tracking-wide">{tile.label}</span>
               </div>
-              <p className={`text-xl sm:text-2xl font-bold leading-none ${tile.color}`}>
+              <p className="text-xl sm:text-2xl font-bold leading-none text-foreground">
                 {value}<span className="text-muted font-medium text-sm">{suffix}</span>
               </p>
             </div>

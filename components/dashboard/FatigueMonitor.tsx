@@ -27,6 +27,108 @@ interface FatigueMonitorProps {
   planType?: PlanType
 }
 
+const ZONE_INSIGHTS: Record<'green' | 'yellow' | 'red', string> = {
+  green: 'You\'re well-recovered. Push hard and aim for PRs this week.',
+  yellow: 'Accumulated load is building. Prioritize sleep and nutrition to sustain performance.',
+  red: 'High fatigue detected. A deload week will help you recover and come back stronger.',
+}
+
+function FatigueGauge({ score, zone }: { score: number; zone: 'green' | 'yellow' | 'red' }) {
+  // Convert score (0–100) to needle angle. score=0 → left (π), score=100 → right (0).
+  const angle = (1 - score / 100) * Math.PI
+  const needleX = 100 + 62 * Math.cos(angle)
+  const needleY = 100 - 62 * Math.sin(angle)
+
+  // Zone boundary tick positions (on arc, r=75) and outer endpoints (r=88)
+  const tick50 = { x: 100, y: 25 }
+  const outer50 = { x: 100, y: 13 }
+  const tick75 = { x: 153.03, y: 46.97 }
+  const outer75 = {
+    x: 100 + 88 * Math.cos(Math.PI / 4),
+    y: 100 - 88 * Math.sin(Math.PI / 4),
+  }
+
+  const zoneColor = zone === 'green' ? '#22c55e' : zone === 'yellow' ? '#f59e0b' : '#ef4444'
+  const zoneLabel = zone === 'green' ? 'Fresh' : zone === 'yellow' ? 'Moderate' : 'Consider Deload'
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      {/* viewBox tall enough to contain score label (y=130) + padding */}
+      <svg viewBox="0 0 200 135" className="w-full max-w-[260px]">
+        {/* Dim background full arc */}
+        <path
+          d="M 25 100 A 75 75 0 0 1 175 100"
+          fill="none"
+          stroke="rgba(255,255,255,0.05)"
+          strokeWidth="15"
+        />
+
+        {/* Green zone: score 0–50 (left → top) */}
+        <path
+          d="M 25 100 A 75 75 0 0 1 100 25"
+          fill="none"
+          stroke="#22c55e"
+          strokeWidth="15"
+          opacity={zone === 'green' ? '1' : '0.35'}
+        />
+
+        {/* Yellow zone: score 50–75 (top → ~45°) */}
+        <path
+          d="M 100 25 A 75 75 0 0 1 153.03 46.97"
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth="15"
+          opacity={zone === 'yellow' ? '1' : '0.35'}
+        />
+
+        {/* Red zone: score 75–100 (~45° → right) */}
+        <path
+          d="M 153.03 46.97 A 75 75 0 0 1 175 100"
+          fill="none"
+          stroke="#ef4444"
+          strokeWidth="15"
+          opacity={zone === 'red' ? '1' : '0.35'}
+        />
+
+        {/* Zone boundary ticks */}
+        <line x1={tick50.x} y1={tick50.y} x2={outer50.x} y2={outer50.y} stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1={tick75.x} y1={tick75.y} x2={outer75.x} y2={outer75.y} stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round" />
+
+        {/* Scale labels */}
+        <text x="20"  y="114" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="8">0</text>
+        <text x="100" y="11"  textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="8">50</text>
+        <text x="180" y="114" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="8">100</text>
+
+        {/* Needle shadow */}
+        <line x1="100" y1="100" x2={needleX + 0.8} y2={needleY + 0.8} stroke="rgba(0,0,0,0.5)" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Needle */}
+        <line x1="100" y1="100" x2={needleX} y2={needleY} stroke="white" strokeWidth="2" strokeLinecap="round" />
+
+        {/* Pivot circle */}
+        <circle cx="100" cy="100" r="6"   fill="#111113" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
+        <circle cx="100" cy="100" r="2.5" fill="white" />
+
+        {/* Score number — safely inside the viewBox at y=130 */}
+        <text x="100" y="130" textAnchor="middle" fill={zoneColor} fontSize="20" fontWeight="bold">
+          {score}
+        </text>
+      </svg>
+
+      {/* Zone status badge */}
+      <span
+        className="text-xs font-semibold px-3 py-1 rounded-full"
+        style={{
+          color: zoneColor,
+          backgroundColor: `${zoneColor}18`,
+          border: `1px solid ${zoneColor}35`,
+        }}
+      >
+        {zoneLabel}
+      </span>
+    </div>
+  )
+}
+
 export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMonitorProps) {
   const [data, setData] = useState<FatigueData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -125,7 +227,7 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
   if (loading) {
     return (
       <div className="card-glass card-accent-top p-6">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Fatigue Score</h3>
         <p className="text-sm text-secondary">Loading...</p>
       </div>
     )
@@ -134,7 +236,7 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
   if (!data) {
     return (
       <div className="card-glass card-accent-top p-6">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3 flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Fatigue Score</h3>
         <p className="text-sm text-secondary">Not enough data yet.</p>
       </div>
     )
@@ -142,11 +244,6 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
 
   const zone =
     data.fatigueScore < 50 ? 'green' : data.fatigueScore < 75 ? 'yellow' : 'red'
-  const zoneColors = {
-    green: { bar: 'bg-emerald-500', glow: 'rgba(16,185,129,0.3)', text: 'text-emerald-400' },
-    yellow: { bar: 'bg-amber-500', glow: 'rgba(245,158,11,0.3)', text: 'text-amber-400' },
-    red: { bar: 'bg-red-500', glow: 'rgba(239,68,68,0.3)', text: 'text-red-400' },
-  }
 
   return (
     <div className="card-glass card-accent-top p-6">
@@ -155,47 +252,28 @@ export default function FatigueMonitor({ planType = 'hypertrophy' }: FatigueMoni
         style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }}
       />
       <div className="relative">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2"><span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Training load</h3>
-        <div className="text-right">
-          <p className="text-[10px] uppercase tracking-wider text-muted">Fatigue score</p>
-          <span className={`text-lg font-bold ${zoneColors[zone].text}`}>{data.fatigueScore}</span>
-        </div>
-      </div>
-      <p className="text-xs text-muted mb-3">
-        {data.weeksTrained} week{data.weeksTrained !== 1 ? 's' : ''} of training in the last 12 weeks
-      </p>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-2 mb-4">
+          <span className="w-0.5 h-3.5 rounded-full bg-accent/40 flex-shrink-0" />Fatigue Score
+        </h3>
 
-      <div className="h-2.5 bg-white/[0.08] rounded-full overflow-hidden mb-3">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${zoneColors[zone].bar}`}
-          style={{
-            width: `${Math.min(100, data.fatigueScore)}%`,
-            boxShadow: `0 0 10px ${zoneColors[zone].glow}`,
-          }}
-        />
-      </div>
+        <FatigueGauge score={data.fatigueScore} zone={zone} />
 
-      {zone === 'red' && (
-        <p className="text-xs text-red-400 mb-3">Consider deload</p>
-      )}
+        <p className="text-xs text-muted text-center mt-3 leading-relaxed">
+          {ZONE_INSIGHTS[zone]}
+        </p>
 
-      {(data.deloadRecommended || data.fatigueScore >= 75) && !data.inDeloadPeriod && (
-        <button
-          onClick={handleStartDeload}
-          className="w-full px-4 py-2 text-sm font-medium rounded-md bg-amber-600/20 text-amber-400 border border-amber-500/50 hover:bg-amber-600/30 transition-colors"
-        >
-          Start deload week
-        </button>
-      )}
+        {(data.deloadRecommended || data.fatigueScore >= 75) && !data.inDeloadPeriod && (
+          <button
+            onClick={handleStartDeload}
+            className="w-full mt-3 px-4 py-2 text-sm font-medium rounded-md bg-amber-600/20 text-amber-400 border border-amber-500/50 hover:bg-amber-600/30 transition-colors"
+          >
+            Start deload week
+          </button>
+        )}
 
-      {data.inDeloadPeriod && (
-        <p className="text-xs text-amber-400 mb-3">Deload week active</p>
-      )}
-
-      <p className="text-[11px] text-muted border-t border-white/[0.06] pt-3 mt-3">
-        Fatigue score (0–100) reflects accumulated training load from consecutive weeks, recent hit-rate trends, and low performance streaks. Green: fresh; yellow: moderate load; red: consider a deload week to recover.
-      </p>
+        {data.inDeloadPeriod && (
+          <p className="text-xs text-amber-400 text-center mt-3">Deload week active</p>
+        )}
       </div>
     </div>
   )

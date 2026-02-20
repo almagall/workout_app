@@ -177,8 +177,12 @@ export async function getWeeklyVolume(weeks: number = 6): Promise<WeeklyVolumeDa
   const supabase = createClient()
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const startDate = new Date(today)
-  startDate.setDate(startDate.getDate() - (weeks - 1) * 7)
+  // Anchor to Monday of the current week so each weekly bucket is fully captured
+  const currentWeekMonday = new Date(today)
+  const dow = (today.getDay() + 6) % 7 // 0 = Monday
+  currentWeekMonday.setDate(today.getDate() - dow)
+  const startDate = new Date(currentWeekMonday)
+  startDate.setDate(currentWeekMonday.getDate() - (weeks - 1) * 7)
   const startDateStr = startDate.toISOString().split('T')[0]
   const endDateStr = today.toISOString().split('T')[0]
 

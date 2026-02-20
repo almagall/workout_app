@@ -4,6 +4,63 @@ import { useState, useEffect } from 'react'
 import { getAllProgressionTrends } from '@/lib/progression-analytics'
 import type { ProgressionTrend } from '@/types/profile'
 
+function TrendIcon({ trend, color }: { trend: ProgressionTrend['trend']; color: string }) {
+  const icons: Record<ProgressionTrend['trend'], React.ReactNode> = {
+    accelerating: (
+      <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4">
+        <path d="M8 2L8 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M5 5L8 2L11 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5 9L8 6L11 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M4 13H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+      </svg>
+    ),
+    progressing: (
+      <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4">
+        <path d="M8 13L8 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M5 7L8 4L11 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    maintaining: (
+      <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4">
+        <path d="M3 8H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M10 5L13 8L10 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    plateaued: (
+      <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4">
+        <path d="M8 3L8 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M5 9L8 12L11 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M4 3H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+      </svg>
+    ),
+    regressing: (
+      <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4">
+        <path d="M8 2L8 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M5 6L8 9L11 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5 11L8 14L11 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M4 2H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+      </svg>
+    ),
+  }
+
+  return (
+    <span
+      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+      style={{ color, backgroundColor: `${color}18`, border: `1px solid ${color}30` }}
+    >
+      {icons[trend]}
+    </span>
+  )
+}
+
+const TREND_LABELS: Record<ProgressionTrend['trend'], string> = {
+  accelerating: 'Accelerating',
+  progressing: 'Progressing',
+  maintaining: 'Maintaining',
+  plateaued: 'Plateaued',
+  regressing: 'Regressing',
+}
+
 export default function ProgressionMomentum() {
   const [loading, setLoading] = useState(true)
   const [trends, setTrends] = useState<ProgressionTrend[]>([])
@@ -59,20 +116,21 @@ export default function ProgressionMomentum() {
           {shown.map((trend, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-3 rounded-lg border border-white/[0.05] bg-white/[0.025] hover:bg-white/[0.04] transition-colors group"
+              className="flex items-center justify-between gap-3 p-3 rounded-lg border border-white/[0.05] bg-white/[0.025] hover:bg-white/[0.04] transition-colors group"
             >
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <span
-                  className="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                  style={{ color: trend.color, backgroundColor: `${trend.color}15` }}
-                >
-                  {trend.icon}
-                </span>
+                <TrendIcon trend={trend.trend} color={trend.color} />
                 <span className="text-foreground font-medium text-sm truncate">{trend.exerciseName}</span>
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span
-                  className="text-sm font-bold tabular-nums"
+                  className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{ color: trend.color, backgroundColor: `${trend.color}18` }}
+                >
+                  {TREND_LABELS[trend.trend]}
+                </span>
+                <span
+                  className="text-sm font-bold tabular-nums w-14 text-right"
                   style={{ color: trend.color }}
                 >
                   {trend.percentChange > 0 ? '+' : ''}

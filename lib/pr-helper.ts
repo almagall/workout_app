@@ -212,34 +212,49 @@ export async function getRecentPRs(limit: number = 5): Promise<RecentPR[]> {
         l.duration_seconds == null
     )
 
+    // Collect the single best value per exercise within this session first,
+    // so only one PR per type per exercise per session is ever emitted.
+    const bestInSession = new Map<string, {
+      heaviestWeight: number
+      bestE1rm: number
+    }>()
     for (const log of logs) {
       const w = parseFloat(log.weight.toString())
       const r = log.reps
       if (w <= 0 || r <= 0) continue
-
-      const key = `${session.template_day_id}:${log.exercise_name}`
-      const prev = maxByExerciseDay.get(key) ?? { heaviestSet: 0, e1RM: 0 }
       const e1rm = estimated1RM(w, r)
+      const existing = bestInSession.get(log.exercise_name)
+      if (!existing) {
+        bestInSession.set(log.exercise_name, { heaviestWeight: w, bestE1rm: e1rm })
+      } else {
+        if (w > existing.heaviestWeight) existing.heaviestWeight = w
+        if (e1rm > existing.bestE1rm) existing.bestE1rm = e1rm
+      }
+    }
 
-      if (w > prev.heaviestSet) {
-        prev.heaviestSet = w
+    for (const [exerciseName, best] of bestInSession) {
+      const key = `${session.template_day_id}:${exerciseName}`
+      const prev = maxByExerciseDay.get(key) ?? { heaviestSet: 0, e1RM: 0 }
+
+      if (best.heaviestWeight > prev.heaviestSet) {
+        prev.heaviestSet = best.heaviestWeight
         maxByExerciseDay.set(key, prev)
         prs.push({
-          exerciseName: log.exercise_name,
+          exerciseName,
           templateDayId: session.template_day_id,
           prType: 'heaviestSet',
-          value: w,
+          value: best.heaviestWeight,
           workoutDate: session.workout_date,
         })
       }
-      if (e1rm > prev.e1RM) {
-        prev.e1RM = e1rm
+      if (best.bestE1rm > prev.e1RM) {
+        prev.e1RM = best.bestE1rm
         maxByExerciseDay.set(key, prev)
         prs.push({
-          exerciseName: log.exercise_name,
+          exerciseName,
           templateDayId: session.template_day_id,
           prType: 'e1RM',
-          value: Math.round(e1rm * 10) / 10,
+          value: Math.round(best.bestE1rm * 10) / 10,
           workoutDate: session.workout_date,
         })
       }
@@ -275,34 +290,49 @@ export async function getRecentPRsByDay(numDays: number = 5): Promise<WorkoutDay
         l.duration_seconds == null
     )
 
+    // Collect the single best value per exercise within this session first,
+    // so only one PR per type per exercise per session is ever emitted.
+    const bestInSession = new Map<string, {
+      heaviestWeight: number
+      bestE1rm: number
+    }>()
     for (const log of logs) {
       const w = parseFloat(log.weight.toString())
       const r = log.reps
       if (w <= 0 || r <= 0) continue
-
-      const key = `${session.template_day_id}:${log.exercise_name}`
-      const prev = maxByExerciseDay.get(key) ?? { heaviestSet: 0, e1RM: 0 }
       const e1rm = estimated1RM(w, r)
+      const existing = bestInSession.get(log.exercise_name)
+      if (!existing) {
+        bestInSession.set(log.exercise_name, { heaviestWeight: w, bestE1rm: e1rm })
+      } else {
+        if (w > existing.heaviestWeight) existing.heaviestWeight = w
+        if (e1rm > existing.bestE1rm) existing.bestE1rm = e1rm
+      }
+    }
 
-      if (w > prev.heaviestSet) {
-        prev.heaviestSet = w
+    for (const [exerciseName, best] of bestInSession) {
+      const key = `${session.template_day_id}:${exerciseName}`
+      const prev = maxByExerciseDay.get(key) ?? { heaviestSet: 0, e1RM: 0 }
+
+      if (best.heaviestWeight > prev.heaviestSet) {
+        prev.heaviestSet = best.heaviestWeight
         maxByExerciseDay.set(key, prev)
         prs.push({
-          exerciseName: log.exercise_name,
+          exerciseName,
           templateDayId: session.template_day_id,
           prType: 'heaviestSet',
-          value: w,
+          value: best.heaviestWeight,
           workoutDate: session.workout_date,
         })
       }
-      if (e1rm > prev.e1RM) {
-        prev.e1RM = e1rm
+      if (best.bestE1rm > prev.e1RM) {
+        prev.e1RM = best.bestE1rm
         maxByExerciseDay.set(key, prev)
         prs.push({
-          exerciseName: log.exercise_name,
+          exerciseName,
           templateDayId: session.template_day_id,
           prType: 'e1RM',
-          value: Math.round(e1rm * 10) / 10,
+          value: Math.round(best.bestE1rm * 10) / 10,
           workoutDate: session.workout_date,
         })
       }
@@ -386,34 +416,49 @@ export function computeRecentPRsFromData(
       (l) => l.session_id === session.id && (l.set_type === 'working' || l.set_type == null)
     )
 
+    // Collect the single best value per exercise within this session first,
+    // so only one PR per type per exercise per session is ever emitted.
+    const bestInSession = new Map<string, {
+      heaviestWeight: number
+      bestE1rm: number
+    }>()
     for (const log of sessionLogs) {
       const w = parseFloat(log.weight.toString())
       const r = log.reps
       if (w <= 0 || r <= 0) continue
-
-      const key = `${session.template_day_id}:${log.exercise_name}`
-      const prev = maxByExerciseDay.get(key) ?? { heaviestSet: 0, e1RM: 0 }
       const e1rm = estimated1RM(w, r)
+      const existing = bestInSession.get(log.exercise_name)
+      if (!existing) {
+        bestInSession.set(log.exercise_name, { heaviestWeight: w, bestE1rm: e1rm })
+      } else {
+        if (w > existing.heaviestWeight) existing.heaviestWeight = w
+        if (e1rm > existing.bestE1rm) existing.bestE1rm = e1rm
+      }
+    }
 
-      if (w > prev.heaviestSet) {
-        prev.heaviestSet = w
+    for (const [exerciseName, best] of bestInSession) {
+      const key = `${session.template_day_id}:${exerciseName}`
+      const prev = maxByExerciseDay.get(key) ?? { heaviestSet: 0, e1RM: 0 }
+
+      if (best.heaviestWeight > prev.heaviestSet) {
+        prev.heaviestSet = best.heaviestWeight
         maxByExerciseDay.set(key, prev)
         prs.push({
-          exerciseName: log.exercise_name,
+          exerciseName,
           templateDayId: session.template_day_id,
           prType: 'heaviestSet',
-          value: w,
+          value: best.heaviestWeight,
           workoutDate: session.workout_date,
         })
       }
-      if (e1rm > prev.e1RM) {
-        prev.e1RM = e1rm
+      if (best.bestE1rm > prev.e1RM) {
+        prev.e1RM = best.bestE1rm
         maxByExerciseDay.set(key, prev)
         prs.push({
-          exerciseName: log.exercise_name,
+          exerciseName,
           templateDayId: session.template_day_id,
           prType: 'e1RM',
-          value: Math.round(e1rm * 10) / 10,
+          value: Math.round(best.bestE1rm * 10) / 10,
           workoutDate: session.workout_date,
         })
       }

@@ -109,6 +109,7 @@ export default function StrengthStandards() {
       ? { text: 'Above average strength', color: '#3b82f6', icon: '●' }
       : { text: 'Keep pushing!', color: '#8b5cf6', icon: '▲' }
 
+
   return (
     <div className="card-glass card-accent-top">
       <div
