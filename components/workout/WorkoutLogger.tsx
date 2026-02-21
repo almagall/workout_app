@@ -908,17 +908,19 @@ export default function WorkoutLogger({
           })
         }
 
-        // Track pre-populated values for styling
+        // Track pre-populated values for styling (key by exercise + working-set index so adding warm-up/cooldown doesn't shift Prev tags)
         const prePopulated = new Map<string, { weight: number; reps: number; rpe: number }>()
         initializedExercises.forEach((exercise, exIndex) => {
-          exercise.sets.forEach((set, setIndex) => {
-            const key = `${exIndex}-${setIndex}`
-            prePopulated.set(key, {
-              weight: set.weight,
-              reps: set.reps,
-              rpe: set.rpe,
+          exercise.sets
+            .filter((s) => s.setType === 'working')
+            .forEach((set, workingSetIndex) => {
+              const key = `${exIndex}-${workingSetIndex}`
+              prePopulated.set(key, {
+                weight: set.weight,
+                reps: set.reps,
+                rpe: set.rpe,
+              })
             })
-          })
         })
         setPrePopulatedValues(prePopulated)
 
@@ -1367,10 +1369,10 @@ export default function WorkoutLogger({
           setType,
           weight: setType === 'working' ? (template?.weight ?? 0) : 0,
           reps: setType === 'working' ? (template?.reps ?? 0) : 0,
-          rpe: 0,
+          rpe: setType === 'working' ? (template?.rpe ?? 5) : 0,
           targetWeight: setType === 'working' ? (template?.targetWeight ?? null) : null,
           targetReps: setType === 'working' ? (template?.targetReps ?? null) : null,
-          targetRpe: null,
+          targetRpe: setType === 'working' ? (template?.targetRpe ?? null) : null,
           targetExplanation: setType === 'working' ? (template?.targetExplanation ?? null) : null,
         }
 
@@ -2419,6 +2421,14 @@ export default function WorkoutLogger({
 
   const currentExercise = exerciseData[currentExerciseIndex]
 
+  if (!currentExercise) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-muted">Loading exercise...</div>
+      </div>
+    )
+  }
+
   const workoutDateInputProps = {
     type: 'date' as const,
     value: workoutDate,
@@ -2521,11 +2531,15 @@ export default function WorkoutLogger({
     const originalIndex = currentExercise!.sets.findIndex((s) => s === set)
     const setKey = `${currentExerciseIndex}-${originalIndex}`
     const isConfirmed = confirmedSets.has(setKey)
+    const badge = prBadges.get(setKey)
+    const isPR = isConfirmed && badge && (badge.heaviestSetPR || badge.e1RMPR)
     return (
       <Fragment key={setKey}>
         <div
           className={`bg-white/[0.04] rounded-xl p-2.5 shadow-card border-l-[3px] ${
-            isConfirmed
+            isPR
+              ? 'set-card-pr'
+              : isConfirmed
               ? 'border border-success border-l-[3px] border-l-success'
               : set.setType === 'warmup'
               ? 'border border-white/[0.06] border-l-amber-500/60'
@@ -2534,47 +2548,20 @@ export default function WorkoutLogger({
               : 'border border-white/[0.06] border-l-accent/60'
           }`}
         >
-          {/* Set header row */}
-          <div className="mb-2 flex items-center justify-between gap-2 text-sm">
+          {/* Set header row — line 1: Set number + Last Session */}
+          <div className="mb-1.5 flex items-center justify-between gap-2 text-sm">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
               <span className="font-semibold text-foreground">Set {set.setNumber}</span>
-              <span
-                className={`text-xs font-medium px-2 py-0.5 rounded shrink-0 ${
-                  set.setType === 'warmup'
-                    ? 'bg-amber-600/30 text-amber-400'
-                    : set.setType === 'cooldown'
-                    ? 'bg-blue-600/30 text-blue-400'
-                    : 'bg-green-600/30 text-green-400'
-                }`}
-              >
-                {set.setType === 'warmup' ? 'Warm-up' : set.setType === 'cooldown' ? 'Cool-down' : 'Working'}
-              </span>
-              {set.setType === 'working' && set.targetWeight != null && !isCardioExercise(currentExercise!.exerciseName) && (
-                <span className="text-muted text-xs flex items-center gap-1 shrink-0">
-                  Target: {set.targetWeight} lbs × {set.targetReps}
-                  {set.targetExplanation && (
-                    <button
-                      type="button"
-                      onClick={() => setTargetWhyModal({ exerciseIndex: currentExerciseIndex, setIndex: originalIndex })}
-                      className="p-0.5 rounded-full text-foreground/50 hover:text-foreground hover:bg-white/[0.04] transition-colors"
-                      aria-label="Why this target?"
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 10v7" />
-                        <circle cx="12" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
-                      </svg>
-                    </button>
-                  )}
-                </span>
-              )}
-              {/* Previous session hint — same font/color as target */}
+              {/* Previous session hint (key by working-set index so warm-up/cooldown don't shift) */}
               {(() => {
-                const prePop = prePopulatedValues.get(setKey)
+                if (set.setType !== 'working') return null
+                const workingSetIndex = currentExercise!.sets.filter((s) => s.setType === 'working').indexOf(set)
+                const prevKey = `${currentExerciseIndex}-${workingSetIndex}`
+                const prePop = prePopulatedValues.get(prevKey)
                 if (!prePop || prePop.weight <= 0) return null
                 return (
                   <span className="text-muted text-xs shrink-0 tabular-nums">
-                    Prev: {prePop.weight} lbs × {prePop.reps}
+                    Last Session: {prePop.weight} lbs × {prePop.reps} @ {prePop.rpe} RPE
                   </span>
                 )
               })()}
@@ -2593,6 +2580,52 @@ export default function WorkoutLogger({
               </button>
             )}
           </div>
+          {/* Target — own line, same style as Last Session; show met/exceeded when confirmed */}
+          {set.setType === 'working' && set.targetWeight != null && !isCardioExercise(currentExercise!.exerciseName) && (
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-muted text-xs tabular-nums">
+                Target: {set.targetWeight} lbs × {set.targetReps}
+              </span>
+              {set.targetExplanation && (
+                <button
+                  type="button"
+                  onClick={() => setTargetWhyModal({ exerciseIndex: currentExerciseIndex, setIndex: originalIndex })}
+                  className="p-0.5 rounded-full text-foreground/50 hover:text-foreground hover:bg-white/[0.04] transition-colors shrink-0"
+                  aria-label="Why this target?"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 10v7" />
+                    <circle cx="12" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
+                  </svg>
+                </button>
+              )}
+              {isConfirmed &&
+                set.targetReps != null &&
+                set.targetRpe != null &&
+                set.targetRpe > 0 &&
+                (() => {
+                  const status = evaluateSetPerformance(
+                    getEffectiveWeight(currentExercise!.exerciseName, set),
+                    set.reps ?? 0,
+                    set.rpe ?? 0,
+                    set.targetWeight,
+                    set.targetReps,
+                    set.targetRpe
+                  )
+                  const label = status === 'overperformed' ? 'Target exceeded' : status === 'met_target' ? 'Target met' : null
+                  if (!label) return null
+                  return (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-green-400">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {label}
+                    </span>
+                  )
+                })()}
+            </div>
+          )}
 
           {/* Inputs + inline confirm */}
           {isCardioExercise(currentExercise!.exerciseName) && set.setType === 'working' ? (
@@ -2702,8 +2735,9 @@ export default function WorkoutLogger({
                     }
                     className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
                       (() => {
-                        const key = `${currentExerciseIndex}-${originalIndex}`
-                        const prePop = prePopulatedValues.get(key)
+                        if (set.setType !== 'working') return 'text-foreground'
+                        const wi = currentExercise!.sets.filter((s) => s.setType === 'working').indexOf(set)
+                        const prePop = prePopulatedValues.get(`${currentExerciseIndex}-${wi}`)
                         return prePop && set.weight === prePop.weight ? 'text-muted' : 'text-foreground'
                       })()
                     }`}
@@ -2722,8 +2756,9 @@ export default function WorkoutLogger({
                   }
                   className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
                     (() => {
-                      const key = `${currentExerciseIndex}-${originalIndex}`
-                      const prePop = prePopulatedValues.get(key)
+                      if (set.setType !== 'working') return 'text-foreground'
+                      const wi = currentExercise!.sets.filter((s) => s.setType === 'working').indexOf(set)
+                      const prePop = prePopulatedValues.get(`${currentExerciseIndex}-${wi}`)
                       return prePop && set.reps === prePop.reps ? 'text-muted' : 'text-foreground'
                     })()
                   }`}
@@ -2742,8 +2777,9 @@ export default function WorkoutLogger({
                   }
                   className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
                     (() => {
-                      const key = `${currentExerciseIndex}-${originalIndex}`
-                      const prePop = prePopulatedValues.get(key)
+                      if (set.setType !== 'working') return 'text-foreground'
+                      const wi = currentExercise!.sets.filter((s) => s.setType === 'working').indexOf(set)
+                      const prePop = prePopulatedValues.get(`${currentExerciseIndex}-${wi}`)
                       return prePop && set.rpe === prePop.rpe ? 'text-muted' : 'text-foreground'
                     })()
                   }`}
@@ -3176,8 +3212,8 @@ export default function WorkoutLogger({
         {/* Working sets */}
         <div className="mb-3">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-accent/70">Working Sets</span>
-            <div className="flex-1 h-px bg-accent/15" />
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-green-400/70">Working</span>
+            <div className="flex-1 h-px bg-green-400/15" />
           </div>
           <div className="space-y-1.5">{workingSets.map(renderSetCard)}</div>
         </div>

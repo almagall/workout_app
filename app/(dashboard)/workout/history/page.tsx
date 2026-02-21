@@ -128,15 +128,6 @@ export default function WorkoutHistoryPage() {
               )}
               <span className="whitespace-nowrap">Export Data</span>
             </button>
-            <Link
-              href="/workout/log"
-              className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-lg btn-primary text-sm font-semibold whitespace-nowrap"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-              Log Workout
-            </Link>
           </div>
         </div>
         <p className="text-sm text-muted">

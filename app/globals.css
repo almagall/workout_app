@@ -193,4 +193,20 @@ input[type="date"] {
   .btn-secondary:active {
     transform: scale(0.98);
   }
+
+  /* PR set card: golden border with glowing animation */
+  @keyframes pr-glow {
+    0%, 100% {
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.25), 0 0 24px rgba(245, 158, 11, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.45), 0 0 36px rgba(245, 158, 11, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+    }
+  }
+  .set-card-pr {
+    border: 1px solid rgba(245, 158, 11, 0.6);
+    border-left-width: 3px;
+    border-left-color: rgb(245, 158, 11);
+    animation: pr-glow 2.5s ease-in-out infinite;
+  }
 }

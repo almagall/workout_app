@@ -21,7 +21,6 @@ import WeeklySummaryCard from '@/components/dashboard/WeeklySummaryCard'
 import PRCelebration from '@/components/dashboard/PRCelebration'
 import { FadeIn, StaggerChildren, StaggerItem } from '@/components/ui/motion'
 import { setDeloadWeek } from '@/lib/deload-detection'
-import { getNextWorkout, type NextWorkoutInfo } from '@/lib/next-workout'
 import Link from 'next/link'
 
 export default function DashboardPage() {
@@ -32,7 +31,6 @@ export default function DashboardPage() {
   const [deloadSuggestion, setDeloadSuggestion] = useState<{ reason: string } | null>(null)
   const [deloadDismissed, setDeloadDismissed] = useState(false)
   const [planType, setPlanType] = useState<PlanType>('hypertrophy')
-  const [nextWorkout, setNextWorkout] = useState<NextWorkoutInfo | null>(null)
   const [showAllAnalytics, setShowAllAnalytics] = useState(false)
 
   useEffect(() => {
@@ -60,8 +58,6 @@ export default function DashboardPage() {
         }
       }
       setLoading(false)
-
-      getNextWorkout().then(setNextWorkout)
     }
     checkAuthAndTemplates()
   }, [])
@@ -129,10 +125,10 @@ export default function DashboardPage() {
             {greeting}, {user.username}
           </h1>
           <Link
-            href={nextWorkout ? `/workout/log/${nextWorkout.templateDayId}` : '/workout/log'}
+            href="/workout/log"
             className="btn-primary px-5 py-2.5 text-sm inline-flex items-center gap-2"
           >
-            {nextWorkout ? `Start ${nextWorkout.dayLabel}` : 'Log Workout'}
+            Log Workout
           </Link>
         </div>
       </FadeIn>
