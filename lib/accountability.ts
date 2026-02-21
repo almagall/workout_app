@@ -10,6 +10,8 @@ export interface AccountabilityPairRow {
   status: AccountabilityStatus
   streak_count: number
   last_both_trained_week: string | null
+  requester_weekly_goal: number | null
+  partner_weekly_goal: number | null
   created_at: string
 }
 
@@ -21,6 +23,17 @@ export interface AccountabilityPairWithUsers extends AccountabilityPairRow {
 export interface WeeklyStatus {
   userTrained: boolean
   partnerTrained: boolean
+  userWorkoutCount: number
+  partnerWorkoutCount: number
+}
+
+export interface AccountabilityCheckin {
+  id: string
+  pair_id: string
+  user_id: string
+  message: string
+  created_at: string
+  username?: string
 }
 
 function getISOWeek(date: Date): string {
@@ -178,7 +191,7 @@ export async function getAccountabilityPairs(): Promise<AccountabilityPairWithUs
   }))
 }
 
-async function hasTrainedInWeek(userId: string, isoWeek: string): Promise<boolean> {
+async function countWorkoutsInWeek(userId: string, isoWeek: string): Promise<number> {
   const monday = getMondayOfISOWeek(isoWeek)
   const sunday = new Date(monday.getTime() + 6 * 86400000)
   const startDate = monday.toISOString().split('T')[0]
@@ -193,22 +206,100 @@ async function hasTrainedInWeek(userId: string, isoWeek: string): Promise<boolea
     .gte('workout_date', startDate)
     .lte('workout_date', endDate)
 
-  return (count ?? 0) > 0
+  return count ?? 0
+}
+
+async function hasTrainedInWeek(userId: string, isoWeek: string): Promise<boolean> {
+  return (await countWorkoutsInWeek(userId, isoWeek)) > 0
 }
 
 export async function getWeeklyStatus(pair: AccountabilityPairRow): Promise<WeeklyStatus> {
   const user = getCurrentUser()
-  if (!user) return { userTrained: false, partnerTrained: false }
+  if (!user) return { userTrained: false, partnerTrained: false, userWorkoutCount: 0, partnerWorkoutCount: 0 }
 
   const currentWeek = getISOWeek(new Date())
   const partnerId = pair.requester_id === user.id ? pair.partner_id : pair.requester_id
 
-  const [userTrained, partnerTrained] = await Promise.all([
-    hasTrainedInWeek(user.id, currentWeek),
-    hasTrainedInWeek(partnerId, currentWeek),
+  const [userCount, partnerCount] = await Promise.all([
+    countWorkoutsInWeek(user.id, currentWeek),
+    countWorkoutsInWeek(partnerId, currentWeek),
   ])
 
-  return { userTrained, partnerTrained }
+  return {
+    userTrained: userCount > 0,
+    partnerTrained: partnerCount > 0,
+    userWorkoutCount: userCount,
+    partnerWorkoutCount: partnerCount,
+  }
+}
+
+export async function setWeeklyGoal(pairId: string, goal: number | null): Promise<{ ok: boolean; error?: string }> {
+  const user = getCurrentUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  const supabase = createClient()
+  const { data: pair, error: fetchErr } = await supabase
+    .from('accountability_pairs')
+    .select('requester_id, partner_id')
+    .eq('id', pairId)
+    .eq('status', 'active')
+    .single()
+
+  if (fetchErr || !pair) return { ok: false, error: 'Partnership not found' }
+
+  const column = pair.requester_id === user.id ? 'requester_weekly_goal' : 'partner_weekly_goal'
+  const { error } = await supabase
+    .from('accountability_pairs')
+    .update({ [column]: goal })
+    .eq('id', pairId)
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+export async function sendCheckin(pairId: string, message: string): Promise<{ ok: boolean; error?: string }> {
+  const user = getCurrentUser()
+  if (!user) return { ok: false, error: 'Not authenticated' }
+
+  const trimmed = message.trim()
+  if (!trimmed) return { ok: false, error: 'Message cannot be empty' }
+  if (trimmed.length > 160) return { ok: false, error: 'Message too long (max 160 chars)' }
+
+  const supabase = createClient()
+  const { error } = await supabase.from('accountability_checkins').insert({
+    pair_id: pairId,
+    user_id: user.id,
+    message: trimmed,
+  })
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+export async function getCheckins(pairId: string, limit = 5): Promise<AccountabilityCheckin[]> {
+  const user = getCurrentUser()
+  if (!user) return []
+
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('accountability_checkins')
+    .select('*')
+    .eq('pair_id', pairId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error || !data?.length) return []
+
+  const userIds = [...new Set(data.map(c => c.user_id))]
+  const { data: users } = await supabase
+    .from('simple_users')
+    .select('user_id, username')
+    .in('user_id', userIds)
+
+  const nameMap = new Map<string, string>()
+  users?.forEach(u => nameMap.set(u.user_id, u.username))
+
+  return data.map(c => ({ ...c, username: nameMap.get(c.user_id) ?? 'Unknown' }))
 }
 
 export async function computeStreak(pair: AccountabilityPairRow): Promise<number> {

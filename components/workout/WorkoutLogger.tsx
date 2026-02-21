@@ -2439,7 +2439,7 @@ export default function WorkoutLogger({
   }
 
   const exerciseSelectorDropdown = (
-    <div className="absolute left-0 right-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-64 max-w-[min(100vw-2rem,24rem)] bg-card border border-white/[0.12] rounded-md shadow-xl z-10 max-h-96 overflow-y-auto">
+    <div className="absolute left-0 right-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-64 max-w-[min(100vw-2rem,24rem)] bg-card border border-white/[0.12] rounded-md shadow-xl z-50 max-h-96 overflow-y-auto">
       <div className="p-2">
         {exercises.map((exerciseName, index) => {
           const isCompleted = completedExercises.has(index)
@@ -2524,32 +2524,22 @@ export default function WorkoutLogger({
     return (
       <Fragment key={setKey}>
         <div
-          className={`relative bg-white/[0.04] rounded-xl p-2.5 shadow-card ${
+          className={`bg-white/[0.04] rounded-xl p-2.5 shadow-card border-l-[3px] ${
             isConfirmed
-              ? 'border-2 border-success'
-              : 'border border-white/[0.06]'
+              ? 'border border-success border-l-[3px] border-l-success'
+              : set.setType === 'warmup'
+              ? 'border border-white/[0.06] border-l-amber-500/60'
+              : set.setType === 'cooldown'
+              ? 'border border-white/[0.06] border-l-blue-400/60'
+              : 'border border-white/[0.06] border-l-accent/60'
           }`}
         >
-          {currentExercise!.sets.length > 1 && (
-            <div className="absolute top-2 right-2">
-              <button
-                type="button"
-                onClick={() => removeSet(currentExerciseIndex, originalIndex)}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2.5 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-colors"
-                title="Remove set"
-                aria-label="Remove set"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          )}
-          <div className="mb-1.5 pr-9 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-y-0.5 gap-x-2 text-sm">
-            <div className="flex items-center gap-x-2 gap-y-0.5">
+          {/* Set header row */}
+          <div className="mb-2 flex items-center justify-between gap-2 text-sm">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
               <span className="font-semibold text-foreground">Set {set.setNumber}</span>
               <span
-                className={`text-xs font-medium px-2 py-0.5 rounded ${
+                className={`text-xs font-medium px-2 py-0.5 rounded shrink-0 ${
                   set.setType === 'warmup'
                     ? 'bg-amber-600/30 text-amber-400'
                     : set.setType === 'cooldown'
@@ -2559,110 +2549,149 @@ export default function WorkoutLogger({
               >
                 {set.setType === 'warmup' ? 'Warm-up' : set.setType === 'cooldown' ? 'Cool-down' : 'Working'}
               </span>
-            </div>
-            {set.setType === 'working' && set.targetWeight != null && !isCardioExercise(currentExercise!.exerciseName) && (
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-muted">
-                  Target: {set.targetWeight} lbs × {set.targetReps} reps
+              {set.setType === 'working' && set.targetWeight != null && !isCardioExercise(currentExercise!.exerciseName) && (
+                <span className="text-muted text-xs flex items-center gap-1 shrink-0">
+                  Target: {set.targetWeight} lbs × {set.targetReps}
+                  {set.targetExplanation && (
+                    <button
+                      type="button"
+                      onClick={() => setTargetWhyModal({ exerciseIndex: currentExerciseIndex, setIndex: originalIndex })}
+                      className="p-0.5 rounded-full text-foreground/50 hover:text-foreground hover:bg-white/[0.04] transition-colors"
+                      aria-label="Why this target?"
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 10v7" />
+                        <circle cx="12" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
+                      </svg>
+                    </button>
+                  )}
                 </span>
-                {set.targetExplanation && (
-                  <button
-                    type="button"
-                    onClick={() => setTargetWhyModal({ exerciseIndex: currentExerciseIndex, setIndex: originalIndex })}
-                    className="shrink-0 p-1 -m-1 rounded-full text-foreground/70 hover:text-foreground hover:bg-white/[0.04] transition-colors"
-                    aria-label="Why this target?"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 10v7" />
-                      <circle cx="12" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
-                    </svg>
-                  </button>
-                )}
-              </div>
+              )}
+              {/* Previous session hint — same font/color as target */}
+              {(() => {
+                const prePop = prePopulatedValues.get(setKey)
+                if (!prePop || prePop.weight <= 0) return null
+                return (
+                  <span className="text-muted text-xs shrink-0 tabular-nums">
+                    Prev: {prePop.weight} lbs × {prePop.reps}
+                  </span>
+                )
+              })()}
+            </div>
+            {currentExercise!.sets.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeSet(currentExerciseIndex, originalIndex)}
+                className="shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                title="Remove set"
+                aria-label="Remove set"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
             )}
           </div>
+
+          {/* Inputs + inline confirm */}
           {isCardioExercise(currentExercise!.exerciseName) && set.setType === 'working' ? (
-            <div className="grid grid-cols-3 gap-1.5">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
-                  Duration (min)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={set.durationSeconds != null ? Math.round(set.durationSeconds / 60) : ''}
-                  onChange={(e) => {
-                    const mins = parseFloat(e.target.value)
-                    updateSet(currentExerciseIndex, originalIndex, 'durationSeconds', Number.isFinite(mins) && mins >= 0 ? mins * 60 : 0)
-                  }}
-                  className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
-                />
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-[1fr_1fr_auto] gap-1.5 items-end">
+                <div>
+                  <label className="block text-xs font-medium text-muted mb-0.5">Duration (min)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={set.durationSeconds != null ? Math.round(set.durationSeconds / 60) : ''}
+                    onChange={(e) => {
+                      const mins = parseFloat(e.target.value)
+                      updateSet(currentExerciseIndex, originalIndex, 'durationSeconds', Number.isFinite(mins) && mins >= 0 ? mins * 60 : 0)
+                    }}
+                    className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted mb-0.5">RPE</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="0.5"
+                    value={set.rpe || ''}
+                    onChange={(e) =>
+                      updateSet(currentExerciseIndex, originalIndex, 'rpe', parseFloat(e.target.value) || 0)
+                    }
+                    className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
+                  />
+                </div>
+                {/* Inline confirm / confirmed indicator */}
+                <div className="flex flex-col items-center justify-end">
+                  {!isConfirmed ? (
+                    <button
+                      onClick={() => confirmSet(currentExerciseIndex, originalIndex)}
+                      className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:px-3 flex items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-all duration-200 bg-white/[0.08] text-muted border border-white/[0.12] hover:bg-white/[0.12] hover:text-foreground"
+                      aria-label="Confirm set"
+                    >
+                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="hidden sm:inline">Confirm</span>
+                    </button>
+                  ) : (
+                    <div className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:px-3 flex items-center justify-center gap-1.5 rounded-md bg-green-600/20 text-green-400 border border-green-600/40" title="Confirmed">
+                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="hidden sm:inline text-xs font-medium">Done</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
-                  Distance (optional)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={set.distance ?? ''}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value)
-                    updateSet(currentExerciseIndex, originalIndex, 'distance', Number.isFinite(v) && v >= 0 ? v : null)
-                  }}
-                  className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
-                />
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
-                  Unit
-                </label>
-                <select
-                  value={set.distanceUnit ?? 'mi'}
-                  onChange={(e) => updateSet(currentExerciseIndex, originalIndex, 'distanceUnit', e.target.value || null)}
-                  className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
-                >
-                  <option value="mi">mi</option>
-                  <option value="km">km</option>
-                </select>
-              </div>
-              <div className="col-span-3 sm:col-span-1">
-                <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
-                  RPE
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  step="0.5"
-                  value={set.rpe || ''}
-                  onChange={(e) =>
-                    updateSet(currentExerciseIndex, originalIndex, 'rpe', parseFloat(e.target.value) || 0)
-                  }
-                  className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
-                />
+              {/* Distance row (optional, below) */}
+              <div className="grid grid-cols-[1fr_auto] gap-1.5">
+                <div>
+                  <label className="block text-xs font-medium text-muted mb-0.5">Distance (optional)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={set.distance ?? ''}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value)
+                      updateSet(currentExerciseIndex, originalIndex, 'distance', Number.isFinite(v) && v >= 0 ? v : null)
+                    }}
+                    className="w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted mb-0.5">Unit</label>
+                  <select
+                    value={set.distanceUnit ?? 'mi'}
+                    onChange={(e) => updateSet(currentExerciseIndex, originalIndex, 'distanceUnit', e.target.value || null)}
+                    className="min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent text-foreground"
+                  >
+                    <option value="mi">mi</option>
+                    <option value="km">km</option>
+                  </select>
+                </div>
               </div>
             </div>
           ) : (
-          <div className="grid grid-cols-3 gap-1.5">
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
-                Weight (lbs)
-              </label>
-              {isBodyweightExercise(currentExercise!.exerciseName) ? (
-                <div
-                  className="w-full px-2.5 py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md text-muted"
-                  title="Bodyweight exercises use your logged weight from Profile > Weight"
-                >
-                  {userBodyweightForDate
-                    ? `Bodyweight (${Math.round(userBodyweightForDate.weight)} lbs)`
-                    : 'Log weight in Profile > Weight'}
-                </div>
-              ) : (
-                <>
+            <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-1.5 items-end">
+              <div>
+                <label className="block text-xs font-medium text-muted mb-0.5">Weight (lbs)</label>
+                {isBodyweightExercise(currentExercise!.exerciseName) ? (
+                  <div
+                    className="min-h-[44px] flex items-center px-2.5 text-xs border border-white/[0.08] bg-white/[0.04] rounded-md text-muted"
+                    title="Bodyweight exercises use your logged weight from Profile > Weight"
+                  >
+                    {userBodyweightForDate
+                      ? `BW (${Math.round(userBodyweightForDate.weight)} lbs)`
+                      : 'Log in Profile > Weight'}
+                  </div>
+                ) : (
                   <input
                     type="number"
                     min="0"
@@ -2675,97 +2704,95 @@ export default function WorkoutLogger({
                       (() => {
                         const key = `${currentExerciseIndex}-${originalIndex}`
                         const prePop = prePopulatedValues.get(key)
-                        return prePop && set.weight === prePop.weight
-                          ? 'text-muted'
-                          : 'text-foreground'
+                        return prePop && set.weight === prePop.weight ? 'text-muted' : 'text-foreground'
                       })()
                     }`}
                   />
-                </>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
-                Reps
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={set.reps || ''}
-                onChange={(e) =>
-                  updateSet(currentExerciseIndex, originalIndex, 'reps', parseInt(e.target.value) || 0)
-                }
-                className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
-                  (() => {
-                    const key = `${currentExerciseIndex}-${originalIndex}`
-                    const prePop = prePopulatedValues.get(key)
-                    return prePop && set.reps === prePop.reps
-                      ? 'text-muted'
-                      : 'text-foreground'
-                  })()
-                }`}
-              />
-            </div>
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-foreground mb-0.5">
-                RPE
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                step="0.5"
-                value={set.rpe || ''}
-                onChange={(e) =>
-                  updateSet(currentExerciseIndex, originalIndex, 'rpe', parseFloat(e.target.value) || 0)
-                }
-                className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
-                  (() => {
-                    const key = `${currentExerciseIndex}-${originalIndex}`
-                    const prePop = prePopulatedValues.get(key)
-                    return prePop && set.rpe === prePop.rpe
-                      ? 'text-muted'
-                      : 'text-foreground'
-                  })()
-                }`}
-              />
-            </div>
-          </div>
-          )}
-          {setValidationError?.key === setKey && (
-            <p className="mt-1.5 text-sm text-red-400">{setValidationError.message}</p>
-          )}
-          <div className="mt-2 flex items-center justify-between">
-            {!isConfirmed ? (
-              <button
-                onClick={() => confirmSet(currentExerciseIndex, originalIndex)}
-                className="min-h-[36px] px-3 py-1.5 text-sm btn-primary transition-all duration-200"
-              >
-                Confirm Set
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-green-500 text-sm font-medium flex items-center gap-1">
-                  ✓ Set Confirmed
-                </span>
-                {prBadges.get(setKey) && (prBadges.get(setKey)!.heaviestSetPR || prBadges.get(setKey)!.e1RMPR) && (
-                  <span className="flex items-center gap-1.5 flex-wrap">
-                    {prBadges.get(setKey)!.heaviestSetPR && (
-                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
-                        Heaviest PR
-                      </span>
-                    )}
-                    {prBadges.get(setKey)!.e1RMPR && (
-                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
-                        Est. 1RM PR
-                      </span>
-                    )}
-                  </span>
                 )}
               </div>
-            )}
-          </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-0.5">Reps</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={set.reps || ''}
+                  onChange={(e) =>
+                    updateSet(currentExerciseIndex, originalIndex, 'reps', parseInt(e.target.value) || 0)
+                  }
+                  className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
+                    (() => {
+                      const key = `${currentExerciseIndex}-${originalIndex}`
+                      const prePop = prePopulatedValues.get(key)
+                      return prePop && set.reps === prePop.reps ? 'text-muted' : 'text-foreground'
+                    })()
+                  }`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-0.5">RPE</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="0.5"
+                  value={set.rpe || ''}
+                  onChange={(e) =>
+                    updateSet(currentExerciseIndex, originalIndex, 'rpe', parseFloat(e.target.value) || 0)
+                  }
+                  className={`w-full min-h-[44px] px-2.5 py-2.5 sm:py-1 text-sm border border-white/[0.08] bg-white/[0.04] rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent ${
+                    (() => {
+                      const key = `${currentExerciseIndex}-${originalIndex}`
+                      const prePop = prePopulatedValues.get(key)
+                      return prePop && set.rpe === prePop.rpe ? 'text-muted' : 'text-foreground'
+                    })()
+                  }`}
+                />
+              </div>
+              {/* Inline confirm / confirmed indicator */}
+              <div className="flex flex-col items-center justify-end">
+                {!isConfirmed ? (
+                  <button
+                    onClick={() => confirmSet(currentExerciseIndex, originalIndex)}
+                    className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:px-3 flex items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-all duration-200 bg-white/[0.08] text-muted border border-white/[0.12] hover:bg-white/[0.12] hover:text-foreground"
+                    aria-label="Confirm set"
+                  >
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="hidden sm:inline">Confirm</span>
+                  </button>
+                ) : (
+                  <div className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:px-3 flex items-center justify-center gap-1.5 rounded-md bg-green-600/20 text-green-400 border border-green-600/40" title="Confirmed">
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="hidden sm:inline text-xs font-medium">Done</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {setValidationError?.key === setKey && (
+            <p className="mt-1.5 text-xs text-red-400">{setValidationError.message}</p>
+          )}
+
+          {/* PR badges — shown below inputs when confirmed */}
+          {isConfirmed && prBadges.get(setKey) && (prBadges.get(setKey)!.heaviestSetPR || prBadges.get(setKey)!.e1RMPR) && (
+            <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+              {prBadges.get(setKey)!.heaviestSetPR && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
+                  Heaviest PR
+                </span>
+              )}
+              {prBadges.get(setKey)!.e1RMPR && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-600/40 text-amber-300 border border-amber-500/50">
+                  Est. 1RM PR
+                </span>
+              )}
+            </div>
+          )}
         </div>
         {showRestTimer && restTimerAfterSetKey === setKey && (
           <div className="mt-2">
@@ -2786,41 +2813,44 @@ export default function WorkoutLogger({
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div ref={exerciseSelectorRef}>
-        {/* Mobile only: Workout Date, Workout day, Select Exercise, Plate calc, Duration */}
-        <div className="space-y-3 sm:hidden mb-4 min-w-0 overflow-hidden">
-          <div className="w-full min-w-0">
-            <label htmlFor="workout-date-mobile" className="block text-sm font-medium text-foreground mb-1">
-              Workout Date
-            </label>
+        {/* Mobile header */}
+        <div className="sm:hidden mb-4 min-w-0 space-y-2">
+          {/* Row 1: Workout name + exercise counter */}
+          <div className="flex items-baseline justify-between gap-2 min-w-0">
+            <h1 className="font-display text-xl font-semibold text-foreground tracking-tight truncate">{dayLabel}</h1>
+            <span className="text-xs text-muted shrink-0 tabular-nums">
+              {currentExerciseIndex + 1} / {exercises.length}
+            </span>
+          </div>
+          {/* Row 2: Date (compact, secondary) */}
+          <div className="flex items-center gap-2 min-w-0">
             <input
               id="workout-date-mobile"
               {...workoutDateInputProps}
-              className="min-h-[44px] px-3 py-2 border border-white/[0.08] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent w-full min-w-0"
+              className="flex-1 min-w-0 h-9 px-2.5 text-sm border border-white/[0.08] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
             />
-            <p className="text-xs text-muted mt-1">
-              {workoutDate === getTodayLocalYYYYMMDD()
-                ? 'Logging today\'s workout'
-                : (() => {
-                    const [year, month, day] = workoutDate.split('-').map(Number)
-                    const date = new Date(year, month - 1, day)
-                    return `Logging workout for ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                  })()}
-            </p>
+            <span className="text-xs text-muted shrink-0">
+              {workoutDate === getTodayLocalYYYYMMDD() ? 'Today' : (() => {
+                const [year, month, day] = workoutDate.split('-').map(Number)
+                return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              })()}
+            </span>
           </div>
-          <div className="min-w-0">
-            <h1 className="font-display text-2xl font-semibold text-foreground tracking-tight break-words">Workout: {dayLabel}</h1>
-          </div>
+          {/* Row 3: Select Exercise dropdown */}
           <div className="w-full min-w-0 relative">
             <button
               onClick={() => setShowExerciseSelector(!showExerciseSelector)}
-              className="w-full min-h-[44px] px-3 py-2.5 text-sm bg-white/[0.04] text-foreground rounded-md hover:bg-white/[0.04] border border-white/[0.06] transition-colors flex items-center justify-between gap-1.5"
+              className="w-full min-h-[44px] px-3 py-2.5 text-sm bg-white/[0.04] text-foreground rounded-lg hover:bg-white/[0.06] border border-white/[0.08] transition-colors flex items-center justify-between gap-1.5"
             >
-              <span>Select Exercise</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <svg className="w-4 h-4 shrink-0 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                </svg>
+                <span className="truncate">{currentExercise?.exerciseName ?? 'Select Exercise'}</span>
+              </div>
               <svg
-                className={`w-4 h-4 shrink-0 transition-transform ${showExerciseSelector ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+                className={`w-4 h-4 shrink-0 text-muted transition-transform ${showExerciseSelector ? 'rotate-180' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -2828,61 +2858,50 @@ export default function WorkoutLogger({
             {showExerciseSelector && exerciseSelectorDropdown}
           </div>
           {plateCalcBlock}
-          {!isEditMode && workoutStartedAt != null && !workoutComplete && (
-            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-white/[0.04] text-muted border border-white/[0.06]">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Workout {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:{String(elapsedSeconds % 60).padStart(2, '0')}
-            </span>
-          )}
         </div>
 
-      {/* Desktop: header with dayLabel, Exercise count, Select Exercise, Workout Date */}
-      <div className="hidden sm:flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground mb-1 sm:mb-2 tracking-tight">{dayLabel}</h1>
-          <p className="text-muted text-sm">
-            Exercise {currentExerciseIndex + 1} of {exercises.length}
+      {/* Desktop header */}
+      <div className="hidden sm:flex sm:justify-between sm:items-center gap-4 mb-6">
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-3 mb-0.5">
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">{dayLabel}</h1>
+            <span className="text-sm text-muted tabular-nums shrink-0">
+              Exercise {currentExerciseIndex + 1} of {exercises.length}
+            </span>
+          </div>
+          <p className="text-xs text-muted">
+            {workoutDate === getTodayLocalYYYYMMDD()
+              ? 'Logging today\'s workout'
+              : (() => {
+                  const [year, month, day] = workoutDate.split('-').map(Number)
+                  return `Logging for ${new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                })()}
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-end gap-3 w-full sm:w-auto">
-          <div className="relative w-full sm:w-auto">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative">
             <button
               onClick={() => setShowExerciseSelector(!showExerciseSelector)}
-              className="w-full sm:w-auto min-h-[44px] px-3 py-2.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-white/[0.04] text-foreground rounded-md hover:bg-white/[0.04] border border-white/[0.06] transition-colors flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2"
+              className="min-h-[40px] px-3 py-2 text-sm bg-white/[0.04] text-foreground rounded-lg hover:bg-white/[0.06] border border-white/[0.08] transition-colors flex items-center gap-2"
             >
-              <span>Select Exercise</span>
+              <svg className="w-4 h-4 shrink-0 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+              </svg>
+              <span>Jump to Exercise</span>
               <svg
-                className={`w-4 h-4 shrink-0 transition-transform ${showExerciseSelector ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+                className={`w-4 h-4 shrink-0 text-muted transition-transform ${showExerciseSelector ? 'rotate-180' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {showExerciseSelector && exerciseSelectorDropdown}
           </div>
-          <div className="flex flex-col sm:items-end w-full sm:w-auto min-w-0">
-            <label htmlFor="workout-date" className="block text-sm font-medium text-foreground mb-1 sm:mb-2">
-              Workout Date
-            </label>
-            <input
-              id="workout-date"
-              {...workoutDateInputProps}
-              className="min-h-[44px] px-3 py-2 border border-white/[0.08] bg-white/[0.04] text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent w-full sm:w-auto min-w-0"
-            />
-            <p className="text-xs text-muted mt-1">
-              {workoutDate === getTodayLocalYYYYMMDD()
-                ? 'Logging today\'s workout'
-                : (() => {
-                    const [year, month, day] = workoutDate.split('-').map(Number)
-                    const date = new Date(year, month - 1, day)
-                    return `Logging workout for ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                  })()}
-            </p>
-          </div>
+          <input
+            id="workout-date"
+            {...workoutDateInputProps}
+            className="h-10 px-3 text-sm border border-white/[0.08] bg-white/[0.04] text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+          />
         </div>
       </div>
 
@@ -2927,8 +2946,19 @@ export default function WorkoutLogger({
         </div>
       )}
 
-      <div className="card-glass card-accent-top p-6 mb-6 shadow-card">
+      <div className="card-glass card-accent-top p-4 sm:p-6 mb-6 shadow-card">
         <div className="absolute -top-10 -left-10 w-40 h-40 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
+
+        {/* Exercise progress bar across top of card */}
+        <div className="relative mb-4">
+          <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-accent to-cyan-400 rounded-full transition-all duration-500"
+              style={{ width: `${exercises.length > 0 ? ((currentExerciseIndex + 1) / exercises.length) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+
         <div className="relative flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
           <div>
             <div ref={swapPopoverRef} className="relative">
@@ -3070,13 +3100,22 @@ export default function WorkoutLogger({
               )
             })()}
           </div>
-          <div className="flex items-center gap-3 flex-wrap shrink-0">
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
             {isEditMode && (
-              <span className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-md text-sm">
-                Editing Workout
+              <span className="px-2.5 py-1 bg-yellow-600/20 text-yellow-400 rounded-md text-xs font-medium">
+                Editing
               </span>
             )}
-            {/* Rest Timer Toggle - below exercise name on mobile portrait */}
+            {/* Elapsed workout timer — prominent */}
+            {!isEditMode && workoutStartedAt != null && !workoutComplete && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-semibold bg-accent/10 text-accent-light border border-accent/20">
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:{String(elapsedSeconds % 60).padStart(2, '0')}
+              </span>
+            )}
+            {/* Rest Timer Toggle */}
             <button
               onClick={() => {
                 const newValue = !restTimerEnabled
@@ -3087,26 +3126,18 @@ export default function WorkoutLogger({
                   setRestTimerAfterSetKey(null)
                 }
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 restTimerEnabled
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
-                  : 'bg-white/[0.04] text-muted border border-white/[0.06]'
+                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                  : 'bg-white/[0.03] text-muted border border-white/[0.06]'
               }`}
               title={restTimerEnabled ? 'Rest timer enabled' : 'Rest timer disabled'}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="inline">Timer {restTimerEnabled ? 'On' : 'Off'}</span>
+              Rest {restTimerEnabled ? 'On' : 'Off'}
             </button>
-            {!isEditMode && workoutStartedAt != null && !workoutComplete && (
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-white/[0.04] text-muted border border-white/[0.06]">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Workout {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:{String(elapsedSeconds % 60).padStart(2, '0')}
-              </span>
-            )}
           </div>
         </div>
 
@@ -3120,67 +3151,68 @@ export default function WorkoutLogger({
           ) : null
         })()}
 
-        {/* Add Warm Up - above all sets */}
-        <div className="mb-3 flex flex-wrap gap-2">
+        {/* Warm-up sets */}
+        {warmupSets.length > 0 && (
+          <div className="mb-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-amber-500/70">Warm-up</span>
+              <div className="flex-1 h-px bg-amber-500/15" />
+            </div>
+            <div className="space-y-1.5">{warmupSets.map(renderSetCard)}</div>
+          </div>
+        )}
+
+        {/* Add Warm-up — above working sets so flow is intuitive */}
+        <div className="mb-2">
           <button
             onClick={() => addSet(currentExerciseIndex, 'warmup')}
-            className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 border border-amber-600/50 transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-amber-600/10 text-amber-400/80 hover:bg-amber-600/20 hover:text-amber-400 border border-amber-600/20 transition-colors"
           >
-            Add Warm Up
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+            Add Warm-up
           </button>
         </div>
 
-        <div className="space-y-1.5">
-          {warmupSets.map(renderSetCard)}
+        {/* Working sets */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-accent/70">Working Sets</span>
+            <div className="flex-1 h-px bg-accent/15" />
+          </div>
+          <div className="space-y-1.5">{workingSets.map(renderSetCard)}</div>
         </div>
-        <div className="space-y-1.5">
-          {workingSets.map(renderSetCard)}
-        </div>
-        {/* Add Working Set + Add Cool Down - below working sets */}
-        <div className="mt-4 mb-3 flex flex-wrap gap-2">
+
+        {/* Cool-down sets */}
+        {cooldownSets.length > 0 && (
+          <div className="mb-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-blue-400/70">Cool-down</span>
+              <div className="flex-1 h-px bg-blue-400/15" />
+            </div>
+            <div className="space-y-1.5">{cooldownSets.map(renderSetCard)}</div>
+          </div>
+        )}
+
+        {/* Add Working Set + Add Cool-down */}
+        <div className="mt-3 flex flex-wrap gap-1.5">
           <button
             onClick={() => addSet(currentExerciseIndex, 'working')}
-            className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md bg-green-600/20 text-green-400 hover:bg-green-600/30 border border-green-600/50 transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-green-600/20 text-green-400 hover:bg-green-600/30 border border-green-600/50 transition-colors"
           >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             Add Working Set
           </button>
           <button
             onClick={() => addSet(currentExerciseIndex, 'cooldown')}
-            className="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-600/50 transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600/10 text-blue-400/80 hover:bg-blue-600/20 hover:text-blue-400 border border-blue-600/20 transition-colors"
           >
-            Add Cool Down
-          </button>
-        </div>
-        <div className="space-y-1.5">
-          {cooldownSets.map(renderSetCard)}
-        </div>
-
-        {/* Complete Exercise - prominent CTA after sets */}
-        <div className="mt-4">
-          <p className="text-xs text-muted mb-2 sm:mb-1.5">Done logging sets? Complete exercise to see feedback.</p>
-          <button
-            onClick={() => completeExercise(currentExerciseIndex)}
-            className="w-full sm:w-auto min-h-[44px] px-4 py-3 btn-primary transition-all duration-200"
-          >
-            Complete Exercise
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+            Add Cool-down
           </button>
         </div>
 
-        {currentExercise.exerciseFeedback && (
-          <div className="mt-4 p-4 bg-white/[0.04] border border-white/[0.06] rounded-xl">
-            {currentExercise.exerciseRating !== null && currentExercise.exerciseRating !== undefined && (
-              <div className="mb-3 pb-3 border-b border-white/[0.06]">
-                <p className="text-sm text-muted mb-1">Exercise Rating</p>
-                <p className="text-2xl font-bold text-foreground">{currentExercise.exerciseRating}/10</p>
-              </div>
-            )}
-            <h3 className="font-semibold mb-2 text-foreground">Feedback:</h3>
-            <p className="text-secondary">{currentExercise.exerciseFeedback}</p>
-          </div>
-        )}
-
-        {/* Per-exercise notes */}
-        <div className="mt-3">
+        {/* Per-exercise notes — above Complete Exercise */}
+        <div className="mt-4 pt-3 border-t border-white/[0.05]">
           <button
             type="button"
             onClick={() => setShowExerciseNotes(prev => {
@@ -3208,34 +3240,94 @@ export default function WorkoutLogger({
             />
           )}
         </div>
+
+        {/* Complete Exercise CTA */}
+        <div className="mt-3">
+          <button
+            onClick={() => completeExercise(currentExerciseIndex)}
+            className="w-full min-h-[48px] px-4 py-3 btn-primary transition-all duration-200 flex items-center justify-center gap-2 font-semibold"
+          >
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+            Complete Exercise
+          </button>
+        </div>
+
+        {currentExercise.exerciseFeedback && (
+          <div className="mt-4 p-4 bg-white/[0.04] border border-white/[0.06] rounded-xl">
+            {currentExercise.exerciseRating !== null && currentExercise.exerciseRating !== undefined && (
+              <div className="mb-3 pb-3 border-b border-white/[0.06]">
+                <p className="text-sm text-muted mb-1">Exercise Rating</p>
+                <p className="text-2xl font-bold text-foreground">{currentExercise.exerciseRating}/10</p>
+              </div>
+            )}
+            <h3 className="font-semibold mb-2 text-foreground">Feedback:</h3>
+            <p className="text-secondary">{currentExercise.exerciseFeedback}</p>
+          </div>
+        )}
       </div>
 
       <div
-        className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-0 z-30 flex justify-between gap-3 py-3 px-1 -mx-1 mt-4 bg-background border-t border-white/[0.06] pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] lg:pb-0 lg:mt-4 lg:border-t-0 lg:bg-transparent lg:px-0 lg:-mx-0"
+        className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-0 z-30 mt-4 bg-background/95 backdrop-blur-sm border-t border-white/[0.06] pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] lg:pb-0 lg:mt-4 lg:border-t-0 lg:bg-transparent"
       >
-        <button
-          onClick={() => setCurrentExerciseIndex(Math.max(0, currentExerciseIndex - 1))}
-          disabled={currentExerciseIndex === 0}
-          className="min-h-[44px] px-4 py-2.5 bg-white/[0.04] text-foreground rounded-md hover:bg-white/[0.04] border border-white/[0.06] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-        >
-          Previous
-        </button>
-        {currentExerciseIndex < exercises.length - 1 ? (
-          <button
-            onClick={() => setCurrentExerciseIndex(currentExerciseIndex + 1)}
-            className="min-h-[44px] px-4 py-2.5 btn-primary transition-all duration-200"
-          >
-            Next Exercise
-          </button>
-        ) : (
-          <button
-            onClick={saveWorkout}
-            disabled={saving}
-            className="min-h-[44px] px-4 py-2.5 btn-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
-          >
-            {saving ? 'Saving...' : 'Complete Workout'}
-          </button>
+        {/* Exercise progress dots */}
+        {exercises.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5 pt-2 pb-1 lg:hidden">
+            {exercises.map((_, i) => {
+              const isCompleted = exerciseData[i]?.exerciseFeedback != null
+              const isCurrent = i === currentExerciseIndex
+              return (
+                <button
+                  key={i}
+                  onClick={() => setCurrentExerciseIndex(i)}
+                  className={`transition-all duration-200 rounded-full ${
+                    isCurrent
+                      ? 'w-5 h-2 bg-accent'
+                      : isCompleted
+                      ? 'w-2 h-2 bg-green-500/70'
+                      : 'w-2 h-2 bg-white/[0.12] hover:bg-white/[0.25]'
+                  }`}
+                  aria-label={`Go to exercise ${i + 1}`}
+                />
+              )
+            })}
+          </div>
         )}
+        <div className="flex justify-between gap-3 py-2 px-1 -mx-1 lg:px-0 lg:-mx-0">
+          <button
+            onClick={() => setCurrentExerciseIndex(Math.max(0, currentExerciseIndex - 1))}
+            disabled={currentExerciseIndex === 0}
+            className="min-h-[44px] px-4 py-2.5 bg-white/[0.04] text-foreground rounded-lg hover:bg-white/[0.06] border border-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="hidden sm:inline">Previous</span>
+          </button>
+          {currentExerciseIndex < exercises.length - 1 ? (
+            <button
+              onClick={() => setCurrentExerciseIndex(currentExerciseIndex + 1)}
+              className="min-h-[44px] px-4 py-2.5 btn-primary transition-all duration-200 flex items-center gap-2"
+            >
+              <span>Next</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={saveWorkout}
+              disabled={saving}
+              className="min-h-[44px] px-5 py-2.5 btn-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+              {saving ? 'Saving...' : 'Complete Workout'}
+            </button>
+          )}
+        </div>
       </div>
 
       {targetWhyModal && (() => {

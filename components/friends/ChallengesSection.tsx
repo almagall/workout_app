@@ -33,6 +33,10 @@ const CHALLENGE_TEMPLATES = [
   { name: 'Bench Press Battle', type: 'e1rm' as const, duration: 14, exercise: 'Barbell Bench Press', description: 'Highest bench e1RM in 2 weeks' },
   { name: 'Squat Showdown', type: 'e1rm' as const, duration: 14, exercise: 'Barbell Back Squat', description: 'Highest squat e1RM in 2 weeks' },
   { name: 'Deadlift Duel', type: 'e1rm' as const, duration: 14, exercise: 'Deadlift', description: 'Highest deadlift e1RM in 2 weeks' },
+  { name: 'OHP Battle', type: 'e1rm' as const, duration: 14, exercise: 'Overhead Press', description: 'Highest overhead press e1RM in 2 weeks' },
+  { name: 'Pull-up Peak', type: 'e1rm' as const, duration: 14, exercise: 'Pull-ups', description: 'Highest pull-up e1RM in 2 weeks' },
+  { name: 'Squat Volume Grind', type: 'total_volume' as const, duration: 14, description: 'Most total volume lifted in 2 weeks' },
+  { name: 'Monthly Grind', type: 'consistency' as const, duration: 30, description: 'Most training days in 30 days' },
 ]
 
 const TYPE_LABELS: Record<string, string> = {
@@ -49,13 +53,20 @@ const TYPE_UNITS: Record<string, string> = {
   consistency: 'days',
 }
 
+type Tab = '1v1' | 'group' | 'history'
+
 interface ChallengesSectionProps {
   friends: FriendRow[]
 }
 
+function formatShortDate(dateStr: string) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 export default function ChallengesSection({ friends }: ChallengesSectionProps) {
   const [user, setUser] = useState<{ id: string } | null>(null)
-  const [tab, setTab] = useState<'1v1' | 'group'>('1v1')
+  const [tab, setTab] = useState<Tab>('1v1')
 
   const [challenges, setChallenges] = useState<ChallengeWithUsers[]>([])
   const [progress, setProgress] = useState<Map<string, ChallengeProgress>>(new Map())
@@ -200,11 +211,13 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
   const pendingReceived = challenges.filter(c => c.status === 'pending' && c.challenged_id === user.id)
   const pendingSent = challenges.filter(c => c.status === 'pending' && c.challenger_id === user.id)
   const active = challenges.filter(c => c.status === 'active')
-  const completed = challenges.filter(c => c.status === 'completed').slice(0, 5)
+  const completed1v1 = challenges.filter(c => c.status === 'completed')
 
   const pendingGroupReceived = groupChallenges.filter(c => c.status === 'pending' && c.members.some(m => m.user_id === user.id && m.status === 'invited'))
   const activeGroup = groupChallenges.filter(c => c.status === 'active')
-  const completedGroup = groupChallenges.filter(c => c.status === 'completed').slice(0, 5)
+  const completedGroup = groupChallenges.filter(c => c.status === 'completed')
+
+  const historyCount = completed1v1.length + completedGroup.length
 
   const renderCreateModal = (isGroup: boolean) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm" onClick={() => isGroup ? setShowGroupCreate(false) : setShowCreate(false)}>
@@ -224,7 +237,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
           <div className="p-5 border-b border-white/[0.04]">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-3">Quick Start</p>
             <div className="grid grid-cols-2 gap-2">
-              {CHALLENGE_TEMPLATES.slice(0, 4).map(t => (
+              {CHALLENGE_TEMPLATES.slice(0, 6).map(t => (
                 <button
                   key={t.name}
                   type="button"
@@ -346,13 +359,15 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
           <div className="w-0.5 h-4 rounded-full bg-accent/50" />
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Challenges</h2>
         </div>
-        <button
-          type="button"
-          onClick={() => tab === 'group' ? setShowGroupCreate(true) : setShowCreate(true)}
-          className="btn-primary text-xs px-3 py-1.5"
-        >
-          {tab === 'group' ? 'Group Challenge' : 'Challenge'}
-        </button>
+        {tab !== 'history' && (
+          <button
+            type="button"
+            onClick={() => tab === 'group' ? setShowGroupCreate(true) : setShowCreate(true)}
+            className="btn-primary text-xs px-3 py-1.5"
+          >
+            {tab === 'group' ? 'Group Challenge' : 'Challenge'}
+          </button>
+        )}
       </div>
 
       <div className="rounded-2xl border border-white/[0.06] overflow-hidden relative" style={{ background: 'linear-gradient(180deg, rgba(19,19,22,0.95), rgba(13,13,16,0.98))', boxShadow: '0 8px 32px -8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)' }}>
@@ -360,18 +375,18 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
 
         {/* Tab bar */}
         <div className="px-4 py-3 border-b border-white/[0.04] flex items-center gap-1">
-          <button
-            onClick={() => setTab('1v1')}
-            className={`px-4 py-1.5 text-xs rounded-lg font-medium transition-all ${tab === '1v1' ? 'bg-accent/15 text-accent-light border border-accent/20' : 'text-muted hover:text-foreground hover:bg-white/[0.03]'}`}
-          >
-            1v1
-          </button>
-          <button
-            onClick={() => setTab('group')}
-            className={`px-4 py-1.5 text-xs rounded-lg font-medium transition-all ${tab === 'group' ? 'bg-accent/15 text-accent-light border border-accent/20' : 'text-muted hover:text-foreground hover:bg-white/[0.03]'}`}
-          >
-            Group
-          </button>
+          {(['1v1', 'group', 'history'] as Tab[]).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-1.5 text-xs rounded-lg font-medium transition-all flex items-center gap-1.5 ${tab === t ? 'bg-accent/15 text-accent-light border border-accent/20' : 'text-muted hover:text-foreground hover:bg-white/[0.03]'}`}
+            >
+              {t === '1v1' ? '1v1' : t === 'group' ? 'Group' : 'History'}
+              {t === 'history' && historyCount > 0 && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/[0.08] text-muted tabular-nums">{historyCount}</span>
+              )}
+            </button>
+          ))}
         </div>
 
         <div className="p-4">
@@ -433,35 +448,77 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                       const isChallenger = c.challenger_id === user.id
                       const yourScore = isChallenger ? (p?.challengerValue ?? 0) : (p?.challengedValue ?? 0)
                       const theirScore = isChallenger ? (p?.challengedValue ?? 0) : (p?.challengerValue ?? 0)
+                      const opponentScore = theirScore
                       const maxScore = Math.max(yourScore, theirScore, 1)
                       const daysLeft = Math.max(0, Math.ceil((new Date(c.end_date).getTime() - Date.now()) / 86400000))
                       const unit = TYPE_UNITS[c.challenge_type] ?? ''
                       const isWinning = yourScore > theirScore
+                      const isTied = yourScore === theirScore
+                      const totalDays = c.duration_days
+                      const daysElapsed = totalDays - daysLeft
+                      const pctElapsed = Math.min((daysElapsed / totalDays) * 100, 100)
 
                       return (
                         <div key={c.id} className="rounded-xl p-4 bg-white/[0.02] border border-white/[0.04]">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-foreground text-sm font-medium">vs {opponentName(c)}</p>
-                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.04] text-muted tabular-nums">{daysLeft}d left</span>
+                          {/* Header row */}
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div>
+                              <p className="text-foreground text-sm font-semibold">vs {opponentName(c)}</p>
+                              <p className="text-[11px] text-muted">{typeLabel(c)}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border tabular-nums ${
+                                daysLeft <= 2
+                                  ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                  : 'bg-white/[0.04] text-muted border-white/[0.06]'
+                              }`}>
+                                {daysLeft === 0 ? 'Ends today' : `${daysLeft}d left`}
+                              </span>
+                              {!isTied && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  isWinning
+                                    ? 'bg-green-500/10 text-green-400'
+                                    : 'bg-amber-500/10 text-amber-400'
+                                }`}>
+                                  {isWinning ? 'Leading' : 'Behind'}
+                                </span>
+                              )}
+                              {isTied && yourScore > 0 && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent-light">Tied</span>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-[11px] text-muted mb-3.5">{typeLabel(c)}</p>
+
+                          {/* Timeline progress */}
+                          <div className="mb-3.5">
+                            <div className="h-1 bg-white/[0.04] rounded-full overflow-hidden">
+                              <div className="h-full bg-white/[0.12] rounded-full transition-all" style={{ width: `${pctElapsed}%` }} />
+                            </div>
+                            <p className="text-[10px] text-muted/50 mt-0.5 text-right">{daysElapsed}/{totalDays} days elapsed</p>
+                          </div>
+
+                          {/* Scores */}
                           <div className="space-y-2.5">
                             <div>
                               <div className="flex justify-between text-xs mb-1">
                                 <span className="text-foreground font-medium">You</span>
-                                <span className={`font-bold tabular-nums ${isWinning ? 'text-accent-light' : 'text-foreground'}`}>{yourScore.toLocaleString()} {unit}</span>
+                                <span className={`font-bold tabular-nums ${isWinning ? 'text-green-400' : 'text-foreground'}`}>
+                                  {yourScore.toLocaleString()}{unit ? ` ${unit}` : ''}
+                                </span>
                               </div>
                               <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full transition-all duration-500 ${isWinning ? 'bg-accent' : 'bg-white/60'}`} style={{ width: `${(yourScore / maxScore) * 100}%` }} />
+                                <div className={`h-full rounded-full transition-all duration-500 ${isWinning ? 'bg-green-500/70' : 'bg-white/40'}`} style={{ width: `${(yourScore / maxScore) * 100}%` }} />
                               </div>
                             </div>
                             <div>
                               <div className="flex justify-between text-xs mb-1">
                                 <span className="text-muted">{opponentName(c)}</span>
-                                <span className={`font-bold tabular-nums ${!isWinning && theirScore > yourScore ? 'text-amber-400' : 'text-muted'}`}>{theirScore.toLocaleString()} {unit}</span>
+                                <span className={`font-bold tabular-nums ${!isWinning && opponentScore > yourScore ? 'text-amber-400' : 'text-muted'}`}>
+                                  {opponentScore.toLocaleString()}{unit ? ` ${unit}` : ''}
+                                </span>
                               </div>
                               <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
-                                <div className="h-full bg-amber-400/70 rounded-full transition-all duration-500" style={{ width: `${(theirScore / maxScore) * 100}%` }} />
+                                <div className="h-full bg-amber-400/60 rounded-full transition-all duration-500" style={{ width: `${(opponentScore / maxScore) * 100}%` }} />
                               </div>
                             </div>
                           </div>
@@ -472,34 +529,12 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                 </div>
               )}
 
-              {completed.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Recent Results</p>
-                  <div className="space-y-1.5">
-                    {completed.map(c => {
-                      const isWinner = c.winner_id === user.id
-                      const isTie = !c.winner_id
-                      return (
-                        <div key={c.id} className="flex items-center justify-between rounded-xl p-3 hover:bg-white/[0.015] transition-colors">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-foreground text-sm">vs {opponentName(c)} <span className="text-muted text-[11px]">· {typeLabel(c)}</span></p>
-                          </div>
-                          <span className={`text-xs font-bold ml-2 px-2 py-0.5 rounded-md ${isTie ? 'text-muted bg-white/[0.04]' : isWinner ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10'}`}>
-                            {isTie ? 'Tie' : isWinner ? 'Won' : 'Lost'}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {!loading && challenges.length === 0 && (
+              {!loading && pendingReceived.length === 0 && pendingSent.length === 0 && active.length === 0 && (
                 <div className="text-center py-8">
                   <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
                     <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                   </div>
-                  <p className="text-muted text-sm">No challenges yet</p>
+                  <p className="text-muted text-sm">No active challenges</p>
                   <p className="text-muted/60 text-xs mt-0.5">Challenge a friend to get started</p>
                 </div>
               )}
@@ -536,36 +571,54 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Active Group Challenges</p>
                   <div className="space-y-3">
                     {activeGroup.map(c => {
-                      const members = groupProgress.get(c.id) ?? []
+                      const members = (groupProgress.get(c.id) ?? []).sort((a, b) => b.value - a.value)
                       const maxVal = Math.max(...members.map(m => m.value), 1)
                       const daysLeft = Math.max(0, Math.ceil((new Date(c.end_date).getTime() - Date.now()) / 86400000))
+                      const daysElapsed = c.duration_days - daysLeft
                       const unit = TYPE_UNITS[c.challenge_type] ?? ''
 
                       return (
                         <div key={c.id} className="rounded-xl p-4 bg-white/[0.02] border border-white/[0.04]">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-foreground text-sm font-medium">{typeLabel(c)}</p>
-                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.04] text-muted tabular-nums">{daysLeft}d left</span>
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div>
+                              <p className="text-foreground text-sm font-semibold">{typeLabel(c)}</p>
+                              <p className="text-[11px] text-muted">{c.members.filter(m => m.status === 'accepted').length} participants</p>
+                            </div>
+                            <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full border tabular-nums ${
+                              daysLeft <= 2
+                                ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                : 'bg-white/[0.04] text-muted border-white/[0.06]'
+                            }`}>
+                              {daysLeft === 0 ? 'Ends today' : `${daysLeft}d left`}
+                            </span>
                           </div>
-                          <p className="text-[11px] text-muted mb-3.5">{c.members.filter(m => m.status === 'accepted').length} participants</p>
-                          <div className="space-y-2.5">
+
+                          <div className="mb-3">
+                            <div className="h-1 bg-white/[0.04] rounded-full overflow-hidden">
+                              <div className="h-full bg-white/[0.12] rounded-full" style={{ width: `${Math.min((daysElapsed / c.duration_days) * 100, 100)}%` }} />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
                             {members.map((m, idx) => {
                               const isYou = m.user_id === user.id
                               const isFirst = idx === 0
+                              const rankColors = ['text-amber-400', 'text-slate-300', 'text-amber-600']
                               return (
                                 <div key={m.user_id}>
                                   <div className="flex justify-between text-xs mb-1">
-                                    <span className={isYou ? 'text-foreground font-medium' : 'text-muted'}>
-                                      <span className="tabular-nums text-muted/40 mr-1.5">{idx + 1}.</span>
+                                    <span className={`flex items-center gap-1.5 ${isYou ? 'text-foreground font-medium' : 'text-muted'}`}>
+                                      <span className={`tabular-nums font-bold ${rankColors[idx] ?? 'text-muted/40'}`}>#{idx + 1}</span>
                                       {isYou ? 'You' : m.username}
+                                      {isYou && <span className="text-[9px] px-1 py-0.5 rounded bg-accent/10 text-accent-light border border-accent/15">you</span>}
                                     </span>
                                     <span className={`font-bold tabular-nums ${isFirst ? 'text-amber-400' : isYou ? 'text-foreground' : 'text-muted'}`}>
-                                      {m.value.toLocaleString()} {unit}
+                                      {m.value.toLocaleString()}{unit ? ` ${unit}` : ''}
                                     </span>
                                   </div>
                                   <div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
                                     <div
-                                      className={`h-full rounded-full transition-all duration-500 ${isFirst ? 'bg-amber-400' : isYou ? 'bg-accent' : 'bg-white/30'}`}
+                                      className={`h-full rounded-full transition-all duration-500 ${isFirst ? 'bg-amber-400' : isYou ? 'bg-accent' : 'bg-white/20'}`}
                                       style={{ width: `${(m.value / maxVal) * 100}%` }}
                                     />
                                   </div>
@@ -580,37 +633,7 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                 </div>
               )}
 
-              {completedGroup.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Recent Group Results</p>
-                  <div className="space-y-1.5">
-                    {completedGroup.map(c => {
-                      const winner = c.members.find(m => m.rank === 1)
-                      const userMember = c.members.find(m => m.user_id === user.id)
-                      return (
-                        <div key={c.id} className="flex items-center justify-between rounded-xl p-3 hover:bg-white/[0.015] transition-colors">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-foreground text-sm">{typeLabel(c)}</p>
-                            <p className="text-[11px] text-muted">{c.members.length} members</p>
-                          </div>
-                          <div className="text-right ml-2">
-                            {winner && (
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${winner.user_id === user.id ? 'text-amber-400 bg-amber-500/10' : 'text-muted bg-white/[0.04]'}`}>
-                                {winner.user_id === user.id ? '1st Place' : `Winner: ${winner.username}`}
-                              </span>
-                            )}
-                            {userMember && userMember.rank && userMember.rank > 1 && (
-                              <p className="text-[10px] text-muted mt-0.5">You: #{userMember.rank}</p>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {!loading && groupChallenges.length === 0 && (
+              {!loading && pendingGroupReceived.length === 0 && activeGroup.length === 0 && (
                 <div className="text-center py-8">
                   <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
                     <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -618,6 +641,108 @@ export default function ChallengesSection({ friends }: ChallengesSectionProps) {
                   <p className="text-muted text-sm">No group challenges yet</p>
                   <p className="text-muted/60 text-xs mt-0.5">Create one to compete with multiple friends</p>
                 </div>
+              )}
+            </>
+          )}
+
+          {/* History tab */}
+          {tab === 'history' && !loading && (
+            <>
+              {historyCount === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+                    <svg className="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <p className="text-muted text-sm">No completed challenges yet</p>
+                  <p className="text-muted/60 text-xs mt-0.5">Finish a challenge to see it here</p>
+                </div>
+              ) : (
+                <>
+                  {completed1v1.length > 0 && (
+                    <div className="mb-5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">1v1 Results</p>
+                      <div className="space-y-2">
+                        {completed1v1.map(c => {
+                          const isWinner = c.winner_id === user.id
+                          const isTie = !c.winner_id
+                          const resultColor = isTie
+                            ? 'bg-white/[0.04] text-muted border-white/[0.06]'
+                            : isWinner
+                              ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                              : 'bg-red-500/10 text-red-400 border-red-500/20'
+
+                          return (
+                            <div key={c.id} className="rounded-xl p-3.5 bg-white/[0.02] border border-white/[0.04]">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-foreground text-sm font-medium">vs {opponentName(c)}</p>
+                                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border ${resultColor}`}>
+                                      {isTie ? 'Tie' : isWinner ? 'Won' : 'Lost'}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-muted mt-0.5">{typeLabel(c)}</p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-[11px] text-muted">{formatShortDate(c.start_date)} – {formatShortDate(c.end_date)}</p>
+                                  {c.winner_username && (
+                                    <p className="text-[11px] text-muted/70 mt-0.5">
+                                      Winner: <span className="text-foreground/80">{c.winner_username}</span>
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {completedGroup.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2.5">Group Results</p>
+                      <div className="space-y-2">
+                        {completedGroup.map(c => {
+                          const winner = c.members.find(m => m.rank === 1)
+                          const userMember = c.members.find(m => m.user_id === user.id)
+                          const userRank = userMember?.rank ?? null
+                          const isFirst = userRank === 1
+
+                          return (
+                            <div key={c.id} className="rounded-xl p-3.5 bg-white/[0.02] border border-white/[0.04]">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-foreground text-sm font-medium">{typeLabel(c)}</p>
+                                    {userRank && (
+                                      <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                        isFirst
+                                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                          : 'bg-white/[0.04] text-muted border-white/[0.06]'
+                                      }`}>
+                                        {isFirst ? '1st Place' : `#${userRank}`}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-muted mt-0.5">{c.members.length} participants</p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-[11px] text-muted">{formatShortDate(c.start_date)} – {formatShortDate(c.end_date)}</p>
+                                  {winner && winner.user_id !== user.id && (
+                                    <p className="text-[11px] text-muted/70 mt-0.5">
+                                      Winner: <span className="text-foreground/80">{winner.username}</span>
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
