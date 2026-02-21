@@ -246,8 +246,8 @@ export default function TrainingGoals() {
             <>
               {friendsGoals.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-muted text-sm">No friends' goals yet</p>
-                  <p className="text-muted/60 text-xs mt-0.5">Friends' goals will appear here when they add them</p>
+                  <p className="text-muted text-sm">No friends&apos; goals yet</p>
+                  <p className="text-muted/60 text-xs mt-0.5">Friends&apos; goals will appear here when they add them</p>
                 </div>
               ) : (
                 <div className="space-y-2">
